@@ -4028,7 +4028,7 @@ const SHOP_ITEMS = [
         id: 'coin_magnet',
         name: 'Coin Magnet',
         icon: '🧲',
-        desc: 'Next adventure gives +20% coins',
+        desc: 'Next adventure gives +20% 🪙',
         cost: 180,
         type: 'consumable',
         rarity: 'UNCOMMON',
@@ -5183,6 +5183,73 @@ function migrateShopSystem(){
     if(!state.limitedTime.nextResetAt){
         initLimitedTimeRewards();
     }
+
+    // Run V54.1 migration
+    migrateToV54_1();
+}
+
+// V54.1 MIGRATION - Add new state properties for enhanced features
+function migrateToV54_1(){
+    // Skip if already migrated
+    if(state.migratedV54_1) return;
+
+    console.log('🔄 Running V54.1 migration...');
+
+    // Boss defeat tracking per tier (for progressive difficulty)
+    if(!state.bossesDefeated){
+        state.bossesDefeated = {
+            tier1: 0,
+            tier2: 0,
+            tier3: 0,
+            tier4: 0,
+            nightmare: 0
+        };
+
+        // Count already defeated bosses from state.defeated array
+        if(state.defeated && state.defeated.length > 0){
+            state.defeated.forEach(bossId => {
+                if(bossId.includes('nightmare')) state.bossesDefeated.nightmare++;
+                else if(BOSSES[bossId]){
+                    const tier = BOSSES[bossId].tier || 1;
+                    state.bossesDefeated['tier' + tier]++;
+                }
+            });
+        }
+        console.log('✅ Added boss defeat tracking:', state.bossesDefeated);
+    }
+
+    // Bestiary discovery tracking
+    if(!state.discoveredCreatures){
+        state.discoveredCreatures = {};
+
+        // Auto-discover creatures students currently have
+        state.students.forEach(s => {
+            if(s.cid){
+                const lv = getLv(s.xp);
+                const evo = getEvo(s.cid, lv);
+                if(!state.discoveredCreatures[s.cid]){
+                    state.discoveredCreatures[s.cid] = {};
+                }
+                state.discoveredCreatures[s.cid][evo] = true;
+            }
+        });
+        console.log('✅ Added bestiary tracking:', Object.keys(state.discoveredCreatures).length, 'creatures');
+    }
+
+    // Arena mode structure (future PvP feature)
+    if(!state.arenaMode){
+        state.arenaMode = {
+            enabled: false,
+            records: {},
+            lastMatch: null
+        };
+        console.log('✅ Added arena mode structure');
+    }
+
+    // Mark migration complete
+    state.migratedV54_1 = true;
+    save();
+    console.log('✅ V54.1 migration complete');
 }
 
 // NAVIGATION
@@ -5268,7 +5335,7 @@ function renderTeam(m){
             <div class="card-pills-row">
                 <div class="pill lv"><span class="pill-label">Lv</span><span class="val">${lv}</span></div>
                 ${s.xpBoostAdventures > 0 ? `<div class="pill boost-active" title="2x XP for ${s.xpBoostAdventures} adventures">⭐×${s.xpBoostAdventures}</div>` : ''}
-                ${s.coinBoostAdventures > 0 ? `<div class="pill boost-active" title="+20% coins for ${s.coinBoostAdventures} adventures">🧲×${s.coinBoostAdventures}</div>` : ''}
+                ${s.coinBoostAdventures > 0 ? `<div class="pill boost-active" title="+20% 🪙 for ${s.coinBoostAdventures} adventures">🧲×${s.coinBoostAdventures}</div>` : ''}
             </div>
             <div class="card-pills-row">
                 <div class="pill"><span class="pill-label">XP</span><span class="val">${s.xp}</span></div>
@@ -5512,12 +5579,12 @@ function renderShop(m){
                 
                 ${locked ? '' : (isClassroom ? `
                     <button class="shop-buy-btn ${canAfford ? '' : 'disabled'}" 
-                        ${canAfford ? `onclick="contributeToClassroom('${item.id}')"` : `onclick="showErrorFeedback(null, '❌ Not enough coins! Need ${price - student.coins} more.')" disabled`}>
+                        ${canAfford ? `onclick="contributeToClassroom('${item.id}')"` : `onclick="showErrorFeedback(null, '❌ Not enough 🪙! Need ${price - student.coins} more.')" disabled`}>
                         Contribute
                     </button>
                 ` : `
                     <button class="shop-buy-btn ${canAfford ? '' : 'disabled'}" 
-                        ${canAfford ? `onclick="buyItem('${item.id}')"` : `onclick="showErrorFeedback(null, '❌ Not enough coins! Need ${price - student.coins} more.')" disabled`}>
+                        ${canAfford ? `onclick="buyItem('${item.id}')"` : `onclick="showErrorFeedback(null, '❌ Not enough 🪙! Need ${price - student.coins} more.')" disabled`}>
                         ${item.type === 'real_reward' ? 'Redeem' : 'Buy'}
                     </button>
                 `)}
@@ -5571,7 +5638,7 @@ function buyItem(itemId){
     
     // Check affordability with visual feedback
     if(student.coins < price){
-        showErrorFeedback(null, `❌ Not enough coins! Need ${price - student.coins} more.`);
+        showErrorFeedback(null, `❌ Not enough 🪙! Need ${price - student.coins} more.`);
         
         // Flash the coin display
         const coinDisplay = document.querySelector('.shop-coins');
@@ -5582,8 +5649,8 @@ function buyItem(itemId){
     
     // Confirmation
     const confirmMsg = item.type === 'real_reward' ? 
-        `Redeem "${item.name}" for ${price} coins?\n\nYou'll need to fulfill this reward manually.` :
-        `Buy "${item.name}" for ${price} coins?`;
+        `Redeem "${item.name}" for ${price} 🪙?\n\nYou'll need to fulfill this reward manually.` :
+        `Buy "${item.name}" for ${price} 🪙?`;
     
     if(!confirm(confirmMsg)) return;
     
@@ -5647,7 +5714,7 @@ function contributeToClassroom(rewardId){
     const contrib = Math.min(maxContrib, Math.max(1, parseInt(amount)));
     
     if(contrib > student.coins){
-        showErrorFeedback(null, `❌ Not enough coins! You only have ${student.coins}.`);
+        showErrorFeedback(null, `❌ Not enough 🪙! You only have ${student.coins}.`);
         
         const coinDisplay = document.querySelector('.shop-coins');
         if(coinDisplay) flashElement(coinDisplay, '#f87171');
@@ -5885,7 +5952,7 @@ function applyItemEffect(student, item){
             
         case 'coin_boost':
             student.coinBoostAdventures = effect.adventures;
-            showToast(`✅ +20% coins for next ${effect.adventures} adventures!`, 'success');
+            showToast(`✅ +20% 🪙 for next ${effect.adventures} adventures!`, 'success');
             return true;
             
         case 'defend_buff':
@@ -7276,29 +7343,29 @@ const DM_NARRATIVES = {
     },
     treasure: {
         1: [
-            (coins) => `Beneath a gnarled oak, something glitters! The party discovers an old adventurer's cache—${coins} coins for each Legend!`,
-            (coins) => `A friendly forest sprite appears! "You've been kind to the woods," it chimes. "Take these ${coins} coins as thanks!"`,
-            (coins) => `Hidden behind a waterfall, the team finds a treasure chest! Inside: ${coins} shimmering coins each!`
+            (coins) => `Beneath a gnarled oak, something glitters! The party discovers an old adventurer's cache—${coins} 🪙 for each Legend!`,
+            (coins) => `A friendly forest sprite appears! "You've been kind to the woods," it chimes. "Take these ${coins} 🪙 as thanks!"`,
+            (coins) => `Hidden behind a waterfall, the team finds a treasure chest! Inside: ${coins} shimmering 🪙 each!`
         ],
         2: [
-            (coins) => `In the ruins of an old watchtower, the team discovers a knight's forgotten coin purse. ${coins} coins each!`,
-            (coins) => `A grateful merchant rewards your bravery: "Take these ${coins} coins, heroes. The city needs defenders like you!"`,
-            (coins) => `Among the rubble, something shines—a cache of ${coins} coins hidden during the siege!`
+            (coins) => `In the ruins of an old watchtower, the team discovers a knight's forgotten coin purse. ${coins} 🪙 each!`,
+            (coins) => `A grateful merchant rewards your bravery: "Take these ${coins} 🪙, heroes. The city needs defenders like you!"`,
+            (coins) => `Among the rubble, something shines—a cache of ${coins} 🪙 hidden during the siege!`
         ],
         3: [
-            (coins) => `Deep within the volcanic caverns, you find a dragon's abandoned hoard! ${coins} coins glitter in the firelight!`,
-            (coins) => `An ancient fire elemental grants you a boon: "${coins} coins of molten gold, forged in eternal flame!"`,
-            (coins) => `The lava recedes to reveal a treasure vault! Each Legend claims ${coins} coins from the scorched chest!`
+            (coins) => `Deep within the volcanic caverns, you find a dragon's abandoned hoard! ${coins} 🪙 glitter in the firelight!`,
+            (coins) => `An ancient fire elemental grants you a boon: "${coins} 🪙 of molten gold, forged in eternal flame!"`,
+            (coins) => `The lava recedes to reveal a treasure vault! Each Legend claims ${coins} 🪙 from the scorched chest!`
         ],
         4: [
-            (coins) => `Frozen in ice for millennia, a treasure chest thaws at your touch. Inside: ${coins} ancient coins each!`,
-            (coins) => `A frost giant's tribute lies scattered in the snow—${coins} coins for each brave Legend!`,
-            (coins) => `The aurora solidifies into ${coins} crystalline coins for each party member!`
+            (coins) => `Frozen in ice for millennia, a treasure chest thaws at your touch. Inside: ${coins} ancient 🪙 each!`,
+            (coins) => `A frost giant's tribute lies scattered in the snow—${coins} 🪙 for each brave Legend!`,
+            (coins) => `The aurora solidifies into ${coins} crystalline 🪙 for each party member!`
         ],
         5: [
-            (coins) => `Reality fractures to reveal a pocket dimension of pure wealth! ${coins} void-touched coins materialize!`,
-            (coins) => `A cosmic entity speaks: "Your courage pleases me. Accept these ${coins} coins from beyond the stars."`,
-            (coins) => `Time loops... and each iteration leaves behind ${coins} coins. The paradox favors you!`
+            (coins) => `Reality fractures to reveal a pocket dimension of pure wealth! ${coins} void-touched 🪙 materialize!`,
+            (coins) => `A cosmic entity speaks: "Your courage pleases me. Accept these ${coins} 🪙 from beyond the stars."`,
+            (coins) => `Time loops... and each iteration leaves behind ${coins} 🪙. The paradox favors you!`
         ]
     },
     special: {
@@ -7318,9 +7385,9 @@ const DM_NARRATIVES = {
             (xp) => `A friendly rival team appears! "Let's spar!" The friendly competition grants ${xp} XP to each Legend!`
         ],
         luck: [
-            (coins) => `A shooting star crashes nearby! Inside the crater: ${coins} star-forged coins for each Legend!`,
-            (coins) => `Four-leaf clovers sprout at your feet! A leprechaun appears: "Your luck is legendary! Take ${coins} coins each!"`,
-            (coins) => `The party stumbles into a fairy ring! The grateful fae gift ${coins} enchanted coins to each Legend!`
+            (coins) => `A shooting star crashes nearby! Inside the crater: ${coins} star-forged 🪙 for each Legend!`,
+            (coins) => `Four-leaf clovers sprout at your feet! A leprechaun appears: "Your luck is legendary! Take ${coins} 🪙 each!"`,
+            (coins) => `The party stumbles into a fairy ring! The grateful fae gift ${coins} enchanted 🪙 to each Legend!`
         ]
     },
     boss: {
@@ -7799,7 +7866,7 @@ function creatorBlessingEvent(avgLv){
             name: '💎 Crystal Heart',
             desc: 'A rare crystal appears, radiating power!',
             effect: () => { getActiveStudents().forEach(s => { s.coins = (s.coins||0) + scaledCoins; addXP(s.id, Math.floor(scaledXP * 0.5)); }); },
-            reward: `+${scaledCoins} coins & +${Math.floor(scaledXP * 0.5)} XP to all!`
+            reward: `+${scaledCoins} 🪙 & +${Math.floor(scaledXP * 0.5)} XP to all!`
         },
         {
             name: '⭐ Level Up Boost',
@@ -7811,7 +7878,7 @@ function creatorBlessingEvent(avgLv){
             name: '🔮 Ancient Artifact',
             desc: 'An artifact from the beginning of time!',
             effect: () => { getActiveStudents().forEach(s => { s.coins = (s.coins||0) + scaledCoins * 2; }); },
-            reward: `+${scaledCoins * 2} coins to all!`
+            reward: `+${scaledCoins * 2} 🪙 to all!`
         }
     ];
     
@@ -8071,7 +8138,7 @@ function renderBattle(m){
         else sizeClass = 'tier1';
     }
     
-    let html=`<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/${enemy.bg||'Backgrounds_DarkForest.png'}')">`;
+    let html=`<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/${b.enemy.bg||'Backgrounds_DarkForest.png'}')">`;
     
     // Header
     html+=`<div class="battle-header">
