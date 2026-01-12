@@ -67,7 +67,6 @@ body{
     max-width:470px; /* Prevent cards from getting too wide */
     min-width:340px; /* Ensure minimum card width for Evo 1 */
 }
-}
 .card::before{
     content:'';position:absolute;inset:0;
     background:radial-gradient(ellipse at 50% 0%,var(--card-accent-glow) 0%,transparent 50%);
@@ -596,7 +595,6 @@ body{
 }
 .player-arena.small-party{
     padding-left:12%;
-}
 }
 
 /* Columns for staggered formation */
@@ -7241,6 +7239,7 @@ function showSummonAnimation(bossName, minions, callback){
         overlay.style.animation = 'summonFadeIn .3s ease-out reverse';
         setTimeout(() => {
             overlay.remove();
+            if(!state.battle) return;
             if(callback) callback();
         }, 300);
     }, 2000); // Show for 2 seconds
@@ -8927,7 +8926,12 @@ function fireProjectile(fromEl, toEl, element, onImpact){
         if(onImpact) onImpact();
         return;
     }
-    
+    if(toRect.width === 0 || toRect.height === 0){
+        console.error('fireProjectile: toEl has no size', toEl);
+        if(onImpact) onImpact();
+        return;
+    }
+
     const startX = fromRect.left + fromRect.width/2;
     const startY = fromRect.top + fromRect.height/2;
     const endX = toRect.left + toRect.width/2;
@@ -9365,7 +9369,12 @@ function enemyAction(){
                     if(arenaCreature) showFloatingDamage(arenaCreature, d, 'damage');
                 });
                 addLog(`Everyone takes damage!`,'dmg');
-                
+
+                turnIdx++;
+                processing = false;
+                renderMain();
+                setTimeout(nextTurn, 800);
+
             } else if(actionType === 'special'){
                 // SPECIAL ATTACK
                 const t = targetMember;
@@ -9508,7 +9517,8 @@ function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
 function endBattle(won){
     const b=state.battle;
     stopMusic(); // Stop battle music
-    
+    window.lastProcessingCheck = null; // Clean up processing watchdog
+
     // Calculate total rewards from all enemies
     const totalXP = b.enemies.reduce((sum, e) => sum + (e.xp || 0), 0);
     const totalCoins = b.enemies.reduce((sum, e) => sum + (e.coins || 0), 0);
