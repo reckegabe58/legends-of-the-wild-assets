@@ -8016,23 +8016,60 @@ function startWildEncounter(avgLv,chapter){
             specialAttack = hasSpecial ? {name: typeData.special, power: 1.6, cooldown: 3, element: typeData.elem, focusCost: 40} : null;
             healAttack = canHealAbility ? {name: typeData.heal, power: 0.25} : null;
         }
-        
+
+        // ============================================
+        // ELITE ENEMY SYSTEM (Chapter 3+)
+        // ============================================
+        // Elite enemies are stronger variants with ★ in name
+        let isElite = false;
+        let eliteHpMult = 1.0;
+        let eliteAtkMult = 1.0;
+        let eliteXpMult = 1.0;
+
+        if(chapter >= 3){
+            // Elite chance increases with chapter: 15% ch3, 20% ch4, 25% ch5
+            const eliteChance = 0.10 + (chapter - 2) * 0.05;
+
+            if(Math.random() < eliteChance){
+                isElite = true;
+                // Elite stat multipliers scale with chapter
+                eliteHpMult = 1.25 + (chapter - 3) * 0.1;   // 1.25x ch3, 1.35x ch4, 1.45x ch5
+                eliteAtkMult = 1.20 + (chapter - 3) * 0.08; // 1.20x ch3, 1.28x ch4, 1.36x ch5
+                eliteXpMult = 1.5; // 50% more XP for elite kills
+            }
+        }
+
+        // Apply elite multipliers
+        const enemyHp = Math.floor(finalHp * eliteHpMult);
+        const enemyAtk = Math.floor(finalAtk * eliteAtkMult);
+        const enemyXp = Math.floor(wildXP * eliteXpMult);
+
+        // Build enemy name with elite star prefix
+        let enemyName = creature.name;
+        if(isElite){
+            enemyName = '★ ' + enemyName;
+        }
+        if(usedCreatures.filter(u=>u===creature.id).length > 1){
+            enemyName += ` #${usedCreatures.filter(u=>u===creature.id).length}`;
+        }
+
         enemies.push({
             id: creature.id + '_' + i,
-            name: creature.name + (usedCreatures.filter(u=>u===creature.id).length > 1 ? ` #${usedCreatures.filter(u=>u===creature.id).length}` : ''),
+            name: enemyName,
             type: creature.type,
-            hp: finalHp,
-            maxHp: finalHp,
-            atk: finalAtk,
+            hp: enemyHp,
+            maxHp: enemyHp,
+            atk: enemyAtk,
             def: finalDef,
             spd: scaledSpd,
             lv: wildLv,
             img: creature.img,
             isWild: true,
+            isElite: isElite,
             isPlayerCreature: isPlayerCreatureEnemy,
             isRegional: isRegional,
             evoStage: creature.evoStage || 0,
-            xp: wildXP,
+            xp: enemyXp,
             coins: wildCoins,
             attacks: attackList,
             attackElement: attackElement,
@@ -8058,10 +8095,16 @@ function startWildEncounter(avgLv,chapter){
     
     // DM Narrative
     const narratives = DM_NARRATIVES.wild[region] || DM_NARRATIVES.wild.forest;
-    
+
+    // Check for elite enemies
+    const eliteCount = enemies.filter(e => e.isElite).length;
+
     let narrative;
     if(numEnemies === 1){
         narrative = narratives[Math.floor(Math.random()*narratives.length)](enemies[0].name, enemies[0].lv);
+        if(enemies[0].isElite){
+            narrative += ' This one radiates unusual power!';
+        }
     } else {
         const names = enemies.map(e => e.name).join(', ');
         const multiNarratives = [
@@ -8071,6 +8114,9 @@ function startWildEncounter(avgLv,chapter){
             `The wilds grow more dangerous. ${numEnemies} foes appear: ${names}!`
         ];
         narrative = multiNarratives[Math.floor(Math.random()*multiNarratives.length)];
+        if(eliteCount > 0){
+            narrative += ` Watch out - ${eliteCount === 1 ? 'one of them is' : eliteCount + ' of them are'} elite!`;
+        }
     }
     
     const enemyList = enemies.map(e => `${e.name} (Lv ${e.lv})`).join('\n• ');
