@@ -565,6 +565,25 @@ body{
     opacity:0.25;
     filter:grayscale(1);
 }
+/* v54.1: Turn order names */
+.turn-order-name{
+    position:absolute;
+    bottom:-16px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:.55rem;
+    color:#ccc;
+    white-space:nowrap;
+    text-shadow:0 1px 3px rgba(0,0,0,.8);
+    font-family:'Cinzel',serif;
+}
+.turn-order-portrait.active .turn-order-name{
+    color:var(--purple-lt);
+    font-weight:bold;
+}
+.turn-order-portrait.enemy .turn-order-name{
+    color:#f87171;
+}
 
 /* Party HUD CSS Removed - now using stats overlay on creatures */
 
@@ -3974,6 +3993,32 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
 }
 
 // ============================================
+// ENEMY DAMAGE ADJUSTMENT (v54.1 - Phase 4)
+// ============================================
+// CRITICAL RULE: Bosses CAN one-shot for dramatic tension
+// CRITICAL RULE: Wild enemies can NEVER one-shot
+// Returns: {damage: number, isDevastating: boolean}
+function adjustEnemyDamage(baseDamage, enemy, target){
+    let finalDamage = baseDamage;
+    let isDevastating = false;
+
+    if(enemy.isBoss){
+        // BOSS DEVASTATING BLOW: 12% chance for 1.8x damage (can one-shot)
+        if(Math.random() < 0.12){
+            finalDamage = Math.floor(baseDamage * 1.8);
+            isDevastating = true;
+        }
+        // No damage cap for bosses - they're meant to be deadly
+    } else {
+        // WILD ENEMIES: Never deal more than 75% of target's max HP
+        const maxDamage = Math.floor(target.maxHp * 0.75);
+        finalDamage = Math.min(baseDamage, maxDamage);
+    }
+
+    return { damage: finalDamage, isDevastating };
+}
+
+// ============================================
 // AOE SPECIAL DETECTION - Determines if special hits all enemies
 // ============================================
 // AOE specials do 65% damage but hit ALL enemies
@@ -6537,15 +6582,24 @@ function renderBestiary(m){
     let html=`<h2 class="section-title">Bestiary</h2>`;
     html+=`<h3 style="color:var(--purple-lt);font-size:.85rem;margin:10px 0">Player Creatures</h3>`;
     html+=`<div class="bestiary-grid">`;
-    
+
     Object.entries(CREATURES).forEach(([id,c])=>{
-        html+=`<div class="bestiary-card">
+        // v54.1: Show all evolution names
+        const evoNames = c.names || [c.name];
+        const evoNamesHtml = evoNames.map((name, idx) => {
+            const evoStage = idx + 1;
+            const color = idx === 0 ? '#aaa' : idx === 1 ? '#8bc34a' : idx === 2 ? '#03a9f4' : '#ffc107';
+            return `<span style="color:${color};font-size:.6rem">Evo${evoStage}: ${name}</span>`;
+        }).join('<br>');
+
+        html+=`<div class="bestiary-card" style="min-height:140px">
             <div class="small-img"><img src="${G}/Player_Creatures/${c.imgs[0]}"></div>
             <h4>${c.name}</h4>
             <p>${c.type}${c.canHeal?' <img src="'+G+'/Icons/Icon_Health.png" style="width:14px;height:14px;vertical-align:middle">':''}</p>
+            <div style="margin-top:5px;line-height:1.4">${evoNamesHtml}</div>
         </div>`;
     });
-    
+
     html+=`</div>`;
     m.innerHTML=html;
 }
@@ -7297,29 +7351,46 @@ function spawnBossMinions(bossId, tier, chapter){
     return minions;
 }
 
-// Check if boss should summon minions (at 40% HP)
+// v54.1 Phase 6: Check if boss should summon minions (at 40% and 20% HP)
 function checkBossMinionSummon(){
     const b = state.battle;
     if(!b) return;
 
     // Find the boss in enemies array
     const boss = b.enemies.find(e => e.isBoss);
-    if(!boss || boss.minionsSpawned) return;
+    if(!boss) return;
 
-    // Check if boss is at or below 40% HP
+    // Track summon waves (0 = none, 1 = first wave at 40%, 2 = second wave at 20%)
+    if(boss.summonWaves === undefined) boss.summonWaves = 0;
+
     const hpPercent = boss.hp / boss.maxHp;
-    if(hpPercent > 0.4) return;
+
+    // PHASE 6: RE-SUMMON MECHANIC
+    // First summon at 40% HP, second summon at 20% HP
+    let shouldSummon = false;
+    let waveNumber = 0;
+
+    if(hpPercent <= 0.2 && boss.summonWaves < 2){
+        shouldSummon = true;
+        waveNumber = 2;
+    } else if(hpPercent <= 0.4 && boss.summonWaves < 1){
+        shouldSummon = true;
+        waveNumber = 1;
+    }
+
+    if(!shouldSummon) return;
+
+    // Update summon wave tracker
+    boss.summonWaves = waveNumber;
 
     // Check if boss has minions to spawn
     const minionPool = boss.minionPool;
 
     // BOSSES WITHOUT MINIONS: Self-heal instead of summoning
     if(!minionPool || !minionPool.length){
-        // Mark as used so we don't do it again
-        boss.minionsSpawned = true;
-
-        // Heal boss for 25% of max HP
-        const healAmount = Math.floor(boss.maxHp * 0.25);
+        // v54.1: Wave-based heal amounts (first wave = 25%, second wave = 15%)
+        const healPercent = waveNumber === 1 ? 0.25 : 0.15;
+        const healAmount = Math.floor(boss.maxHp * healPercent);
         const actualHeal = Math.min(healAmount, boss.maxHp - boss.hp);
         boss.hp = Math.min(boss.maxHp, boss.hp + healAmount);
 
@@ -7331,44 +7402,52 @@ function checkBossMinionSummon(){
             showFloatingDamage(bossEl, actualHeal, 'heal');
         }
 
+        const healMsg = waveNumber === 2 ?
+            `💚 ${boss.name} desperately channels remaining energy!` :
+            `💚 ${boss.name} channels dark energy and heals itself!`;
         playSound('heal');
-        addLog(`💚 ${boss.name} channels dark energy and heals itself!`, 'enemy');
+        addLog(healMsg, 'enemy');
         renderMain();
         return;
     }
 
-    // Mark as spawned so we don't do it again
-    boss.minionsSpawned = true;
-    
     // Generate minions - MORE minions for bigger parties
+    // v54.1: Wave 2 spawns fewer but stronger minions
     const avgLv = getAvgLevel();
     const partySize = b.team.filter(t => t.curHp > 0).length;
     
-    // Base 2 minions, +1 for every 2 party members above 2
-    const baseMinions = 2;
+    // v54.1: Wave-based minion count and strength
+    // Wave 1: Normal count, normal strength
+    // Wave 2: Fewer minions but 30% stronger (elite reinforcements)
+    const isWave2 = waveNumber === 2;
+    const baseMinions = isWave2 ? 1 : 2;
     const bonusMinions = Math.floor(Math.max(0, partySize - 2) / 2);
-    const numMinions = Math.min(baseMinions + bonusMinions, 4); // Cap at 4
-    
+    const numMinions = Math.min(baseMinions + bonusMinions, isWave2 ? 3 : 4);
+    const wave2Multiplier = isWave2 ? 1.3 : 1.0; // 30% stronger in wave 2
+
     const newMinions = [];
     for(let i = 0; i < numMinions; i++){
         const minionId = minionPool[Math.floor(Math.random() * minionPool.length)];
         const minionData = MINIONS[minionId];
         if(!minionData) continue;
-        
+
         const minionLv = Math.max(avgLv - 5, 10);
         const lvScale = 1 + (minionLv - 1) * 0.08;
-        
+
         // Apply party-adaptive scaling to minions
-        const baseHP = Math.floor(minionData.base.hp * lvScale);
-        const baseATK = Math.floor(minionData.base.atk * lvScale);
+        const baseHP = Math.floor(minionData.base.hp * lvScale * wave2Multiplier);
+        const baseATK = Math.floor(minionData.base.atk * lvScale * wave2Multiplier);
         const baseDEF = Math.floor(minionData.base.def * lvScale);
         const baseSPD = Math.floor(minionData.base.spd * lvScale);
-        
+
         const scaled = scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD);
-        
+
+        // v54.1: Elite prefix for wave 2 minions
+        const minionName = isWave2 ? `Elite ${minionData.name}` : minionData.name;
+
         newMinions.push({
             id: minionId,
-            name: minionData.name,
+            name: minionName,
             type: minionData.type,
             lv: minionLv,
             hp: scaled.hp,
@@ -7376,10 +7455,11 @@ function checkBossMinionSummon(){
             atk: scaled.atk,
             def: scaled.def,
             spd: scaled.spd,
-            xp: Math.floor(20 + minionLv * 3),
-            coins: Math.floor(10 + minionLv * 2),
+            xp: Math.floor((20 + minionLv * 3) * wave2Multiplier),
+            coins: Math.floor((10 + minionLv * 2) * wave2Multiplier),
             img: minionData.img,
             isMinion: true,
+            isElite: isWave2,
             attacks: ['Minion Strike', 'Quick Attack', 'Slash']
         });
     }
@@ -7387,24 +7467,29 @@ function checkBossMinionSummon(){
     if(newMinions.length > 0){
         // CRITICAL: Set processing flag to block ALL turn advancement during summon
         processing = true;
-        
+
         // Show summon animation BEFORE adding minions
         showSummonAnimation(boss.name, newMinions, () => {
             // Add minions to battle after animation
             b.enemies.push(...newMinions);
-            
+
             // Add minions to turn order with correct indices
             newMinions.forEach((m, i) => {
                 const enemyIdx = b.enemies.length - newMinions.length + i;
                 battleQueue.push({type:'enemy', idx: enemyIdx, spd: m.spd});
             });
-            
+
             // Re-sort turn order by speed
             battleQueue.sort((a,b) => b.spd - a.spd);
-            
-            // Show summon message in log
-            addLog(`💀 ${boss.name} summons reinforcements!`, 'enemy');
-            addLog(`👹 ${newMinions.length} minion(s) join the fight!`, 'enemy');
+
+            // v54.1: Wave-specific summon messages
+            if(isWave2){
+                addLog(`⚡ ${boss.name} calls upon elite reinforcements!`, 'enemy');
+                addLog(`👹 ${newMinions.length} ELITE minion(s) enter the battle!`, 'enemy');
+            } else {
+                addLog(`💀 ${boss.name} summons reinforcements!`, 'enemy');
+                addLog(`👹 ${newMinions.length} minion(s) join the fight!`, 'enemy');
+            }
             
             // Force re-render to show new minions
             renderMain();
@@ -8290,26 +8375,38 @@ function renderBattle(m){
     </div>`;
     
     // ============================================
-    // V43: TURN ORDER TRACKER - Top center
+    // V43: TURN ORDER TRACKER - Top center (v54.1: Added names)
     // ============================================
     html+=`<div class="turn-order-bar">`;
     const upcomingTurns = battleQueue.slice(turnIdx, Math.min(turnIdx + 7, battleQueue.length));
     upcomingTurns.forEach((turn, offset) => {
         const isActive = offset === 0;
-        const isKO = turn.type === 'player' ? 
-            b.team[turn.idx].curHp <= 0 : 
+        const isKO = turn.type === 'player' ?
+            b.team[turn.idx].curHp <= 0 :
             b.enemies[turn.idx].hp <= 0;
-        
+
         let portraitClass = `turn-order-portrait ${turn.type}`;
         if(isActive) portraitClass += ' active';
         if(isKO) portraitClass += ' ko';
-        
-        const imgSrc = turn.type === 'player' ? 
+
+        const imgSrc = turn.type === 'player' ?
             getImg(b.team[turn.idx].cid, b.team[turn.idx].lv) :
             `${G}/${b.enemies[turn.idx].img}`;
-        
+
+        // v54.1: Get name for turn order display
+        let turnName = '';
+        if(turn.type === 'player'){
+            const member = b.team[turn.idx];
+            turnName = member.name || 'Hero';
+        } else {
+            turnName = b.enemies[turn.idx].name || 'Enemy';
+        }
+        // Truncate long names
+        const displayName = turnName.length > 8 ? turnName.substring(0, 7) + '…' : turnName;
+
         html+=`<div class="${portraitClass}">
             <img src="${imgSrc}" onerror="this.style.opacity='0.3'">
+            <span class="turn-order-name">${displayName}</span>
         </div>`;
     });
     html+=`</div>`;
@@ -9642,11 +9739,14 @@ function enemyAction(){
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
-                    let d = Math.max(5, enemy.atk * 0.5 - (t.st.def * 0.15));
-                    d = Math.floor(d * (0.7 + Math.random() * 0.3));
-                    if(t.def) d = Math.floor(d * 0.5);
+                    let baseDmg = Math.max(5, enemy.atk * 0.5 - (t.st.def * 0.15));
+                    baseDmg = Math.floor(baseDmg * (0.7 + Math.random() * 0.3));
+                    if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
+                    // v54.1: Apply boss/wild damage adjustment
+                    const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
+                    const d = dmgResult.damage;
                     t.curHp = Math.max(0, t.curHp - d);
-                    
+
                     const idx = b.team.indexOf(t);
                     const targetEl = document.getElementById('c'+idx);
                     const arenaCreature = document.getElementById('arenaC'+idx);
@@ -9656,8 +9756,8 @@ function enemyAction(){
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
                         if(targetEl) targetEl.classList.remove('anim-hit-shake');
                     },250);
-                    
-                    if(arenaCreature) showFloatingDamage(arenaCreature, d, 'damage');
+
+                    if(arenaCreature) showFloatingDamage(arenaCreature, d, dmgResult.isDevastating ? 'crit' : 'damage');
                 });
                 addLog(`Everyone takes damage!`,'dmg');
 
@@ -9685,34 +9785,38 @@ function enemyAction(){
                 const element = spec.element || enemy.attackElement || 'energy';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let d = Math.max(15, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
-                    d = Math.floor(d * (0.9 + Math.random() * 0.2));
-                    if(t.def) d = Math.floor(d * 0.6);
+                    let baseDmg = Math.max(15, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
+                    baseDmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.2));
+                    if(t.def) baseDmg = Math.floor(baseDmg * 0.6);
+                    // v54.1: Apply boss/wild damage adjustment
+                    const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
+                    const d = dmgResult.damage;
                     t.curHp = Math.max(0, t.curHp - d);
-                    
+
                     enemy.specialCooldown = spec.cooldown || 3;
-                    
-                    // Strong visual feedback
+
+                    // Strong visual feedback (enhanced for devastating blows)
                     if(arenaCreature) arenaCreature.classList.add('hit-recoil');
                     if(targetEl) targetEl.classList.add('anim-crit-shake');
                     setTimeout(()=>{
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
                         if(targetEl) targetEl.classList.remove('anim-crit-shake');
                     },300);
-                    
+
                     if(arena){
                         arena.classList.add('screen-shake');
                         setTimeout(()=>arena.classList.remove('screen-shake'),200);
                     }
-                    
-                    showFloatingDamage(arenaCreature || targetEl, d, 'crit');
+
+                    showFloatingDamage(arenaCreature || targetEl, d, dmgResult.isDevastating ? 'crit' : 'damage');
                     
                     // Show element effect for special
                     if(spec.element){
                         showElementEffect(arenaCreature || targetEl, spec.element);
                     }
                     
-                    addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}`,'enemy');
+                    addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
+                    if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
                     
                     turnIdx++;
@@ -9735,38 +9839,42 @@ function enemyAction(){
                 const element = enemy.attackElement || 'physical';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let d = Math.max(10, enemy.atk - (t.st.def * 0.2));
-                    d = Math.floor(d * (0.8 + Math.random() * 0.4));
-                    if(t.def){ d = Math.floor(d * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
+                    let baseDmg = Math.max(10, enemy.atk - (t.st.def * 0.2));
+                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.4));
+                    if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
+                    // v54.1: Apply boss/wild damage adjustment
+                    const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
+                    const d = dmgResult.damage;
                     t.curHp = Math.max(0, t.curHp - d);
-                    
-                    // VISUAL EFFECTS - Impact + Slash
+
+                    // VISUAL EFFECTS - Impact + Slash (enhanced for devastating)
                     showImpactFlash(arenaCreature || targetEl);
-                    showSlashEffect(arenaCreature || targetEl, false);
-                    
+                    showSlashEffect(arenaCreature || targetEl, dmgResult.isDevastating);
+
                     if(arenaCreature) arenaCreature.classList.add('hit-recoil');
-                    if(targetEl) targetEl.classList.add('anim-hit-shake');
+                    if(targetEl) targetEl.classList.add(dmgResult.isDevastating ? 'anim-crit-shake' : 'anim-hit-shake');
                     setTimeout(()=>{
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
-                        if(targetEl) targetEl.classList.remove('anim-hit-shake');
+                        if(targetEl) targetEl.classList.remove('anim-hit-shake', 'anim-crit-shake');
                     },250);
-                    
+
                     const hpBar = document.getElementById('pmHpBar'+idx);
                     if(hpBar){
                         hpBar.classList.add('anim-damage');
                         setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
                     }
-                    
-                    showFloatingDamage(arenaCreature || targetEl, d, 'damage');
+
+                    showFloatingDamage(arenaCreature || targetEl, d, dmgResult.isDevastating ? 'crit' : 'damage');
                     
                     // Show element effect
                     if(enemy.attackElement){
                         setTimeout(() => showElementEffect(arenaCreature || targetEl, enemy.attackElement), 80);
                     }
                     
-                    addLog(`${enemy.name} used ${atkName}! ${t.name||'Hero'} -${d}`,'enemy');
+                    addLog(`${enemy.name} used ${atkName}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
+                    if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
-                    
+
                     turnIdx++;
                     processing = false; // CRITICAL: Clear before nextTurn
                     renderMain();
