@@ -604,6 +604,20 @@ body{
     color:#f87171;
 }
 
+/* v54.5: Arena team indicators - subtle border colors */
+.turn-order-portrait.arena-team-red{
+    border-color:rgba(231,76,60,.6);
+}
+.turn-order-portrait.arena-team-blue{
+    border-color:rgba(52,152,219,.6);
+}
+.turn-order-portrait.arena-team-red .turn-order-name{
+    color:#e74c3c;
+}
+.turn-order-portrait.arena-team-blue .turn-order-name{
+    color:#3498db;
+}
+
 /* Party HUD CSS Removed - now using stats overlay on creatures */
 
 /* Move Buttons - Absolute bottom now (no party HUD) */
@@ -7338,7 +7352,7 @@ function showArenaHeal(idx, amt){
 }
 
 // ============================================
-// ARENA BATTLE UI
+// ARENA BATTLE UI - v54.5: Visually matches main battle UI
 // ============================================
 function renderArenaBattle(m){
     if(!arenaBattle){
@@ -7347,140 +7361,212 @@ function renderArenaBattle(m){
         return;
     }
 
+    console.log('[ARENA] Rendering arena battle UI (v54.5 unified styling)');
+
     const cur = arenaBattle.turnQueue[arenaBattle.turnIdx];
     const activeCombatant = cur ? arenaBattle.combatants[cur.idx] : null;
     const isTargeting = arenaBattle.targetingMode !== null;
+    const activeIdx = cur ? cur.idx : -1;
 
-    let html = `<div class="arena-battle-container" style="background-image:url('${G}/Backgrounds/Backgrounds_VolcanoArena.png')">`;
+    // Use same container class as main battle
+    let html = `<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/Backgrounds_VolcanoArena.png')">`;
 
-    // Header
-    html += `<div class="arena-battle-header">
-        <div class="arena-battle-title">⚔️ ${ARENA_MODES[arenaBattle.mode].name.toUpperCase()} ⚔️</div>
-        <button class="arena-forfeit-btn" onclick="forfeitArenaBattle()">🏳️ Forfeit</button>
+    // Header - same structure as main battle
+    html += `<div class="battle-header">
+        <div class="battle-type">⚔️ ${ARENA_MODES[arenaBattle.mode].name.toUpperCase()}</div>
+        <button onclick="forfeitArenaBattle()" style="background:#f87171;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;">🏳️ Forfeit</button>
     </div>`;
 
-    // Turn order bar
-    html += `<div class="arena-turn-bar">`;
-    const upcomingTurns = arenaBattle.turnQueue.slice(arenaBattle.turnIdx, Math.min(arenaBattle.turnIdx + 8, arenaBattle.turnQueue.length));
+    // Turn order bar - same structure as main battle
+    html += `<div class="turn-order-bar">`;
+    const upcomingTurns = arenaBattle.turnQueue.slice(arenaBattle.turnIdx, Math.min(arenaBattle.turnIdx + 7, arenaBattle.turnQueue.length));
     upcomingTurns.forEach((turn, offset) => {
         const combatant = arenaBattle.combatants[turn.idx];
         const isActive = offset === 0;
         const isKO = combatant.curHp <= 0;
-        const teamColor = arenaBattle.isFFA ? 'ffa' : `team${combatant.team}`;
+        // Add team indicator as subtle border color
+        const teamClass = arenaBattle.isFFA ? '' : (combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue');
 
-        html += `<div class="arena-turn-portrait ${teamColor} ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''}">
-            <img src="${getImg(combatant.cid, combatant.lv)}">
-            <span class="turn-name">${(combatant.name || 'Hero').substring(0, 6)}</span>
+        let portraitClass = `turn-order-portrait player ${teamClass}`;
+        if(isActive) portraitClass += ' active';
+        if(isKO) portraitClass += ' ko';
+
+        const displayName = (combatant.name || 'Hero').length > 8 ?
+            (combatant.name || 'Hero').substring(0, 7) + '…' :
+            (combatant.name || 'Hero');
+
+        html += `<div class="${portraitClass}">
+            <img src="${getImg(combatant.cid, combatant.lv)}" onerror="this.style.opacity='0.3'">
+            <span class="turn-order-name">${displayName}</span>
         </div>`;
     });
     html += `</div>`;
 
-    // Battle Arena
-    html += `<div class="arena-battlefield">`;
+    // Battle Arena - same structure as main battle
+    html += `<div class="battle-arena">`;
 
     if(arenaBattle.isFFA){
-        // FFA - Circular arrangement
-        html += `<div class="ffa-arena">`;
-        arenaBattle.combatants.forEach((combatant, idx) => {
-            const isActive = cur && cur.idx === idx;
-            const isKO = combatant.curHp <= 0;
-            const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
-            const evoIdx = getEvo(combatant.cid, combatant.lv);
+        // FFA - Use player-arena layout for all combatants
+        const partySize = arenaBattle.combatants.length;
+        const numColumns = partySize <= 3 ? 1 : partySize <= 6 ? 2 : 3;
 
-            html += `<div class="ffa-fighter ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''} ${isValidTarget ? 'targetable' : ''}"
-                        id="arenaFighter${idx}"
-                        onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}">
-                ${isActive && !isKO ? '<div class="active-indicator">▼</div>' : ''}
-                <div class="fighter-creature evo${evoIdx+1}">
-                    <img src="${getImg(combatant.cid, combatant.lv)}">
-                </div>
-                <div class="fighter-hud">
-                    <div class="fighter-hud-name">${(combatant.name || 'Hero').substring(0, 10)}</div>
-                    <div class="fighter-hp-bar">
-                        <div class="fighter-hp-fill" style="width:${Math.max(0, (combatant.curHp/combatant.maxHp)*100)}%"></div>
+        let partyClass = 'player-arena';
+        if(partySize <= 2) partyClass += ' solo-party';
+        else if(partySize === 3) partyClass += ' small-party';
+        else if(partySize <= 6) partyClass += ' medium-party';
+        else partyClass += ' large-party';
+
+        html += `<div class="${partyClass}" style="width:100%">`;
+
+        // Distribute into columns
+        const columns = [[],[],[]];
+        arenaBattle.combatants.forEach((combatant, i) => {
+            const colIdx = i % numColumns;
+            columns[colIdx].push({...combatant, idx: i});
+        });
+
+        // Render columns
+        columns.forEach((col, colIdx) => {
+            if(col.length === 0) return;
+            const colClass = colIdx === 0 ? '' : colIdx === 1 ? ' col-2' : ' col-3';
+            html += `<div class="arena-column${colClass}">`;
+
+            col.forEach(combatant => {
+                const isActive = combatant.idx === activeIdx;
+                const isKO = combatant.curHp <= 0;
+                const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.idx !== activeIdx;
+                const evoIdx = getEvo(combatant.cid, combatant.lv);
+
+                let classes = 'arena-creature';
+                if(isKO) classes += ' ko';
+                if(isActive && !isKO) classes += ' active active-turn';
+                if(isValidTarget) classes += ' targetable';
+
+                html += `<div class="${classes}" id="arenaC${combatant.idx}" ${isValidTarget ? `onclick="selectArenaTarget(${combatant.idx})"` : ''}>
+                    ${isActive && !isKO ? '<span class="active-arrow">▼</span>' : ''}
+
+                    <div class="ground-circle"></div>
+                    <div class="arena-frame evo${evoIdx+1}" id="c${combatant.idx}">
+                        <img src="${getImg(combatant.cid, combatant.lv)}" onerror="this.style.opacity='0.3'">
                     </div>
-                    <div class="fighter-focus-bar">
-                        <div class="fighter-focus-fill" style="width:${Math.max(0, (combatant.focus/combatant.focusMax)*100)}%"></div>
+
+                    <!-- Minimalist HP/Focus bars below creature (same as main battle) -->
+                    <div class="creature-bars-minimal">
+                        <div class="minimal-bar hp-minimal">
+                            <div class="minimal-bar-fill hp-fill-minimal" style="width:${Math.max(0,(combatant.curHp/combatant.maxHp)*100)}%"></div>
+                        </div>
+                        <div class="minimal-bar focus-minimal">
+                            <div class="minimal-bar-fill focus-fill-minimal" style="width:${Math.max(0,(combatant.focus/combatant.focusMax)*100)}%"></div>
+                        </div>
                     </div>
-                </div>
-            </div>`;
+                </div>`;
+            });
+            html += `</div>`;
         });
         html += `</div>`;
     } else {
-        // Team vs Team
+        // Team vs Team - Use player-arena (left) vs enemy-arena (right) like main battle
         const team0 = arenaBattle.combatants.filter(c => c.team === 0);
         const team1 = arenaBattle.combatants.filter(c => c.team === 1);
 
-        // Red Team (Left)
-        html += `<div class="arena-team-side red-team">`;
-        team0.forEach(combatant => {
+        // Left side - Team 0 (uses player-arena styling)
+        const leftSize = team0.length;
+        const leftColumns = leftSize <= 3 ? 1 : leftSize <= 6 ? 2 : 3;
+
+        let leftClass = 'player-arena';
+        if(leftSize <= 2) leftClass += ' solo-party';
+        else if(leftSize === 3) leftClass += ' small-party';
+        else if(leftSize <= 6) leftClass += ' medium-party';
+        else leftClass += ' large-party';
+
+        html += `<div class="${leftClass}">`;
+
+        const leftCols = [[],[],[]];
+        team0.forEach((combatant, i) => {
+            const colIdx = i % leftColumns;
+            leftCols[colIdx].push({...combatant, idx: arenaBattle.combatants.indexOf(combatant)});
+        });
+
+        leftCols.forEach((col, colIdx) => {
+            if(col.length === 0) return;
+            const colClass = colIdx === 0 ? '' : colIdx === 1 ? ' col-2' : ' col-3';
+            html += `<div class="arena-column${colClass}">`;
+
+            col.forEach(combatant => {
+                const isActive = combatant.idx === activeIdx;
+                const isKO = combatant.curHp <= 0;
+                const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
+                const evoIdx = getEvo(combatant.cid, combatant.lv);
+
+                let classes = 'arena-creature';
+                if(isKO) classes += ' ko';
+                if(isActive && !isKO) classes += ' active active-turn';
+                if(isValidTarget) classes += ' targetable';
+
+                html += `<div class="${classes}" id="arenaC${combatant.idx}" ${isValidTarget ? `onclick="selectArenaTarget(${combatant.idx})"` : ''}>
+                    ${isActive && !isKO ? '<span class="active-arrow">▼</span>' : ''}
+
+                    <div class="ground-circle"></div>
+                    <div class="arena-frame evo${evoIdx+1}" id="c${combatant.idx}">
+                        <img src="${getImg(combatant.cid, combatant.lv)}" onerror="this.style.opacity='0.3'">
+                    </div>
+
+                    <div class="creature-bars-minimal">
+                        <div class="minimal-bar hp-minimal">
+                            <div class="minimal-bar-fill hp-fill-minimal" style="width:${Math.max(0,(combatant.curHp/combatant.maxHp)*100)}%"></div>
+                        </div>
+                        <div class="minimal-bar focus-minimal">
+                            <div class="minimal-bar-fill focus-fill-minimal" style="width:${Math.max(0,(combatant.focus/combatant.focusMax)*100)}%"></div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+        });
+        html += `</div>`;
+
+        // Right side - Team 1 (uses enemy-arena styling, but with player creatures)
+        html += `<div class="enemy-arena">`;
+
+        // Render team 1 in column layout similar to minions
+        html += `<div class="minion-column" style="flex-direction:column;gap:15px">`;
+        team1.forEach(combatant => {
             const idx = arenaBattle.combatants.indexOf(combatant);
-            const isActive = cur && cur.idx === idx;
+            const isActive = idx === activeIdx;
             const isKO = combatant.curHp <= 0;
             const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
             const evoIdx = getEvo(combatant.cid, combatant.lv);
+            const hpPct = (combatant.curHp/combatant.maxHp)*100;
 
-            html += `<div class="arena-fighter ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''} ${isValidTarget ? 'targetable' : ''}"
-                        id="arenaFighter${idx}"
-                        onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}">
-                ${isActive && !isKO ? '<div class="active-indicator">▼</div>' : ''}
-                <div class="fighter-creature evo${evoIdx+1}">
-                    <img src="${getImg(combatant.cid, combatant.lv)}">
+            let classes = 'enemy-unit';
+            if(isValidTarget) classes += ' targetable';
+            if(isKO) classes += ' ko';
+
+            html += `<div class="${classes}" id="enemy${idx}" onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}" style="${isKO ? 'opacity:.15;filter:grayscale(.9)' : ''}">
+                ${isActive && !isKO ? '<div style="position:absolute;top:-25px;left:50%;transform:translateX(-50%);color:var(--gold);font-size:1.2rem;animation:bounceArrow 0.6s ease-in-out infinite">▼</div>' : ''}
+                <div class="enemy-hp-float">
+                    <div class="enemy-name" style="font-size:.7rem">${(combatant.name || 'Hero').substring(0, 12)}</div>
+                    <div class="enemy-hp-bar" id="enemyHpBar${idx}">
+                        <div class="enemy-hp-fill" style="width:${hpPct}%"></div>
+                    </div>
                 </div>
-                <div class="fighter-hud">
-                    <div class="fighter-hud-name">${(combatant.name || 'Hero').substring(0, 10)}</div>
-                    <div class="fighter-hp-bar">
-                        <div class="fighter-hp-fill" style="width:${Math.max(0, (combatant.curHp/combatant.maxHp)*100)}%"></div>
-                    </div>
-                    <div class="fighter-focus-bar">
-                        <div class="fighter-focus-fill" style="width:${Math.max(0, (combatant.focus/combatant.focusMax)*100)}%"></div>
-                    </div>
+                <div class="enemy-frame wild${team1.length >= 4 ? '-small' : team1.length === 1 ? '-solo' : ''}" id="enemyImg${idx}" style="${isActive ? 'box-shadow:0 0 20px rgba(232,184,74,.6)' : ''}">
+                    <img src="${getImg(combatant.cid, combatant.lv)}" style="animation:creatureIdle 2.5s ease-in-out infinite">
                 </div>
             </div>`;
         });
         html += `</div>`;
-
-        // VS Badge
-        html += `<div class="arena-vs-center">VS</div>`;
-
-        // Blue Team (Right)
-        html += `<div class="arena-team-side blue-team">`;
-        team1.forEach(combatant => {
-            const idx = arenaBattle.combatants.indexOf(combatant);
-            const isActive = cur && cur.idx === idx;
-            const isKO = combatant.curHp <= 0;
-            const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
-            const evoIdx = getEvo(combatant.cid, combatant.lv);
-
-            html += `<div class="arena-fighter ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''} ${isValidTarget ? 'targetable' : ''}"
-                        id="arenaFighter${idx}"
-                        onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}">
-                ${isActive && !isKO ? '<div class="active-indicator">▼</div>' : ''}
-                <div class="fighter-creature evo${evoIdx+1}">
-                    <img src="${getImg(combatant.cid, combatant.lv)}">
-                </div>
-                <div class="fighter-hud">
-                    <div class="fighter-hud-name">${(combatant.name || 'Hero').substring(0, 10)}</div>
-                    <div class="fighter-hp-bar">
-                        <div class="fighter-hp-fill" style="width:${Math.max(0, (combatant.curHp/combatant.maxHp)*100)}%"></div>
-                    </div>
-                    <div class="fighter-focus-bar">
-                        <div class="fighter-focus-fill" style="width:${Math.max(0, (combatant.focus/combatant.focusMax)*100)}%"></div>
-                    </div>
-                </div>
-            </div>`;
-        });
         html += `</div>`;
     }
 
-    html += `</div>`; // End battlefield
+    html += `</div>`; // End battle-arena
 
-    // Combat Log
-    html += `<div class="arena-log">
-        ${arenaBattle.log.slice(0, 8).map(e => `<div class="arena-log-entry log-${e.t}">${e.m}</div>`).join('')}
+    // Combat Log - same structure as main battle
+    html += `<div class="battle-log" id="arenaLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+        ${arenaBattle.log.slice(0, 20).reverse().map(e => `<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
     </div>`;
 
-    // Action buttons (only show for active turn)
+    // Action buttons - same structure as main battle
     if(activeCombatant && activeCombatant.curHp > 0 && !arenaBattle.processing){
         const hasHeal = CREATURES[activeCombatant.cid]?.canHeal && getMove(activeCombatant.cid, activeCombatant.lv, 'heal');
         const hasSpec = getMove(activeCombatant.cid, activeCombatant.lv, 'spec');
@@ -7494,50 +7580,56 @@ function renderArenaBattle(m){
         const canSpec = hasSpec && activeCombatant.focus >= specCost && activeCombatant.cooldown === 0;
         const canHeal = hasHeal && activeCombatant.focus >= healCost;
 
-        html += `<div class="arena-action-bar">
-            <div class="action-fighter-info">
-                <span class="action-name">${activeCombatant.name}'s Turn</span>
-                <span class="action-focus">🔷 ${activeCombatant.focus}/${activeCombatant.focusMax}</span>
-            </div>
-            <div class="arena-actions">
-                <button class="arena-action-btn attack" onclick="doArenaAction('atk')">
-                    <span class="btn-icon">⚔️</span>
-                    <span class="btn-label">Attack</span>
-                </button>
-                <button class="arena-action-btn defend" onclick="doArenaAction('def')">
-                    <span class="btn-icon">🛡️</span>
-                    <span class="btn-label">Defend</span>
-                    <span class="btn-cost">+5 FP</span>
-                </button>`;
+        let atkName = 'Attack', defName = 'Defend', healName = 'Heal', specName = 'Special';
+        const atkMove = getMove(activeCombatant.cid, activeCombatant.lv, 'atk');
+        const defMove = getMove(activeCombatant.cid, activeCombatant.lv, 'def');
+        if(atkMove) atkName = atkMove.n;
+        if(defMove) defName = defMove.n;
+        if(healMove) healName = healMove.n;
+        if(specMove) specName = specMove.n;
+
+        html += `<div class="move-buttons-container">`;
+
+        html += `<button class="move-btn attack" onclick="doArenaAction('atk')">
+                <span class="move-name">⚔️ ${atkName}</span>
+            </button>
+            <button class="move-btn defend" onclick="doArenaAction('def')">
+                <span class="move-name">🛡️ ${defName}</span>
+                <span class="move-cost">+5 FP</span>
+            </button>`;
 
         if(hasHeal){
-            html += `<button class="arena-action-btn heal ${!canHeal ? 'disabled' : ''}" ${!canHeal ? 'disabled' : ''} onclick="doArenaAction('heal')">
-                <span class="btn-icon">💚</span>
-                <span class="btn-label">Heal</span>
-                <span class="btn-cost">${healCost} FP</span>
+            html += `<button class="move-btn heal" ${!canHeal ? 'disabled' : ''} onclick="doArenaAction('heal')">
+                <span class="move-name">💚 ${healName}</span>
+                <span class="move-cost${!canHeal ? ' insufficient' : ''}">${healCost} FP</span>
             </button>`;
         }
 
         if(hasSpec){
-            html += `<button class="arena-action-btn special ${!canSpec ? 'disabled' : ''}" ${!canSpec ? 'disabled' : ''} onclick="doArenaAction('spec')">
-                <span class="btn-icon">⚡</span>
-                <span class="btn-label">${specMove.n}${activeCombatant.cooldown > 0 ? ` (${activeCombatant.cooldown})` : ''}</span>
-                <span class="btn-cost">${specCost} FP</span>
+            const specType = typeof getSpecialType === 'function' ? getSpecialType(specName) : {isAOE: false};
+            const typeLabel = specType.isAOE ? '<span class="aoe-label">AOE</span>' : '<span class="st-label">ST</span>';
+            html += `<button class="move-btn special" ${!canSpec ? 'disabled' : ''} onclick="doArenaAction('spec')">
+                <span class="move-name">⚡ ${specName} ${typeLabel}${activeCombatant.cooldown > 0 ? ' (' + activeCombatant.cooldown + ')' : ''}</span>
+                <span class="move-cost${activeCombatant.focus < specCost ? ' insufficient' : ''}">${specCost} FP</span>
             </button>`;
         }
 
-        html += `</div></div>`;
+        html += `</div>`;
     }
 
-    // Targeting instruction
+    // Targeting instruction - same structure as main battle
     if(isTargeting){
-        html += `<div class="targeting-overlay">
-            <div class="targeting-text">🎯 Select a target!</div>
+        html += `<div class="targeting-overlay" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.8);padding:20px 40px;border-radius:15px;z-index:1000;border:2px solid var(--gold)">
+            <div class="targeting-text" style="color:var(--gold);font-family:'Cinzel',serif;font-size:1.2rem">🎯 Select a target!</div>
         </div>`;
     }
 
-    html += `</div>`; // End arena-battle-container
+    html += `</div>`; // End battle-container
     m.innerHTML = html;
+
+    // Auto-scroll log
+    const logEl = document.getElementById('arenaLog');
+    if(logEl) logEl.scrollTop = logEl.scrollHeight;
 }
 
 function forfeitArenaBattle(){
