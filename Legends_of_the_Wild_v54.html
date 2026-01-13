@@ -565,6 +565,25 @@ body{
     opacity:0.25;
     filter:grayscale(1);
 }
+/* v54.1: Turn order names */
+.turn-order-name{
+    position:absolute;
+    bottom:-16px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:.55rem;
+    color:#ccc;
+    white-space:nowrap;
+    text-shadow:0 1px 3px rgba(0,0,0,.8);
+    font-family:'Cinzel',serif;
+}
+.turn-order-portrait.active .turn-order-name{
+    color:var(--purple-lt);
+    font-weight:bold;
+}
+.turn-order-portrait.enemy .turn-order-name{
+    color:#f87171;
+}
 
 /* Party HUD CSS Removed - now using stats overlay on creatures */
 
@@ -6563,15 +6582,24 @@ function renderBestiary(m){
     let html=`<h2 class="section-title">Bestiary</h2>`;
     html+=`<h3 style="color:var(--purple-lt);font-size:.85rem;margin:10px 0">Player Creatures</h3>`;
     html+=`<div class="bestiary-grid">`;
-    
+
     Object.entries(CREATURES).forEach(([id,c])=>{
-        html+=`<div class="bestiary-card">
+        // v54.1: Show all evolution names
+        const evoNames = c.names || [c.name];
+        const evoNamesHtml = evoNames.map((name, idx) => {
+            const evoStage = idx + 1;
+            const color = idx === 0 ? '#aaa' : idx === 1 ? '#8bc34a' : idx === 2 ? '#03a9f4' : '#ffc107';
+            return `<span style="color:${color};font-size:.6rem">Evo${evoStage}: ${name}</span>`;
+        }).join('<br>');
+
+        html+=`<div class="bestiary-card" style="min-height:140px">
             <div class="small-img"><img src="${G}/Player_Creatures/${c.imgs[0]}"></div>
             <h4>${c.name}</h4>
             <p>${c.type}${c.canHeal?' <img src="'+G+'/Icons/Icon_Health.png" style="width:14px;height:14px;vertical-align:middle">':''}</p>
+            <div style="margin-top:5px;line-height:1.4">${evoNamesHtml}</div>
         </div>`;
     });
-    
+
     html+=`</div>`;
     m.innerHTML=html;
 }
@@ -8316,26 +8344,38 @@ function renderBattle(m){
     </div>`;
     
     // ============================================
-    // V43: TURN ORDER TRACKER - Top center
+    // V43: TURN ORDER TRACKER - Top center (v54.1: Added names)
     // ============================================
     html+=`<div class="turn-order-bar">`;
     const upcomingTurns = battleQueue.slice(turnIdx, Math.min(turnIdx + 7, battleQueue.length));
     upcomingTurns.forEach((turn, offset) => {
         const isActive = offset === 0;
-        const isKO = turn.type === 'player' ? 
-            b.team[turn.idx].curHp <= 0 : 
+        const isKO = turn.type === 'player' ?
+            b.team[turn.idx].curHp <= 0 :
             b.enemies[turn.idx].hp <= 0;
-        
+
         let portraitClass = `turn-order-portrait ${turn.type}`;
         if(isActive) portraitClass += ' active';
         if(isKO) portraitClass += ' ko';
-        
-        const imgSrc = turn.type === 'player' ? 
+
+        const imgSrc = turn.type === 'player' ?
             getImg(b.team[turn.idx].cid, b.team[turn.idx].lv) :
             `${G}/${b.enemies[turn.idx].img}`;
-        
+
+        // v54.1: Get name for turn order display
+        let turnName = '';
+        if(turn.type === 'player'){
+            const member = b.team[turn.idx];
+            turnName = member.name || 'Hero';
+        } else {
+            turnName = b.enemies[turn.idx].name || 'Enemy';
+        }
+        // Truncate long names
+        const displayName = turnName.length > 8 ? turnName.substring(0, 7) + '…' : turnName;
+
         html+=`<div class="${portraitClass}">
             <img src="${imgSrc}" onerror="this.style.opacity='0.3'">
+            <span class="turn-order-name">${displayName}</span>
         </div>`;
     });
     html+=`</div>`;
