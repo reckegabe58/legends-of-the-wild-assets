@@ -337,6 +337,24 @@ body{
     padding-bottom:4px
 }
 
+/* Nature Badge - Shows creature's nature and stat modifiers */
+.nature-badge{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin:4px 16px 8px;padding:4px 10px;
+    background:rgba(0,0,0,.3);border-radius:12px;
+    font-size:.7rem;border:1px solid rgba(255,255,255,.15)
+}
+.nature-name{font-weight:600;text-transform:capitalize}
+.nature-effects{display:flex;gap:4px;font-size:.65rem}
+.nature-effects .stat-up{color:#4ade80}
+.nature-effects .stat-down{color:#f87171}
+/* Nature category colors */
+.nature-offensive{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.15)}
+.nature-defensive{border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.15)}
+.nature-speedy{border-color:rgba(250,204,21,.4);background:rgba(250,204,21,.15)}
+.nature-bulky{border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.15)}
+.nature-balanced{border-color:rgba(156,163,175,.4);background:rgba(156,163,175,.15)}
+
 /* Starter Dropdown - LIGHT background */
 .starter-select{
     display:block;width:calc(100% - 32px);margin:8px 16px 12px;padding:12px 16px;
@@ -4107,6 +4125,84 @@ const MAX_FOCUS = 100;          // Maximum focus cap
 const BASE_SPECIAL_COST = 50;   // Base cost for special attacks (modified by evolution/power)
 
 // ============================================
+// NATURE SYSTEM (v54.3) - Creature Personalities
+// ============================================
+// Each creature has a nature that modifies their stats
+// Total stat budget stays balanced (buffs = debuffs)
+// Natures are assigned randomly on creature creation/migration
+const NATURES = {
+    // Balanced (no change)
+    hardy:   { hp: 0,   atk: 0,   def: 0,   spd: 0,   desc: "A balanced and straightforward creature" },
+
+    // ATK-Focused (Offensive)
+    adamant: { hp: -5,  atk: +10, def: 0,   spd: -5,  desc: "Fierce and aggressive, favors overwhelming offense" },
+    brave:   { hp: 0,   atk: +10, def: -5,  spd: -5,  desc: "Courageous attacker, slow but powerful" },
+    naughty: { hp: +5,  atk: +10, def: -10, spd: -5,  desc: "Reckless fighter with glass-cannon tendencies" },
+    lonely:  { hp: -10, atk: +15, def: -5,  spd: 0,   desc: "Maximum attack power, very risky" },
+    rash:    { hp: -5,  atk: +10, def: -5,  spd: 0,   desc: "Aggressive nature, throws caution to the wind" },
+
+    // DEF-Focused (Defensive)
+    bold:    { hp: +10, atk: -5,  def: +10, spd: -15, desc: "Sturdy creature that prioritizes defense" },
+    relaxed: { hp: +10, atk: 0,   def: +10, spd: -20, desc: "Maximum defense, extremely slow" },
+    impish:  { hp: +5,  atk: -10, def: +15, spd: -10, desc: "Defense specialist, weak attacks" },
+    lax:     { hp: +15, atk: -10, def: +5,  spd: -10, desc: "Bulky tank with HP and defense focus" },
+
+    // SPD-Focused (Speedy)
+    timid:   { hp: -10, atk: -10, def: -5,  spd: +25, desc: "Nimble creature with blinding speed" },
+    hasty:   { hp: -5,  atk: 0,   def: -10, spd: +15, desc: "Fast but fragile, quick striker" },
+    jolly:   { hp: -5,  atk: -5,  def: 0,   spd: +10, desc: "Speedy and cheerful, well-rounded fast" },
+    naive:   { hp: 0,   atk: -5,  def: -5,  spd: +10, desc: "Simple speed boost, slight trade-offs" },
+
+    // HP-Focused (Bulky)
+    calm:    { hp: +15, atk: -10, def: +5,  spd: -10, desc: "Serene tank that outlasts opponents" },
+    careful: { hp: +15, atk: -5,  def: +5,  spd: -15, desc: "Cautious creature, maximum survivability" },
+    sassy:   { hp: +10, atk: -5,  def: +5,  spd: -10, desc: "Durable and stubborn, holds the line" },
+
+    // Mixed/Balanced variants
+    modest:  { hp: +5,  atk: +5,  def: -5,  spd: -5,  desc: "Slight offensive edge with some bulk" },
+    mild:    { hp: +5,  atk: 0,   def: -5,  spd: 0,   desc: "Gentle nature with minor HP boost" },
+    quiet:   { hp: +5,  atk: +5,  def: +5,  spd: -15, desc: "Strong but slow, patient fighter" }
+};
+
+// Nature category helper
+function getNatureCategory(nature) {
+    const offensive = ['adamant', 'brave', 'naughty', 'lonely', 'rash'];
+    const defensive = ['bold', 'relaxed', 'impish', 'lax'];
+    const speedy = ['timid', 'hasty', 'jolly', 'naive'];
+    const bulky = ['calm', 'careful', 'sassy'];
+
+    if(offensive.includes(nature)) return 'offensive';
+    if(defensive.includes(nature)) return 'defensive';
+    if(speedy.includes(nature)) return 'speedy';
+    if(bulky.includes(nature)) return 'bulky';
+    return 'balanced';
+}
+
+// Get random nature
+function getRandomNature() {
+    const natureKeys = Object.keys(NATURES);
+    return natureKeys[Math.floor(Math.random() * natureKeys.length)];
+}
+
+// Format nature effects for display
+function formatNatureEffects(nature) {
+    const mods = NATURES[nature];
+    if(!mods) return '';
+
+    let effects = [];
+    if(mods.hp > 0) effects.push(`<span class="stat-up">↑HP</span>`);
+    if(mods.hp < 0) effects.push(`<span class="stat-down">↓HP</span>`);
+    if(mods.atk > 0) effects.push(`<span class="stat-up">↑ATK</span>`);
+    if(mods.atk < 0) effects.push(`<span class="stat-down">↓ATK</span>`);
+    if(mods.def > 0) effects.push(`<span class="stat-up">↑DEF</span>`);
+    if(mods.def < 0) effects.push(`<span class="stat-down">↓DEF</span>`);
+    if(mods.spd > 0) effects.push(`<span class="stat-up">↑SPD</span>`);
+    if(mods.spd < 0) effects.push(`<span class="stat-down">↓SPD</span>`);
+
+    return effects.join(' ');
+}
+
+// ============================================
 // DYNAMIC SPECIAL COST CALCULATION (v54.1)
 // ============================================
 // Calculates focus cost based on evolution, power, and effect type
@@ -5245,13 +5341,39 @@ function getLv(xp){for(let i=XP_TABLE.length-1;i>=0;i--)if(xp>=XP_TABLE[i])retur
 function getXPProg(xp){const l=getLv(xp);if(l>=50)return 100;return Math.min(100,((xp-XP_TABLE[l-1])/(XP_TABLE[l]-XP_TABLE[l-1]))*100)}
 function getEvo(cid,lv){const c=CREATURES[cid];if(!c)return 0;let e=0;for(let i=0;i<c.evAt.length;i++)if(lv>=c.evAt[i])e=i+1;return e}
 function getEvoClass(cid,lv){return 'evo'+(getEvo(cid,lv)+1)}
-function getStats(cid,lv){const c=CREATURES[cid];if(!c)return{hp:100,atk:20,def:20,spd:20};const e=getEvo(cid,lv),b=1+(e*.15);return{hp:Math.floor((c.base.hp+c.grow.hp*(lv-1))*b),atk:Math.floor((c.base.atk+c.grow.atk*(lv-1))*b),def:Math.floor((c.base.def+c.grow.def*(lv-1))*b),spd:Math.floor((c.base.spd+c.grow.spd*(lv-1))*b)}}
+// v54.3: Modified to accept nature parameter for stat modifiers
+function getStats(cid, lv, nature = null){
+    const c = CREATURES[cid];
+    if(!c) return {hp:100, atk:20, def:20, spd:20};
+
+    const e = getEvo(cid, lv);
+    const b = 1 + (e * 0.15); // Evolution bonus
+
+    // Calculate base stats
+    let stats = {
+        hp: Math.floor((c.base.hp + c.grow.hp * (lv-1)) * b),
+        atk: Math.floor((c.base.atk + c.grow.atk * (lv-1)) * b),
+        def: Math.floor((c.base.def + c.grow.def * (lv-1)) * b),
+        spd: Math.floor((c.base.spd + c.grow.spd * (lv-1)) * b)
+    };
+
+    // Apply nature modifiers if provided
+    if(nature && NATURES[nature]){
+        const mods = NATURES[nature];
+        stats.hp = Math.floor(stats.hp * (1 + mods.hp / 100));
+        stats.atk = Math.floor(stats.atk * (1 + mods.atk / 100));
+        stats.def = Math.floor(stats.def * (1 + mods.def / 100));
+        stats.spd = Math.floor(stats.spd * (1 + mods.spd / 100));
+    }
+
+    return stats;
+}
 function getImg(cid,lv){const c=CREATURES[cid];return c?G+'/Player_Creatures/'+c.imgs[getEvo(cid,lv)]:''}
 function getMove(cid,lv,type){const c=CREATURES[cid];if(!c||!c.moves[type])return null;const a=c.moves[type].filter(m=>lv>=m.lv);return a.length?a[a.length-1]:null}
 function getActiveStudents(){return state.students.filter(s=>state.activeIds.includes(s.id))}
 function getAbsentStudents(){return state.students.filter(s=>!state.activeIds.includes(s.id))}
 function getAvgLevel(){const active=getActiveStudents().filter(s=>s.cid);if(!active.length)return 1;return Math.floor(active.reduce((sum,s)=>sum+getLv(s.xp),0)/active.length)}
-function getPartyPower(){const active=getActiveStudents().filter(s=>s.cid);if(!active.length)return 0;return active.reduce((sum,s)=>{const st=getStats(s.cid,getLv(s.xp));return sum+st.hp+st.atk+st.def+st.spd},0)}
+function getPartyPower(){const active=getActiveStudents().filter(s=>s.cid);if(!active.length)return 0;return active.reduce((sum,s)=>{const st=getStats(s.cid,getLv(s.xp),s.nature);return sum+st.hp+st.atk+st.def+st.spd},0)}
 
 // Boss fight eligibility - party power vs boss power
 function canFightBoss(bid){
@@ -5565,6 +5687,34 @@ function migrateToV54_1(){
     state.migratedV54_1 = true;
     save();
     console.log('✅ V54.1 migration complete');
+
+    // Run V54.3 migration (Natures)
+    migrateToV54_3_Natures();
+}
+
+// V54.3 MIGRATION - Assign random natures to all existing creatures
+function migrateToV54_3_Natures(){
+    // Skip if already migrated
+    if(state.migratedV54_3_Natures) return;
+
+    console.log('🔄 Running V54.3 Natures migration...');
+
+    // Assign random nature to all students with creatures
+    let assignedCount = 0;
+    state.students.forEach(s => {
+        if(s.cid && !s.nature){
+            s.nature = getRandomNature();
+            assignedCount++;
+            console.log(`  Assigned ${s.nature} nature to ${s.name || 'student'}`);
+        }
+    });
+
+    console.log(`✅ Assigned natures to ${assignedCount} creatures`);
+
+    // Mark migration complete
+    state.migratedV54_3_Natures = true;
+    save();
+    console.log('✅ V54.3 Natures migration complete');
 }
 
 // NAVIGATION
@@ -5626,9 +5776,11 @@ function renderTeam(m){
         const lv=getLv(s.xp);
         const prog=getXPProg(s.xp);
         const c=s.cid?CREATURES[s.cid]:null;
-        const st=s.cid?getStats(s.cid,lv):null;
+        const st=s.cid?getStats(s.cid,lv,s.nature):null;
         const evoIdx=s.cid?getEvo(s.cid,lv):0;
         const evoClass='evo'+(evoIdx+1);
+        const natureData = s.nature ? NATURES[s.nature] : null;
+        const natureCategory = s.nature ? getNatureCategory(s.nature) : 'balanced';
         
         // Get element for theming
         const element=c?c.type.toLowerCase().split('/')[0]:'';
@@ -5673,6 +5825,15 @@ function renderTeam(m){
             } else {
                 // Show base creature name if no custom name
                 html+=`<div class="creature-evo-label">${c.name} - Evo ${evoIdx+1}</div>`;
+            }
+
+            // Nature badge with stat effects
+            if(s.nature && natureData){
+                const natureName = s.nature.charAt(0).toUpperCase() + s.nature.slice(1);
+                html+=`<div class="nature-badge nature-${natureCategory}" title="${natureData.desc}">
+                    <span class="nature-name">${natureName}</span>
+                    <span class="nature-effects">${formatNatureEffects(s.nature)}</span>
+                </div>`;
             }
             
             // Creature Hero Section (50-60% of card)
@@ -6217,7 +6378,7 @@ function useItem(studentId, itemId){
 function applyItemEffect(student, item){
     const effect = item.effect;
     const lv = getLv(student.xp);
-    const stats = getStats(student.cid, lv);
+    const stats = getStats(student.cid, lv, student.nature);
     
     // Create a temporary member object for effect application
     let tempMember = {
@@ -6271,8 +6432,8 @@ function applyItemEffect(student, item){
             
             // Show level-up popup if function exists
             if(typeof showLevelUpPopup === 'function'){
-                const oldStats = getStats(student.cid, lv);
-                const newStats = getStats(student.cid, lv + 1);
+                const oldStats = getStats(student.cid, lv, student.nature);
+                const newStats = getStats(student.cid, lv + 1, student.nature);
                 setTimeout(() => {
                     showLevelUpPopup(student, lv, lv + 1, oldStats, newStats);
                 }, 500);
@@ -7198,11 +7359,15 @@ function setCre(id,cid){
     const s=state.students.find(x=>x.id===id);
     if(s){
         s.cid=cid||null;
-        // v54.1: Discover creature for bestiary when assigned
+        // v54.3: Assign random nature when creature is assigned
         if(cid){
+            s.nature = getRandomNature();
             const lv = getLv(s.xp);
             const evo = getEvo(cid, lv);
             discoverCreature(cid, evo);
+        } else {
+            // Clear nature if creature removed
+            s.nature = null;
         }
         save();
         renderMain();
@@ -7213,12 +7378,12 @@ function addXP(id,amt){
     initAudio();
     const s=state.students.find(x=>x.id===id);if(!s)return;
     const oL=getLv(s.xp);
-    const oldStats = s.cid ? getStats(s.cid, oL) : null;
-    
+    const oldStats = s.cid ? getStats(s.cid, oL, s.nature) : null;
+
     s.xp+=amt;
     state.totalXP+=amt;
     const nL=getLv(s.xp);
-    const newStats = s.cid ? getStats(s.cid, nL) : null;
+    const newStats = s.cid ? getStats(s.cid, nL, s.nature) : null;
     
     // Show XP gain popup
     showGainPopup(amt, 'xp');
@@ -7452,7 +7617,7 @@ function createBossEnemy(id, boss, chapter){
     
     // Ensure boss attack is threatening (minimum 25% of average party HP)
     const avgPartyHP = activeParty.reduce((sum, s) => {
-        const st = getStats(s.cid, getLv(s.xp));
+        const st = getStats(s.cid, getLv(s.xp), s.nature);
         return sum + st.hp;
     }, 0) / Math.max(1, partySize);
     const minBossAtk = Math.floor(avgPartyHP * 0.25);
@@ -8542,7 +8707,7 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
         currentEnemyIdx: 0, // Track which enemy is being targeted
         sizeClass: sizeClass,
         team: activeReady.map(s=>{
-            const l=getLv(s.xp),st=getStats(s.cid,l);
+            const l=getLv(s.xp),st=getStats(s.cid,l,s.nature);
             return{...s,lv:l,curHp:st.hp,maxHp:st.hp,st,def:false,cooldown:0,
                 focus:STARTING_FOCUS,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN}; // FOCUS SYSTEM (v54.1)
         }),
@@ -10386,8 +10551,8 @@ function endBattle(won){
             
             // Track level-up data
             if(nL>oL && s.cid){
-                const oldStats = getStats(s.cid, oL);
-                const newStats = getStats(s.cid, nL);
+                const oldStats = getStats(s.cid, oL, s.nature);
+                const newStats = getStats(s.cid, nL, s.nature);
                 const oE=getEvo(s.cid,oL);
                 const nE=getEvo(s.cid,nL);
 
@@ -10663,8 +10828,8 @@ function showEvolutionSequence(student, oldLv, newLv){
     const newEvo = getEvo(student.cid, newLv);
     const oldImg = getImg(student.cid, oldLv);
     const newImg = getImg(student.cid, newLv);
-    const oldStats = getStats(student.cid, oldLv);
-    const newStats = getStats(student.cid, newLv);
+    const oldStats = getStats(student.cid, oldLv, student.nature);
+    const newStats = getStats(student.cid, newLv, student.nature);
     
     // Get evolution names
     const oldName = c.names ? c.names[oldEvo] : c.name;
