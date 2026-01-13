@@ -5672,13 +5672,34 @@ function getItemPrice(item){
     if(state.shopConfig.priceOverrides[item.id]){
         return state.shopConfig.priceOverrides[item.id];
     }
-    
-    // Apply multipliers
+
+    // ============================================
+    // TIERED PRICE MULTIPLIERS (Economy Rebalancing)
+    // ============================================
+    // With coin splitting, prices adjusted to maintain balance:
+    // - Battle items: 2x (frequently purchased, strategic spending)
+    // - Real rewards: 1.5x common, 2x rare (special treats, attainable)
+    // - Classroom rewards: 1.5x (group effort, fair contribution)
+
     let price = item.cost;
-    if(item.type === 'real_reward'){
+
+    if(item.type === 'consumable' || item.type === 'equipment'){
+        // Battle items - moderate increase
+        price *= 2;
+    } else if(item.type === 'real_reward'){
+        // Real-life rewards - scaled by rarity
+        if(item.rarity === 'LEGENDARY' || item.rarity === 'EPIC'){
+            price *= 2; // Rare rewards
+        } else {
+            price *= 1.5; // Common rewards
+        }
+        // Also apply teacher multiplier if set
         price *= state.shopConfig.realRewardPriceMultiplier;
+    } else if(item.type === 'classroom_reward'){
+        // Classroom rewards - shared cost
+        price *= 1.5;
     }
-    
+
     return Math.floor(price);
 }
 
@@ -9758,9 +9779,13 @@ function endBattle(won){
         
         // Award XP and coins
         const activeStudents=getActiveStudents();
+
+        // SPLIT COINS EQUALLY among party (prevents inflation with large parties)
+        const coinShare = Math.floor(totalCoins / Math.max(1, activeStudents.length));
+
         activeStudents.forEach(s=>{
             const oL=getLv(s.xp);
-            
+
             // Apply XP boost if active
             let xpGain = totalXP;
             if(s.xpBoostAdventures && s.xpBoostAdventures > 0){
@@ -9768,17 +9793,17 @@ function endBattle(won){
                 s.xpBoostAdventures--;
                 addLog(`⭐ ${s.name} has 2x XP boost! (${s.xpBoostAdventures} adventures remaining)`, 'info');
             }
-            
-            // Apply coin boost if active
-            let coinGain = totalCoins;
+
+            // Apply coin boost if active (applies to their SHARE)
+            let coinGain = coinShare;
             if(s.coinBoostAdventures && s.coinBoostAdventures > 0){
                 coinGain = Math.floor(coinGain * 1.2); // 20% boost from Coin Magnet
                 s.coinBoostAdventures--;
             }
-            
+
             // Apply economy multiplier
             coinGain = Math.floor(coinGain * state.shopConfig.coinEconomyMultiplier);
-            
+
             s.xp += xpGain;
             s.coins = (s.coins||0) + coinGain;
             state.totalXP += xpGain;
