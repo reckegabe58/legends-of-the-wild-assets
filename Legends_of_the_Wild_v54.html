@@ -3974,6 +3974,32 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
 }
 
 // ============================================
+// ENEMY DAMAGE ADJUSTMENT (v54.1 - Phase 4)
+// ============================================
+// CRITICAL RULE: Bosses CAN one-shot for dramatic tension
+// CRITICAL RULE: Wild enemies can NEVER one-shot
+// Returns: {damage: number, isDevastating: boolean}
+function adjustEnemyDamage(baseDamage, enemy, target){
+    let finalDamage = baseDamage;
+    let isDevastating = false;
+
+    if(enemy.isBoss){
+        // BOSS DEVASTATING BLOW: 12% chance for 1.8x damage (can one-shot)
+        if(Math.random() < 0.12){
+            finalDamage = Math.floor(baseDamage * 1.8);
+            isDevastating = true;
+        }
+        // No damage cap for bosses - they're meant to be deadly
+    } else {
+        // WILD ENEMIES: Never deal more than 75% of target's max HP
+        const maxDamage = Math.floor(target.maxHp * 0.75);
+        finalDamage = Math.min(baseDamage, maxDamage);
+    }
+
+    return { damage: finalDamage, isDevastating };
+}
+
+// ============================================
 // AOE SPECIAL DETECTION - Determines if special hits all enemies
 // ============================================
 // AOE specials do 65% damage but hit ALL enemies
@@ -9642,11 +9668,14 @@ function enemyAction(){
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
-                    let d = Math.max(5, enemy.atk * 0.5 - (t.st.def * 0.15));
-                    d = Math.floor(d * (0.7 + Math.random() * 0.3));
-                    if(t.def) d = Math.floor(d * 0.5);
+                    let baseDmg = Math.max(5, enemy.atk * 0.5 - (t.st.def * 0.15));
+                    baseDmg = Math.floor(baseDmg * (0.7 + Math.random() * 0.3));
+                    if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
+                    // v54.1: Apply boss/wild damage adjustment
+                    const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
+                    const d = dmgResult.damage;
                     t.curHp = Math.max(0, t.curHp - d);
-                    
+
                     const idx = b.team.indexOf(t);
                     const targetEl = document.getElementById('c'+idx);
                     const arenaCreature = document.getElementById('arenaC'+idx);
@@ -9656,8 +9685,8 @@ function enemyAction(){
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
                         if(targetEl) targetEl.classList.remove('anim-hit-shake');
                     },250);
-                    
-                    if(arenaCreature) showFloatingDamage(arenaCreature, d, 'damage');
+
+                    if(arenaCreature) showFloatingDamage(arenaCreature, d, dmgResult.isDevastating ? 'crit' : 'damage');
                 });
                 addLog(`Everyone takes damage!`,'dmg');
 
@@ -9685,34 +9714,38 @@ function enemyAction(){
                 const element = spec.element || enemy.attackElement || 'energy';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let d = Math.max(15, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
-                    d = Math.floor(d * (0.9 + Math.random() * 0.2));
-                    if(t.def) d = Math.floor(d * 0.6);
+                    let baseDmg = Math.max(15, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
+                    baseDmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.2));
+                    if(t.def) baseDmg = Math.floor(baseDmg * 0.6);
+                    // v54.1: Apply boss/wild damage adjustment
+                    const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
+                    const d = dmgResult.damage;
                     t.curHp = Math.max(0, t.curHp - d);
-                    
+
                     enemy.specialCooldown = spec.cooldown || 3;
-                    
-                    // Strong visual feedback
+
+                    // Strong visual feedback (enhanced for devastating blows)
                     if(arenaCreature) arenaCreature.classList.add('hit-recoil');
                     if(targetEl) targetEl.classList.add('anim-crit-shake');
                     setTimeout(()=>{
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
                         if(targetEl) targetEl.classList.remove('anim-crit-shake');
                     },300);
-                    
+
                     if(arena){
                         arena.classList.add('screen-shake');
                         setTimeout(()=>arena.classList.remove('screen-shake'),200);
                     }
-                    
-                    showFloatingDamage(arenaCreature || targetEl, d, 'crit');
+
+                    showFloatingDamage(arenaCreature || targetEl, d, dmgResult.isDevastating ? 'crit' : 'damage');
                     
                     // Show element effect for special
                     if(spec.element){
                         showElementEffect(arenaCreature || targetEl, spec.element);
                     }
                     
-                    addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}`,'enemy');
+                    addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
+                    if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
                     
                     turnIdx++;
@@ -9735,38 +9768,42 @@ function enemyAction(){
                 const element = enemy.attackElement || 'physical';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let d = Math.max(10, enemy.atk - (t.st.def * 0.2));
-                    d = Math.floor(d * (0.8 + Math.random() * 0.4));
-                    if(t.def){ d = Math.floor(d * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
+                    let baseDmg = Math.max(10, enemy.atk - (t.st.def * 0.2));
+                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.4));
+                    if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
+                    // v54.1: Apply boss/wild damage adjustment
+                    const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
+                    const d = dmgResult.damage;
                     t.curHp = Math.max(0, t.curHp - d);
-                    
-                    // VISUAL EFFECTS - Impact + Slash
+
+                    // VISUAL EFFECTS - Impact + Slash (enhanced for devastating)
                     showImpactFlash(arenaCreature || targetEl);
-                    showSlashEffect(arenaCreature || targetEl, false);
-                    
+                    showSlashEffect(arenaCreature || targetEl, dmgResult.isDevastating);
+
                     if(arenaCreature) arenaCreature.classList.add('hit-recoil');
-                    if(targetEl) targetEl.classList.add('anim-hit-shake');
+                    if(targetEl) targetEl.classList.add(dmgResult.isDevastating ? 'anim-crit-shake' : 'anim-hit-shake');
                     setTimeout(()=>{
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
-                        if(targetEl) targetEl.classList.remove('anim-hit-shake');
+                        if(targetEl) targetEl.classList.remove('anim-hit-shake', 'anim-crit-shake');
                     },250);
-                    
+
                     const hpBar = document.getElementById('pmHpBar'+idx);
                     if(hpBar){
                         hpBar.classList.add('anim-damage');
                         setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
                     }
-                    
-                    showFloatingDamage(arenaCreature || targetEl, d, 'damage');
+
+                    showFloatingDamage(arenaCreature || targetEl, d, dmgResult.isDevastating ? 'crit' : 'damage');
                     
                     // Show element effect
                     if(enemy.attackElement){
                         setTimeout(() => showElementEffect(arenaCreature || targetEl, enemy.attackElement), 80);
                     }
                     
-                    addLog(`${enemy.name} used ${atkName}! ${t.name||'Hero'} -${d}`,'enemy');
+                    addLog(`${enemy.name} used ${atkName}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
+                    if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
-                    
+
                     turnIdx++;
                     processing = false; // CRITICAL: Clear before nextTurn
                     renderMain();
