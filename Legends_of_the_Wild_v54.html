@@ -3882,6 +3882,43 @@ function updateMusic(){
 }
 
 // ============================================
+// FOCUS SYSTEM CONSTANTS
+// ============================================
+const STARTING_FOCUS = 25;        // Starting focus in battle (was 50)
+const MAX_FOCUS = 100;            // Maximum focus
+const FOCUS_REGEN_PLAYER = 10;    // Player focus per turn
+const FOCUS_REGEN_ENEMY = 15;     // Enemy focus per turn
+const BASE_SPECIAL_COST = 50;     // Base special attack cost
+
+/**
+ * Calculates dynamic special attack cost based on evolution and power
+ * @param {number} level - Creature level
+ * @param {number} power - Special attack power multiplier (default 1.6)
+ * @param {string} effectType - 'single', 'aoe', 'status', 'combo'
+ * @returns {number} Focus cost (50-100 range)
+ */
+function calculateSpecialCost(level, power = 1.6, effectType = 'single') {
+    // Determine evolution stage from level
+    const evoStage = level <= 10 ? 1 : level <= 20 ? 2 : level <= 30 ? 3 : 4;
+
+    // Base cost by evolution
+    const evoCosts = { 1: 50, 2: 60, 3: 75, 4: 90 };
+    let cost = evoCosts[evoStage];
+
+    // Power adjustment
+    if(power >= 2.5) cost += 15;
+    else if(power >= 2.0) cost += 10;
+    else if(power >= 1.6) cost += 5;
+
+    // Effect type adjustment
+    const effectCosts = { 'single': 0, 'aoe': 10, 'status': 5, 'combo': 15 };
+    cost += effectCosts[effectType] || 0;
+
+    // Cap between 50-100
+    return Math.max(50, Math.min(100, cost));
+}
+
+// ============================================
 // PARTY SCALING SYSTEM - Adaptive Difficulty
 // ============================================
 // Scales enemy stats based on party size for balanced challenge
@@ -5967,7 +6004,7 @@ function applyItemEffect(student, item){
         lv: lv,
         maxHp: stats.hp,
         curHp: stats.hp, // Assume full HP outside battle
-        focus: 50, // Assume some focus
+        focus: STARTING_FOCUS,
         focusMax: 100,
         st: stats
     };
@@ -7847,7 +7884,7 @@ function startWildEncounter(avgLv,chapter){
             attacks: attackList,
             attackElement: attackElement,
             // Focus system for specials
-            focus: 50, // Start with 50 focus
+            focus: STARTING_FOCUS, // Start with 25 focus
             focusMax: 100,
             focusRegen: 15, // Regen 15 per turn
             // Abilities
@@ -8072,7 +8109,7 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
         team: activeReady.map(s=>{
             const l=getLv(s.xp),st=getStats(s.cid,l);
             return{...s,lv:l,curHp:st.hp,maxHp:st.hp,st,def:false,cooldown:0,
-                focus:50,focusMax:100,focusRegen:10}; // FOCUS SYSTEM
+                focus:STARTING_FOCUS,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PLAYER}; // FOCUS SYSTEM
         }),
         isMultiEnemy: allEnemies.length > 1
     };
@@ -8473,7 +8510,11 @@ function renderBattle(m){
         if(atkMove){ atkName = atkMove.n; atkCost = atkMove.f || 0; }
         if(defMove){ defName = defMove.n; defCost = defMove.f || 0; }
         if(healMove){ healName = healMove.n; healCost = healMove.f || 0; }
-        if(specMove){ specName = specMove.n; specCost = specMove.f || 0; }
+        if(specMove){
+            specName = specMove.n;
+            // Use dynamic cost based on level/power if no explicit cost
+            specCost = specMove.f || calculateSpecialCost(activeMember.lv, specMove.power || 1.6, specMove.effectType || 'single');
+        }
         
         const canAffordHeal = activeMember.focus >= healCost;
         const canAffordSpec = activeMember.focus >= specCost && activeMember.cooldown === 0;
@@ -8767,7 +8808,8 @@ function doAction(a){
     }else if(a==='spec'){
         const mv=getMove(m.cid,m.lv,'spec');
         if(mv&&m.cooldown===0){
-            const specCost = mv.f || 0;
+            // Dynamic cost based on level/power
+            const specCost = mv.f || calculateSpecialCost(m.lv, mv.power || 1.6, mv.effectType || 'single');
             // Check if enough focus
             if(m.focus < specCost){
                 addLog(`${m.name||'Hero'} doesn't have enough Focus! (Need ${specCost})`, 'dmg');
@@ -9520,8 +9562,8 @@ function enemyAction(){
     
     // Check if should use special
     if(actionType === 'basic' && enemy.hasSpecial && enemy.specialAttack && enemy.specialCooldown === 0){
-        // Check focus requirement
-        const specialCost = enemy.specialAttack.focusCost || 40;
+        // Check focus requirement - dynamic cost based on level/power
+        const specialCost = enemy.specialAttack.focusCost || calculateSpecialCost(enemy.lv, enemy.specialAttack.power || 1.6, enemy.specialAttack.effectType || 'single');
         const hasFocus = !enemy.focus || enemy.focus >= specialCost;
         
         if(hasFocus){
@@ -9619,9 +9661,9 @@ function enemyAction(){
                 // SPECIAL ATTACK
                 const t = targetMember;
                 const spec = enemy.specialAttack;
-                
-                // DEDUCT FOCUS COST
-                const specialCost = spec.focusCost || 40;
+
+                // DEDUCT FOCUS COST - dynamic based on level/power
+                const specialCost = spec.focusCost || calculateSpecialCost(enemy.lv, spec.power || 1.6, spec.effectType || 'single');
                 if(enemy.focus !== undefined){
                     enemy.focus = Math.max(0, enemy.focus - specialCost);
                 }
