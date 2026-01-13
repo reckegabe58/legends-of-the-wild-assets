@@ -2092,10 +2092,20 @@ body{
     padding:14px;text-align:center;cursor:pointer;transition:.2s
 }
 .bestiary-card:hover{border-color:var(--gold)}
+.bestiary-card.locked{opacity:0.6;cursor:default}
+.bestiary-card.locked:hover{border-color:rgba(255,255,255,.08)}
 .bestiary-card h4{color:var(--gold-lt);font-size:.8rem;font-family:'Cinzel',serif}
+.bestiary-card.locked h4{color:#555}
 .bestiary-card p{font-size:.7rem;color:var(--txt-muted)}
 .small-img{width:55px;height:55px;margin:0 auto 8px}
 .small-img img{width:100%;height:100%;object-fit:contain}
+.locked-silhouette{
+    width:55px;height:55px;
+    background:rgba(0,0,0,.5);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.5rem;color:#444;font-weight:bold
+}
 
 /* Teacher Panel */
 .teacher-panel{
@@ -6582,31 +6592,65 @@ function renderTrophies(m){
     m.innerHTML=html;
 }
 
-// RENDER: BESTIARY
+// RENDER: BESTIARY (v54.1 - Discovery-based)
 function renderBestiary(m){
+    const discovered = state.discoveredCreatures || {};
+    const totalCreatures = Object.keys(CREATURES).length;
+    const discoveredCount = Object.keys(discovered).length;
+
     let html=`<h2 class="section-title">Bestiary</h2>`;
+    html+=`<p style="color:var(--txt-muted);font-size:.75rem;margin-bottom:10px">Discovered: ${discoveredCount}/${totalCreatures} creatures</p>`;
     html+=`<h3 style="color:var(--purple-lt);font-size:.85rem;margin:10px 0">Player Creatures</h3>`;
     html+=`<div class="bestiary-grid">`;
 
     Object.entries(CREATURES).forEach(([id,c])=>{
-        // v54.1: Show all evolution names
-        const evoNames = c.names || [c.name];
-        const evoNamesHtml = evoNames.map((name, idx) => {
-            const evoStage = idx + 1;
-            const color = idx === 0 ? '#aaa' : idx === 1 ? '#8bc34a' : idx === 2 ? '#03a9f4' : '#ffc107';
-            return `<span style="color:${color};font-size:.6rem">Evo${evoStage}: ${name}</span>`;
-        }).join('<br>');
+        const creatureDiscovered = discovered[id];
+        const evoCount = c.imgs.length;
 
-        html+=`<div class="bestiary-card" style="min-height:140px">
-            <div class="small-img"><img src="${G}/Player_Creatures/${c.imgs[0]}"></div>
-            <h4>${c.name}</h4>
-            <p>${c.type}${c.canHeal?' <img src="'+G+'/Icons/Icon_Health.png" style="width:14px;height:14px;vertical-align:middle">':''}</p>
-            <div style="margin-top:5px;line-height:1.4">${evoNamesHtml}</div>
-        </div>`;
+        if(!creatureDiscovered){
+            // Not discovered - show locked silhouette
+            html+=`<div class="bestiary-card locked">
+                <div class="small-img"><div class="locked-silhouette">?</div></div>
+                <h4>???</h4>
+                <p style="color:#666">Not discovered</p>
+            </div>`;
+        } else {
+            // Discovered - show unlocked evolutions
+            const unlockedEvos = Object.keys(creatureDiscovered).map(Number).sort((a,b)=>a-b);
+            const highestEvo = Math.max(...unlockedEvos);
+            const evoName = c.names ? c.names[highestEvo] : c.name;
+            const evoImg = c.imgs[highestEvo];
+
+            // Count total evolutions for this creature
+            const totalEvos = c.imgs.length;
+            const discoveredEvos = unlockedEvos.length;
+
+            html+=`<div class="bestiary-card">
+                <div class="small-img"><img src="${G}/Player_Creatures/${evoImg}"></div>
+                <h4>${evoName}</h4>
+                <p>${c.type}${c.canHeal?' <img src="'+G+'/Icons/Icon_Health.png" style="width:14px;height:14px;vertical-align:middle">':''}</p>
+                <p style="font-size:.6rem;color:var(--purple-lt)">Evolutions: ${discoveredEvos}/${totalEvos}</p>
+            </div>`;
+        }
     });
 
     html+=`</div>`;
     m.innerHTML=html;
+}
+
+// v54.1: Discover a creature/evolution for the bestiary
+function discoverCreature(creatureId, evoStage){
+    if(!creatureId) return;
+    if(!state.discoveredCreatures) state.discoveredCreatures = {};
+    if(!state.discoveredCreatures[creatureId]){
+        state.discoveredCreatures[creatureId] = {};
+    }
+    if(!state.discoveredCreatures[creatureId][evoStage]){
+        state.discoveredCreatures[creatureId][evoStage] = true;
+        save();
+        return true; // New discovery
+    }
+    return false; // Already discovered
 }
 
 // RENDER: TEACHER PANEL
@@ -6994,7 +7038,20 @@ function removeStudent(){
 }
 
 function setName(id,n){const s=state.students.find(x=>x.id===id);if(s){s.name=n;save()}}
-function setCre(id,cid){const s=state.students.find(x=>x.id===id);if(s){s.cid=cid||null;save();renderMain()}}
+function setCre(id,cid){
+    const s=state.students.find(x=>x.id===id);
+    if(s){
+        s.cid=cid||null;
+        // v54.1: Discover creature for bestiary when assigned
+        if(cid){
+            const lv = getLv(s.xp);
+            const evo = getEvo(cid, lv);
+            discoverCreature(cid, evo);
+        }
+        save();
+        renderMain();
+    }
+}
 
 function addXP(id,amt){
     initAudio();
@@ -9979,7 +10036,10 @@ function endBattle(won){
                 const newStats = getStats(s.cid, nL);
                 const oE=getEvo(s.cid,oL);
                 const nE=getEvo(s.cid,nL);
-                
+
+                // v54.1: Track discovery for bestiary
+                discoverCreature(s.cid, nE);
+
                 levelUps.push({
                     student: s,
                     oldLevel: oL,
