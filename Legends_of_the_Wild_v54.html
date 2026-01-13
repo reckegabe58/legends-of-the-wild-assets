@@ -8186,6 +8186,11 @@ function doArenaAction(action){
         const defReduction = target.def ? 0.5 : 1.0;
         const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
 
+        // v54.6: Get move name and animation type for enhanced animations
+        const moveName = move?.n || 'Attack';
+        const element = attackerType.toLowerCase();
+        const attackAnimType = typeof getAttackAnimationType === 'function' ? getAttackAnimationType(moveName, element) : 'slash';
+
         // v54.5: Full attack animation sequence
         // 1. DASH toward enemy
         const dashDir = attacker.team === 0 ? 'anim-dash-right' : 'anim-dash-left';
@@ -8194,9 +8199,17 @@ function doArenaAction(action){
         setTimeout(() => {
             if(attackerFrame) attackerFrame.classList.remove(dashDir);
 
-            // 2. Fire projectile
+            // 2. Fire projectile with enhanced animations
             if(attackerFrame && targetFrame){
-                fireProjectile(attackerFrame, targetFrame, attackerType.toLowerCase(), () => {
+                // v54.6: Show element trail particles
+                if(typeof showElementTrail === 'function') showElementTrail(attackerFrame, targetFrame, element);
+
+                // v54.6: For beam-type attacks, show beam
+                if(attackAnimType === 'beam' && typeof showBeamAttack === 'function'){
+                    showBeamAttack(attackerFrame, targetFrame, element);
+                }
+
+                fireProjectile(attackerFrame, targetFrame, element, () => {
                     // 3. On impact - damage + effects
                     target.curHp = Math.max(0, target.curHp - finalDmg);
 
@@ -8207,7 +8220,12 @@ function doArenaAction(action){
                     }
 
                     // Impact effect
-                    showImpactEffect(targetFrame, false, attackerType.toLowerCase());
+                    showImpactEffect(targetFrame, false, element);
+
+                    // v54.6: Move-name based attack animation
+                    if(typeof showAttackAnimationByType === 'function'){
+                        showAttackAnimationByType(targetFrame, moveName, element, false);
+                    }
 
                     // Hit shake + damage number
                     if(targetEl) targetEl.classList.add('hit-shake');
@@ -8237,11 +8255,21 @@ function doArenaAction(action){
         attacker.def = true;
         attacker.focus = Math.min(attacker.focusMax, attacker.focus + 5);
 
-        // v54.5: Defend animation with shield effect
-        if(attackerEl) attackerEl.classList.add('defend-glow');
-        showDefendEffect(attackerFrame);
+        // v54.6: Enhanced defend animation with name-based variants
+        const defMove = getMove(attacker.cid, attacker.lv, 'def');
+        const defMoveName = defMove?.n || 'Defend';
+        const element = attackerType.toLowerCase();
 
-        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.creatureName} (${attacker.ownerName}) defends!` });
+        if(attackerEl) attackerEl.classList.add('defend-glow');
+
+        // Use name-based defend animation if available
+        if(typeof showDefendAnimation === 'function'){
+            showDefendAnimation(attackerFrame, defMoveName, element);
+        } else {
+            showDefendEffect(attackerFrame);
+        }
+
+        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.creatureName} (${attacker.ownerName}) uses ${defMoveName}!` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('defend-glow');
@@ -8259,15 +8287,33 @@ function doArenaAction(action){
         }
 
         attacker.focus -= healMove.f || 0;
-        const healAmt = Math.floor(attacker.maxHp * (healMove.p || 0.3));
+
+        // v54.6: Enhanced heal with level scaling
+        const baseHealPct = healMove.p || 0.3;
+        const levelBonus = 1 + (attacker.lv * 0.015); // +1.5% per level
+        let healAmt = Math.floor(attacker.maxHp * baseHealPct * levelBonus);
+
+        // v54.6: Emergency heal bonus (+25% when below 30% HP)
+        const isEmergency = attacker.curHp < attacker.maxHp * 0.3;
+        if(isEmergency) healAmt = Math.floor(healAmt * 1.25);
+
         attacker.curHp = Math.min(attacker.maxHp, attacker.curHp + healAmt);
 
-        // v54.5: Full heal animation
+        // v54.6: Enhanced heal animation with name-based variants
+        const healMoveName = healMove?.n || 'Heal';
+        const element = attackerType.toLowerCase();
+
         if(attackerEl) attackerEl.classList.add('heal-glow');
-        showHealEffect(attackerFrame);
+
+        // Use name-based heal animation if available
+        if(typeof showHealAnimationByType === 'function'){
+            showHealAnimationByType(attackerFrame, healMoveName, element, isEmergency);
+        } else {
+            showHealEffect(attackerFrame);
+        }
         showArenaHealV2(cur.idx, attacker, healAmt);
 
-        arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.creatureName} (${attacker.ownerName}) heals ${healAmt} HP!` });
+        arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.creatureName} (${attacker.ownerName}) uses ${healMoveName} - ${healAmt} HP!${isEmergency?' (Emergency!)':''}` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('heal-glow');
@@ -8297,6 +8343,10 @@ function doArenaAction(action){
         const dmgMult = specMove.p;
         const rawDmg = Math.floor(attacker.st.atk * dmgMult * 1.2);
 
+        // v54.6: Get animation type for specials
+        const element = attackerType.toLowerCase();
+        const specAnimType = typeof getAttackAnimationType === 'function' ? getAttackAnimationType(specMove.n, element) : 'projectile';
+
         // v54.5: Special charge-up animation
         if(attackerFrame) attackerFrame.classList.add('special-charge');
 
@@ -8318,6 +8368,13 @@ function doArenaAction(action){
                         setTimeout(() => arena.classList.remove('screen-shake'), 400);
                     }
 
+                    // v54.6: Show beam for AOE beam-type attacks
+                    if(specAnimType === 'beam' && typeof showBeamAttack === 'function' && validTargets.length > 0){
+                        const firstTarget = validTargets[0];
+                        const firstFrame = getArenaFrame(arenaBattle.combatants.indexOf(firstTarget), firstTarget);
+                        showBeamAttack(attackerFrame, firstFrame, element);
+                    }
+
                     validTargets.forEach((t, i) => {
                         const tIdx = arenaBattle.combatants.indexOf(t);
                         const aoeDmg = Math.floor(rawDmg * 0.7);
@@ -8330,7 +8387,11 @@ function doArenaAction(action){
 
                         setTimeout(() => {
                             if(tEl) tEl.classList.add('hit-shake');
-                            showImpactEffect(tFrame, true, attackerType.toLowerCase());
+                            showImpactEffect(tFrame, true, element);
+                            // v54.6: Use name-based animation
+                            if(typeof showAttackAnimationByType === 'function'){
+                                showAttackAnimationByType(tFrame, specMove.n, element, true);
+                            }
                             showArenaDamageV2(tIdx, t, finalDmg, true);
                         }, i * 100);
                     });
@@ -8338,7 +8399,15 @@ function doArenaAction(action){
                 } else {
                     // v54.5: Single target special with projectile
                     if(attackerFrame && targetFrame){
-                        fireProjectile(attackerFrame, targetFrame, attackerType.toLowerCase(), () => {
+                        // v54.6: Show element trail
+                        if(typeof showElementTrail === 'function') showElementTrail(attackerFrame, targetFrame, element);
+
+                        // v54.6: For beam-type specials, show beam
+                        if(specAnimType === 'beam' && typeof showBeamAttack === 'function'){
+                            showBeamAttack(attackerFrame, targetFrame, element);
+                        }
+
+                        fireProjectile(attackerFrame, targetFrame, element, () => {
                             const defReduction = target.def ? 0.5 : 1.0;
                             const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
                             target.curHp = Math.max(0, target.curHp - finalDmg);
@@ -8349,7 +8418,11 @@ function doArenaAction(action){
                                 setTimeout(() => arena.classList.remove('screen-shake'), 400);
                             }
 
-                            showImpactEffect(targetFrame, true, attackerType.toLowerCase());
+                            showImpactEffect(targetFrame, true, element);
+                            // v54.6: Use name-based animation
+                            if(typeof showAttackAnimationByType === 'function'){
+                                showAttackAnimationByType(targetFrame, specMove.n, element, true);
+                            }
                             if(targetEl) targetEl.classList.add('hit-shake');
                             showArenaDamageV2(targetIdx, target, finalDmg, true);
                             arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.creatureName} (${attacker.ownerName}) uses ${specMove.n} on ${target.creatureName} (${target.ownerName}) - ${finalDmg} dmg!` });
