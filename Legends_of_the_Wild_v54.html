@@ -1894,6 +1894,13 @@ body{
     75%{transform:translate(-2px,1px)}
 }
 
+/* v54.5: Shield pop animation for defend */
+@keyframes shieldPop{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0}
+    50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(1);opacity:0}
+}
+
 /* Critical hit flash - dramatic white screen flash */
 .crit-flash{
     position:fixed;
@@ -7143,6 +7150,7 @@ function arenaNextTurn(){
     renderMain();
 }
 
+// v54.5: Arena action with full battle animations
 function doArenaAction(action){
     if(!arenaBattle || arenaBattle.processing) return;
 
@@ -7153,12 +7161,12 @@ function doArenaAction(action){
     if(attacker.curHp <= 0) { arenaNextTurn(); return; }
 
     const c = CREATURES[attacker.cid];
+    const attackerType = c?.type || 'fire';
 
     // Get valid targets (alive enemies)
     const validTargets = arenaBattle.combatants.filter(t => t.curHp > 0 && t.team !== attacker.team);
 
     if(validTargets.length === 0){
-        // No targets, check victory
         if(checkArenaVictory()){
             setTimeout(() => showArenaVictory(), 500);
         }
@@ -7187,54 +7195,104 @@ function doArenaAction(action){
     arenaBattle.selectedTarget = null;
 
     const move = getMove(attacker.cid, attacker.lv, action);
-    const attackerEl = document.getElementById(`arenaFighter${cur.idx}`);
     const targetIdx = arenaBattle.combatants.indexOf(target);
-    const targetEl = document.getElementById(`arenaFighter${targetIdx}`);
+
+    // v54.5: Get correct element IDs based on team
+    const getArenaEl = (idx, combatant) => {
+        if(combatant.team === 0){
+            return document.getElementById(`arenaC${idx}`);
+        } else {
+            return document.getElementById(`enemy${idx}`);
+        }
+    };
+    const getArenaFrame = (idx, combatant) => {
+        if(combatant.team === 0){
+            return document.getElementById(`c${idx}`);
+        } else {
+            return document.getElementById(`enemyImg${idx}`);
+        }
+    };
+
+    const attackerEl = getArenaEl(cur.idx, attacker);
+    const attackerFrame = getArenaFrame(cur.idx, attacker);
+    const targetEl = getArenaEl(targetIdx, target);
+    const targetFrame = getArenaFrame(targetIdx, target);
+    const arena = document.getElementById('battleArena');
 
     attacker.def = false;
+
+    console.log('[ARENA] Action:', action, 'Attacker:', attacker.name, 'Target:', target?.name);
 
     if(action === 'atk'){
         // Basic attack - PvP balanced damage
         const dmgMult = move ? move.p : 1.0;
-        // PvP formula: Lower damage, more strategic
         const rawDmg = Math.floor(attacker.st.atk * dmgMult * 0.8);
         const defReduction = target.def ? 0.5 : 1.0;
         const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
 
-        // Animation
-        if(attackerEl) attackerEl.classList.add('attack-anim');
+        // v54.5: Full attack animation sequence
+        // 1. DASH toward enemy
+        const dashDir = attacker.team === 0 ? 'anim-dash-right' : 'anim-dash-left';
+        if(attackerFrame) attackerFrame.classList.add(dashDir);
 
         setTimeout(() => {
-            target.curHp = Math.max(0, target.curHp - finalDmg);
-            if(targetEl){
-                targetEl.classList.add('hit-shake');
-                showArenaDamage(targetIdx, finalDmg, false);
-            }
+            if(attackerFrame) attackerFrame.classList.remove(dashDir);
 
-            arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.name} attacks ${target.name} for ${finalDmg} damage!` });
+            // 2. Fire projectile
+            if(attackerFrame && targetFrame){
+                fireProjectile(attackerFrame, targetFrame, attackerType.toLowerCase(), () => {
+                    // 3. On impact - damage + effects
+                    target.curHp = Math.max(0, target.curHp - finalDmg);
 
-            setTimeout(() => {
-                if(attackerEl) attackerEl.classList.remove('attack-anim');
-                if(targetEl) targetEl.classList.remove('hit-shake');
+                    // Screen shake
+                    if(arena) {
+                        arena.classList.add('screen-shake');
+                        setTimeout(() => arena.classList.remove('screen-shake'), 300);
+                    }
+
+                    // Impact effect
+                    showImpactEffect(targetFrame, false, attackerType.toLowerCase());
+
+                    // Hit shake + damage number
+                    if(targetEl) targetEl.classList.add('hit-shake');
+                    showArenaDamageV2(targetIdx, target, finalDmg, false);
+
+                    arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.name} attacks ${target.name} for ${finalDmg} damage!` });
+
+                    setTimeout(() => {
+                        if(targetEl) targetEl.classList.remove('hit-shake');
+                        arenaBattle.processing = false;
+                        renderMain();
+                        arenaNextTurn();
+                    }, 400);
+                });
+            } else {
+                // Fallback if elements not found
+                target.curHp = Math.max(0, target.curHp - finalDmg);
+                arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.name} attacks ${target.name} for ${finalDmg} damage!` });
                 arenaBattle.processing = false;
+                renderMain();
                 arenaNextTurn();
-            }, 400);
-        }, 300);
+            }
+        }, 250);
 
     } else if(action === 'def'){
         // Defend - Gain focus and reduce incoming damage
         attacker.def = true;
         attacker.focus = Math.min(attacker.focusMax, attacker.focus + 5);
 
+        // v54.5: Defend animation with shield effect
         if(attackerEl) attackerEl.classList.add('defend-glow');
+        showDefendEffect(attackerFrame);
 
         arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.name} defends and gains Focus!` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('defend-glow');
             arenaBattle.processing = false;
+            renderMain();
             arenaNextTurn();
-        }, 500);
+        }, 600);
 
     } else if(action === 'heal'){
         // Heal move
@@ -7248,16 +7306,19 @@ function doArenaAction(action){
         const healAmt = Math.floor(attacker.maxHp * (healMove.p || 0.3));
         attacker.curHp = Math.min(attacker.maxHp, attacker.curHp + healAmt);
 
+        // v54.5: Full heal animation
         if(attackerEl) attackerEl.classList.add('heal-glow');
-        showArenaHeal(cur.idx, healAmt);
+        showHealEffect(attackerFrame);
+        showArenaHealV2(cur.idx, attacker, healAmt);
 
         arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.name} heals for ${healAmt} HP!` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('heal-glow');
             arenaBattle.processing = false;
+            renderMain();
             arenaNextTurn();
-        }, 600);
+        }, 700);
 
     } else if(action === 'spec'){
         // Special attack
@@ -7275,49 +7336,138 @@ function doArenaAction(action){
         attacker.focus -= specCost;
         attacker.cooldown = 3;
 
-        // Check if AOE
         const specType = getSpecialType(specMove.n);
         const isAOE = specType.isAOE;
-
         const dmgMult = specMove.p;
         const rawDmg = Math.floor(attacker.st.atk * dmgMult * 1.2);
 
-        if(attackerEl) attackerEl.classList.add('special-charge');
+        // v54.5: Special charge-up animation
+        if(attackerFrame) attackerFrame.classList.add('special-charge');
 
         setTimeout(() => {
-            if(isAOE){
-                // Hit all enemies
-                validTargets.forEach(t => {
-                    const tIdx = arenaBattle.combatants.indexOf(t);
-                    const aoeDmg = Math.floor(rawDmg * 0.7); // AOE penalty
-                    const defReduction = t.def ? 0.5 : 1.0;
-                    const finalDmg = Math.max(1, Math.floor((aoeDmg - t.st.def * 0.25) * defReduction));
-                    t.curHp = Math.max(0, t.curHp - finalDmg);
-
-                    const tEl = document.getElementById(`arenaFighter${tIdx}`);
-                    if(tEl) tEl.classList.add('hit-shake');
-                    showArenaDamage(tIdx, finalDmg, true);
-                });
-                arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} hitting all enemies!` });
-            } else {
-                // Single target
-                const defReduction = target.def ? 0.5 : 1.0;
-                const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
-                target.curHp = Math.max(0, target.curHp - finalDmg);
-
-                if(targetEl) targetEl.classList.add('hit-shake');
-                showArenaDamage(targetIdx, finalDmg, true);
-                arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} for ${finalDmg} damage!` });
+            // Special dash
+            const dashDir = attacker.team === 0 ? 'anim-special-dash' : 'anim-dash-left';
+            if(attackerFrame) {
+                attackerFrame.classList.remove('special-charge');
+                attackerFrame.classList.add(dashDir);
             }
 
             setTimeout(() => {
-                if(attackerEl) attackerEl.classList.remove('special-charge');
-                document.querySelectorAll('.hit-shake').forEach(el => el.classList.remove('hit-shake'));
-                arenaBattle.processing = false;
-                arenaNextTurn();
-            }, 500);
-        }, 400);
+                if(attackerFrame) attackerFrame.classList.remove(dashDir);
+
+                if(isAOE){
+                    // v54.5: AOE - screen shake + hit all enemies
+                    if(arena) {
+                        arena.classList.add('screen-shake');
+                        setTimeout(() => arena.classList.remove('screen-shake'), 400);
+                    }
+
+                    validTargets.forEach((t, i) => {
+                        const tIdx = arenaBattle.combatants.indexOf(t);
+                        const aoeDmg = Math.floor(rawDmg * 0.7);
+                        const defReduction = t.def ? 0.5 : 1.0;
+                        const finalDmg = Math.max(1, Math.floor((aoeDmg - t.st.def * 0.25) * defReduction));
+                        t.curHp = Math.max(0, t.curHp - finalDmg);
+
+                        const tEl = getArenaEl(tIdx, t);
+                        const tFrame = getArenaFrame(tIdx, t);
+
+                        setTimeout(() => {
+                            if(tEl) tEl.classList.add('hit-shake');
+                            showImpactEffect(tFrame, true, attackerType.toLowerCase());
+                            showArenaDamageV2(tIdx, t, finalDmg, true);
+                        }, i * 100);
+                    });
+                    arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} hitting all enemies!` });
+                } else {
+                    // v54.5: Single target special with projectile
+                    if(attackerFrame && targetFrame){
+                        fireProjectile(attackerFrame, targetFrame, attackerType.toLowerCase(), () => {
+                            const defReduction = target.def ? 0.5 : 1.0;
+                            const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+                            target.curHp = Math.max(0, target.curHp - finalDmg);
+
+                            // Big screen shake for special
+                            if(arena) {
+                                arena.classList.add('screen-shake');
+                                setTimeout(() => arena.classList.remove('screen-shake'), 400);
+                            }
+
+                            showImpactEffect(targetFrame, true, attackerType.toLowerCase());
+                            if(targetEl) targetEl.classList.add('hit-shake');
+                            showArenaDamageV2(targetIdx, target, finalDmg, true);
+                            arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} for ${finalDmg} damage!` });
+                        });
+                    }
+                }
+
+                setTimeout(() => {
+                    document.querySelectorAll('.hit-shake').forEach(el => el.classList.remove('hit-shake'));
+                    arenaBattle.processing = false;
+                    renderMain();
+                    arenaNextTurn();
+                }, 600);
+            }, 300);
+        }, 500);
     }
+}
+
+// v54.5: Updated damage popup that works with new element structure
+function showArenaDamageV2(idx, combatant, dmg, isCrit){
+    const el = combatant.team === 0 ?
+        document.getElementById(`arenaC${idx}`) :
+        document.getElementById(`enemy${idx}`);
+    if(!el) return;
+
+    const popup = document.createElement('div');
+    popup.className = `damage-popup ${isCrit ? 'crit' : ''}`;
+    popup.textContent = `-${dmg}`;
+    popup.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1000;';
+    el.style.position = 'relative';
+    el.appendChild(popup);
+
+    setTimeout(() => popup.remove(), 1000);
+}
+
+// v54.5: Updated heal popup
+function showArenaHealV2(idx, combatant, amt){
+    const el = combatant.team === 0 ?
+        document.getElementById(`arenaC${idx}`) :
+        document.getElementById(`enemy${idx}`);
+    if(!el) return;
+
+    const popup = document.createElement('div');
+    popup.className = 'heal-popup';
+    popup.textContent = `+${amt}`;
+    popup.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1000;';
+    el.style.position = 'relative';
+    el.appendChild(popup);
+
+    setTimeout(() => popup.remove(), 1000);
+}
+
+// v54.5: Defend shield effect
+function showDefendEffect(targetEl){
+    if(!targetEl) return;
+
+    const shield = document.createElement('div');
+    shield.className = 'defend-shield-effect';
+    shield.innerHTML = '🛡️';
+    shield.style.cssText = `
+        position:absolute;
+        top:50%;left:50%;
+        transform:translate(-50%,-50%) scale(0);
+        font-size:3rem;
+        z-index:100;
+        animation:shieldPop 0.6s ease-out forwards;
+    `;
+
+    document.body.appendChild(shield);
+    const rect = targetEl.getBoundingClientRect();
+    shield.style.left = rect.left + rect.width/2 + 'px';
+    shield.style.top = rect.top + rect.height/2 + 'px';
+
+    setTimeout(() => shield.remove(), 600);
 }
 
 function selectArenaTarget(idx){
