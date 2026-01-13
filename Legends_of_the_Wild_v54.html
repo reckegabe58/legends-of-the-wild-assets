@@ -619,32 +619,6 @@ body{
     color:#3498db;
 }
 
-/* v54.6: Arena Team Glow System - Team-colored creature outlines */
-.arena-creature.arena-team-red .arena-frame,
-.arena-creature.arena-team-red .ground-circle{
-    box-shadow:0 0 15px 3px rgba(231,76,60,.4), inset 0 0 10px rgba(231,76,60,.1);
-    border-color:rgba(231,76,60,.6);
-}
-.arena-creature.arena-team-blue .arena-frame,
-.arena-creature.arena-team-blue .ground-circle{
-    box-shadow:0 0 15px 3px rgba(52,152,219,.4), inset 0 0 10px rgba(52,152,219,.1);
-    border-color:rgba(52,152,219,.6);
-}
-/* Active turn enhances the team glow */
-.arena-creature.arena-team-red.active-turn .arena-frame{
-    box-shadow:0 0 25px 8px rgba(231,76,60,.6), 0 0 40px 15px rgba(231,76,60,.3);
-}
-.arena-creature.arena-team-blue.active-turn .arena-frame{
-    box-shadow:0 0 25px 8px rgba(52,152,219,.6), 0 0 40px 15px rgba(52,152,219,.3);
-}
-/* Enemy unit team colors (right side) */
-.enemy-unit.arena-team-red .enemy-frame{
-    box-shadow:0 0 15px 3px rgba(231,76,60,.4);
-}
-.enemy-unit.arena-team-blue .enemy-frame{
-    box-shadow:0 0 15px 3px rgba(52,152,219,.4);
-}
-
 /* Party HUD CSS Removed - now using stats overlay on creatures */
 
 /* Move Buttons - Absolute bottom now (no party HUD) */
@@ -7476,6 +7450,9 @@ function migrateShopSystem(){
 
     // Run V54.1 migration
     migrateToV54_1();
+
+    // v54.6: Always run natures migration (in case V54.1 was done before V54.3 existed)
+    migrateToV54_3_Natures();
 }
 
 // V54.1 MIGRATION - Add new state properties for enhanced features
@@ -7578,8 +7555,8 @@ const ARENA_MODES = {
     '1v1': { name: '1v1 Duel', teamSize: 1, teams: 2, icon: '⚔️', desc: 'One champion vs one challenger!' },
     '2v2': { name: '2v2 Tag Team', teamSize: 2, teams: 2, icon: '🤝', desc: 'Two partners fight together!' },
     '3v3': { name: '3v3 Squad Battle', teamSize: 3, teams: 2, icon: '👥', desc: 'Squad up and dominate!' },
-    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' },
-    'ffa': { name: 'Free For All', teamSize: 1, teams: 'all', icon: '🌪️', desc: 'Everyone for themselves!' }
+    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' }
+    // FFA mode removed - was broken
 };
 
 // Arena state (persists during setup)
@@ -8676,9 +8653,8 @@ function renderArenaBattle(m){
                 const isKO = combatant.curHp <= 0;
                 const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
                 const evoIdx = getEvo(combatant.cid, combatant.lv);
-                const teamClass = combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue';
 
-                let classes = 'arena-creature ' + teamClass;
+                let classes = 'arena-creature';
                 if(isKO) classes += ' ko';
                 if(isActive && !isKO) classes += ' active active-turn';
                 if(isValidTarget) classes += ' targetable';
@@ -8717,9 +8693,8 @@ function renderArenaBattle(m){
             const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
             const evoIdx = getEvo(combatant.cid, combatant.lv);
             const hpPct = (combatant.curHp/combatant.maxHp)*100;
-            const teamClass = combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue';
 
-            let classes = 'enemy-unit ' + teamClass;
+            let classes = 'enemy-unit';
             if(isValidTarget) classes += ' targetable';
             if(isKO) classes += ' ko';
 
@@ -8743,7 +8718,7 @@ function renderArenaBattle(m){
     html += `</div>`; // End battle-arena
 
     // Combat Log - v54.6: Collapsible, default expanded
-    html += `<div class="battle-log${arenaBattle.logCollapsed?' collapsed':''}" id="arenaLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+    html += `<div class="battle-log${arenaBattle.logCollapsed?' collapsed':''}" id="arenaLog" style="position:absolute;top:60px;right:20px;width:320px;z-index:50">
         <div class="battle-log-header" onclick="toggleArenaLog()">
             <span class="battle-log-title">📜 Combat Log</span>
             <span class="battle-log-toggle">▼</span>
@@ -10203,13 +10178,16 @@ function useBattleItem(itemId, targetIdx){
     if(student.inventory[itemId] <= 0){
         delete student.inventory[itemId];
     }
-    
+
     save();
-    
-    // End turn after item use
-    turnIdx++;
+
+    // v54.6: Items are now FREE ACTIONS - don't end turn, just refresh UI
+    // Player can still attack/defend/heal/special after using an item
+    // Mark that an item was used this turn (optional: to prevent multiple items)
+    if(!b.itemUsedThisTurn) b.itemUsedThisTurn = {};
+    b.itemUsedThisTurn[cur.idx] = true;
+
     renderMain();
-    setTimeout(nextTurn, 600);
 }
 
 function renderHomeBase(m){
@@ -12203,17 +12181,20 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
 function buildTurnOrder(){
     const b=state.battle;
     battleQueue=[];
-    
+
+    // v54.6: Reset item used tracking for new round
+    b.itemUsedThisTurn = {};
+
     // Add all player team members
     b.team.forEach((m,i)=>{
         if(m.curHp>0) battleQueue.push({type:'player',idx:i,spd:m.st.spd});
     });
-    
+
     // Add all enemies
     b.enemies.forEach((e,i)=>{
         if(e.hp>0) battleQueue.push({type:'enemy',idx:i,spd:e.spd});
     });
-    
+
     battleQueue.sort((a,b)=>b.spd-a.spd);
     turnIdx=0;
 }
@@ -12566,7 +12547,7 @@ function renderBattle(m){
     // ============================================
     
     // Battle Log (bottom-left corner) - v54.6: Collapsible, default expanded
-    html+=`<div class="battle-log${state.battleLogCollapsed?' collapsed':''}" id="battleLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+    html+=`<div class="battle-log${state.battleLogCollapsed?' collapsed':''}" id="battleLog" style="position:absolute;top:60px;right:20px;width:320px;z-index:50">
         <div class="battle-log-header" onclick="toggleBattleLog()">
             <span class="battle-log-title">📜 Combat Log</span>
             <span class="battle-log-toggle">▼</span>
@@ -12627,11 +12608,14 @@ function renderBattle(m){
         }
         
         // ITEMS BUTTON - Show usable items count
+        // v54.6: Items are free actions but limited to 1 per turn
         const usableItems = getUsableBattleItems(activeMember);
         const itemCount = usableItems.length;
-        html+=`<button class="move-btn items ${itemCount === 0 ? 'disabled' : ''}" ${buttonsDisabled || itemCount === 0 ? 'disabled' : ''} onclick="openBattleItems()">
+        const itemUsedThisTurn = b.itemUsedThisTurn && b.itemUsedThisTurn[activeIdx];
+        const itemsDisabled = buttonsDisabled || itemCount === 0 || itemUsedThisTurn;
+        html+=`<button class="move-btn items ${itemsDisabled ? 'disabled' : ''}" ${itemsDisabled ? 'disabled' : ''} onclick="openBattleItems()">
             <span class="move-name">🎒 Items</span>
-            <span class="move-cost">${itemCount} available</span>
+            <span class="move-cost">${itemUsedThisTurn ? 'Used' : itemCount + ' available'}</span>
         </button>`;
         
         html+=`</div>`; // End move-buttons-container
