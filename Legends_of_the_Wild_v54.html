@@ -471,8 +471,8 @@ body{
    ============================================ */
 
 .battle-container{
-    height:75vh; /* Reduced from 90vh - more compact */
-    max-height:75vh;
+    height:80vh; /* v54.6: Expanded from 75vh for less overlap */
+    max-height:80vh;
     background-size:cover;
     background-position:center;
     border-radius:12px;
@@ -619,6 +619,32 @@ body{
     color:#3498db;
 }
 
+/* v54.6: Arena Team Glow System - Team-colored creature outlines */
+.arena-creature.arena-team-red .arena-frame,
+.arena-creature.arena-team-red .ground-circle{
+    box-shadow:0 0 15px 3px rgba(231,76,60,.4), inset 0 0 10px rgba(231,76,60,.1);
+    border-color:rgba(231,76,60,.6);
+}
+.arena-creature.arena-team-blue .arena-frame,
+.arena-creature.arena-team-blue .ground-circle{
+    box-shadow:0 0 15px 3px rgba(52,152,219,.4), inset 0 0 10px rgba(52,152,219,.1);
+    border-color:rgba(52,152,219,.6);
+}
+/* Active turn enhances the team glow */
+.arena-creature.arena-team-red.active-turn .arena-frame{
+    box-shadow:0 0 25px 8px rgba(231,76,60,.6), 0 0 40px 15px rgba(231,76,60,.3);
+}
+.arena-creature.arena-team-blue.active-turn .arena-frame{
+    box-shadow:0 0 25px 8px rgba(52,152,219,.6), 0 0 40px 15px rgba(52,152,219,.3);
+}
+/* Enemy unit team colors (right side) */
+.enemy-unit.arena-team-red .enemy-frame{
+    box-shadow:0 0 15px 3px rgba(231,76,60,.4);
+}
+.enemy-unit.arena-team-blue .enemy-frame{
+    box-shadow:0 0 15px 3px rgba(52,152,219,.4);
+}
+
 /* Party HUD CSS Removed - now using stats overlay on creatures */
 
 /* Move Buttons - Absolute bottom now (no party HUD) */
@@ -639,7 +665,7 @@ body{
     align-items:center;
     justify-content:flex-start;
     padding-left:8%;
-    /* No margin-bottom needed - buttons at true bottom */
+    padding-bottom:80px; /* v54.6: Added padding to prevent overlap with move buttons */
 }
 
 /* Solo/Duo party - more centered with bigger creatures */
@@ -669,6 +695,34 @@ body{
     transition:all .2s;
 }
 .arena-creature.ko{opacity:.15;filter:grayscale(.9)}
+
+/* Heal Target Mode - Visual feedback for clickable allies */
+.arena-creature.heal-target{
+    cursor:pointer;
+    animation:heal-target-pulse 1s ease-in-out infinite;
+}
+.arena-creature.heal-target .arena-frame{
+    box-shadow:0 0 20px 8px rgba(74,222,128,.6), 0 0 40px 15px rgba(74,222,128,.3);
+    border-color:#4ade80;
+}
+.arena-creature.heal-target::after{
+    content:'💚';
+    position:absolute;
+    top:-20px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:1.5rem;
+    animation:heal-heart-bounce 0.6s ease-in-out infinite;
+    z-index:100;
+}
+@keyframes heal-target-pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.05)}
+}
+@keyframes heal-heart-bounce{
+    0%,100%{transform:translateX(-50%) translateY(0)}
+    50%{transform:translateX(-50%) translateY(-8px)}
+}
 
 /* Creature Stats Overlay - HP and Focus above creature */
 /* Minimalist HP/Focus Bars - Pokemon Style (below creature, no numbers) */
@@ -1613,12 +1667,13 @@ body{
 
 /* Battle Log - Compact */
 .battle-log{
-    max-height:180px;
+    max-height:150px; /* v54.6: Reduced from 180px to minimize overlap */
     overflow-y:auto;
     scroll-behavior:smooth;
-    background:rgba(0,0,0,.25);
+    background:rgba(0,0,0,.5); /* v54.6: Darker for better readability */
     border-radius:6px;
-    padding:6px 12px;
+    padding:0; /* v54.6: Remove padding, header handles it */
+    border:1px solid rgba(255,255,255,.1);
 }
 .log-entry{font-size:.7rem;color:#777;padding:2px 0}
 .log-entry.log-dmg{color:#f87171}
@@ -1627,6 +1682,31 @@ body{
 .log-entry.log-spec{color:#fbbf24}
 .log-entry.log-enemy{color:#ff9999}
 .log-entry.log-focus{color:#60a5fa}
+.log-entry.log-atk{color:#f87171}
+.log-entry.log-info{color:#aaa}
+
+/* v54.6: Collapsible Battle Log */
+.battle-log-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:4px 8px;
+    background:rgba(0,0,0,.4);
+    border-radius:6px 6px 0 0;
+    cursor:pointer;
+    user-select:none;
+    border-bottom:1px solid rgba(255,255,255,.1);
+}
+.battle-log-header:hover{background:rgba(0,0,0,.5)}
+.battle-log-title{font-size:.75rem;color:#888;font-family:'Cinzel',serif}
+.battle-log-toggle{font-size:.8rem;color:#666;transition:transform .2s}
+.battle-log.collapsed .battle-log-toggle{transform:rotate(180deg)}
+.battle-log.collapsed .battle-log-content{display:none}
+.battle-log-content{
+    max-height:160px;
+    overflow-y:auto;
+    padding:6px 8px;
+}
 
 /* ============================================
    COMBAT ANIMATIONS - No flashes, impact only
@@ -7498,6 +7578,7 @@ const ARENA_MODES = {
     '1v1': { name: '1v1 Duel', teamSize: 1, teams: 2, icon: '⚔️', desc: 'One champion vs one challenger!' },
     '2v2': { name: '2v2 Tag Team', teamSize: 2, teams: 2, icon: '🤝', desc: 'Two partners fight together!' },
     '3v3': { name: '3v3 Squad Battle', teamSize: 3, teams: 2, icon: '👥', desc: 'Squad up and dominate!' },
+    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' },
     'ffa': { name: 'Free For All', teamSize: 1, teams: 'all', icon: '🌪️', desc: 'Everyone for themselves!' }
 };
 
@@ -7888,6 +7969,9 @@ function startArenaBattle(){
 
             const lv = getLv(s.xp);
             const st = getStats(s.cid, lv, s.nature);
+            const c = CREATURES[s.cid];
+            const evoIdx = getEvo(s.cid, lv);
+            const creatureName = c?.names?.[evoIdx] || c?.name || 'Creature';
 
             combatants.push({
                 ...s,
@@ -7900,7 +7984,10 @@ function startArenaBattle(){
                 cooldown: 0,
                 focus: STARTING_FOCUS,
                 focusMax: MAX_FOCUS,
-                focusRegen: FOCUS_REGEN_PER_TURN
+                focusRegen: FOCUS_REGEN_PER_TURN,
+                // v54.6: Store both player name and creature name for combat log
+                ownerName: s.name || 'Player',
+                creatureName: creatureName
             });
         });
     });
@@ -8008,7 +8095,7 @@ function arenaNextTurn(){
         const oldFocus = combatant.focus;
         combatant.focus = Math.min(combatant.focusMax, combatant.focus + combatant.focusRegen);
         if(combatant.focus > oldFocus){
-            arenaBattle.log.unshift({ t: 'focus', m: `🔷 ${combatant.name} regains ${combatant.focus - oldFocus} Focus` });
+            arenaBattle.log.unshift({ t: 'focus', m: `🔷 ${combatant.creatureName} (${combatant.ownerName}) regains Focus` });
         }
 
         // Reduce cooldowns
@@ -8126,7 +8213,7 @@ function doArenaAction(action){
                     if(targetEl) targetEl.classList.add('hit-shake');
                     showArenaDamageV2(targetIdx, target, finalDmg, false);
 
-                    arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.name} attacks ${target.name} for ${finalDmg} damage!` });
+                    arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.creatureName} (${attacker.ownerName}) hits ${target.creatureName} (${target.ownerName}) for ${finalDmg} dmg!` });
 
                     setTimeout(() => {
                         if(targetEl) targetEl.classList.remove('hit-shake');
@@ -8138,7 +8225,7 @@ function doArenaAction(action){
             } else {
                 // Fallback if elements not found
                 target.curHp = Math.max(0, target.curHp - finalDmg);
-                arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.name} attacks ${target.name} for ${finalDmg} damage!` });
+                arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.creatureName} (${attacker.ownerName}) hits ${target.creatureName} (${target.ownerName}) for ${finalDmg} dmg!` });
                 arenaBattle.processing = false;
                 renderMain();
                 arenaNextTurn();
@@ -8154,7 +8241,7 @@ function doArenaAction(action){
         if(attackerEl) attackerEl.classList.add('defend-glow');
         showDefendEffect(attackerFrame);
 
-        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.name} defends and gains Focus!` });
+        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.creatureName} (${attacker.ownerName}) defends!` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('defend-glow');
@@ -8180,7 +8267,7 @@ function doArenaAction(action){
         showHealEffect(attackerFrame);
         showArenaHealV2(cur.idx, attacker, healAmt);
 
-        arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.name} heals for ${healAmt} HP!` });
+        arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.creatureName} (${attacker.ownerName}) heals ${healAmt} HP!` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('heal-glow');
@@ -8247,7 +8334,7 @@ function doArenaAction(action){
                             showArenaDamageV2(tIdx, t, finalDmg, true);
                         }, i * 100);
                     });
-                    arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} hitting all enemies!` });
+                    arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.creatureName} (${attacker.ownerName}) uses ${specMove.n} - AoE!` });
                 } else {
                     // v54.5: Single target special with projectile
                     if(attackerFrame && targetFrame){
@@ -8265,7 +8352,7 @@ function doArenaAction(action){
                             showImpactEffect(targetFrame, true, attackerType.toLowerCase());
                             if(targetEl) targetEl.classList.add('hit-shake');
                             showArenaDamageV2(targetIdx, target, finalDmg, true);
-                            arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} for ${finalDmg} damage!` });
+                            arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.creatureName} (${attacker.ownerName}) uses ${specMove.n} on ${target.creatureName} (${target.ownerName}) - ${finalDmg} dmg!` });
                         });
                     }
                 }
@@ -8516,8 +8603,9 @@ function renderArenaBattle(m){
                 const isKO = combatant.curHp <= 0;
                 const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
                 const evoIdx = getEvo(combatant.cid, combatant.lv);
+                const teamClass = combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue';
 
-                let classes = 'arena-creature';
+                let classes = 'arena-creature ' + teamClass;
                 if(isKO) classes += ' ko';
                 if(isActive && !isKO) classes += ' active active-turn';
                 if(isValidTarget) classes += ' targetable';
@@ -8556,8 +8644,9 @@ function renderArenaBattle(m){
             const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
             const evoIdx = getEvo(combatant.cid, combatant.lv);
             const hpPct = (combatant.curHp/combatant.maxHp)*100;
+            const teamClass = combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue';
 
-            let classes = 'enemy-unit';
+            let classes = 'enemy-unit ' + teamClass;
             if(isValidTarget) classes += ' targetable';
             if(isKO) classes += ' ko';
 
@@ -8580,9 +8669,15 @@ function renderArenaBattle(m){
 
     html += `</div>`; // End battle-arena
 
-    // Combat Log - same structure as main battle
-    html += `<div class="battle-log" id="arenaLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
-        ${arenaBattle.log.slice(0, 20).reverse().map(e => `<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
+    // Combat Log - v54.6: Collapsible, default expanded
+    html += `<div class="battle-log${arenaBattle.logCollapsed?' collapsed':''}" id="arenaLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+        <div class="battle-log-header" onclick="toggleArenaLog()">
+            <span class="battle-log-title">📜 Combat Log</span>
+            <span class="battle-log-toggle">▼</span>
+        </div>
+        <div class="battle-log-content">
+            ${arenaBattle.log.filter(e=>e.t!=='focus').slice(0, 20).reverse().map(e => `<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
+        </div>
     </div>`;
 
     // Action buttons - same structure as main battle
@@ -12397,9 +12492,15 @@ function renderBattle(m){
     // V46: NEW COMBAT UI ONLY - Old UI completely removed
     // ============================================
     
-    // Battle Log (bottom-left corner) - v54.2: Fixed to show newest entries, scrollable history
-    html+=`<div class="battle-log" id="battleLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
-        ${state.log.slice(0, 20).reverse().map(e=>`<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
+    // Battle Log (bottom-left corner) - v54.6: Collapsible, default expanded
+    html+=`<div class="battle-log${state.battleLogCollapsed?' collapsed':''}" id="battleLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+        <div class="battle-log-header" onclick="toggleBattleLog()">
+            <span class="battle-log-title">📜 Combat Log</span>
+            <span class="battle-log-toggle">▼</span>
+        </div>
+        <div class="battle-log-content">
+            ${state.log.filter(e=>e.t!=='focus').slice(0, 20).reverse().map(e=>`<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
+        </div>
     </div>`;
     
     
@@ -12462,7 +12563,24 @@ function renderBattle(m){
         
         html+=`</div>`; // End move-buttons-container
     }
-    
+
+    // v54.6: Targeting Instruction Overlays
+    // Attack/Special targeting mode
+    if(b.targetingMode){
+        html += `<div class="targeting-overlay">
+            <div style="color:var(--gold);font-family:'Cinzel',serif;font-size:1.2rem">🎯 Select an enemy to attack!</div>
+            <button onclick="cancelTargeting()" style="margin-top:10px;padding:8px 16px;background:rgba(255,100,100,.3);border:1px solid #f66;border-radius:8px;color:#fff;cursor:pointer;font-family:'Cinzel',serif">Cancel</button>
+        </div>`;
+    }
+
+    // Heal targeting mode
+    if(b.healTargetingMode){
+        html += `<div class="targeting-overlay" style="border-color:#4ade80">
+            <div style="color:#4ade80;font-family:'Cinzel',serif;font-size:1.2rem">💚 Click an ally to heal!</div>
+            <button onclick="cancelHealTargeting()" style="margin-top:10px;padding:8px 16px;background:rgba(100,255,100,.3);border:1px solid #4ade80;border-radius:8px;color:#fff;cursor:pointer;font-family:'Cinzel',serif">Cancel</button>
+        </div>`;
+    }
+
     html+=`</div>`; // End battle-container
     m.innerHTML=html;
     
@@ -14327,6 +14445,37 @@ function selectHealTarget(allyIdx){
     b.healAmount = null;
     
     executeHeal(healerIdx, allyIdx, healAmount);
+}
+
+// v54.6: Cancel targeting modes
+function cancelTargeting(){
+    const b = state.battle;
+    if(!b) return;
+    b.targetingMode = false;
+    b.selectedTarget = undefined;
+    processing = false;
+    renderMain();
+}
+
+function cancelHealTargeting(){
+    const b = state.battle;
+    if(!b) return;
+    b.healTargetingMode = false;
+    b.healerIdx = null;
+    b.healAmount = null;
+    processing = false;
+    renderMain();
+}
+
+// v54.6: Toggle battle log collapsed state
+function toggleBattleLog(){
+    state.battleLogCollapsed = !state.battleLogCollapsed;
+    renderMain();
+}
+
+function toggleArenaLog(){
+    if(arenaBattle) arenaBattle.logCollapsed = !arenaBattle.logCollapsed;
+    renderArena();
 }
 
 // v54.6: Enhanced executeHeal with emergency bonus and improved animations
