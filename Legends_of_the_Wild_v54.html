@@ -13834,11 +13834,29 @@ function showStatusApplyEffect(targetEl, status){
 function getAttackAnimationType(moveName, element){
     const name = (moveName || '').toLowerCase();
 
-    // ICE/FROST attacks - use ice shard or beam, never slash
+    // v54.6: COMPOUND WORDS FIRST - Handle specific combinations before generic checks
+    // Sandstorm, duststorm = earth, NOT lightning
+    if(name.includes('sandstorm') || name.includes('duststorm') || name.includes('dust storm')){
+        return 'slam';
+    }
+    // Firestorm, inferno storm = fire, NOT lightning
+    if(name.includes('firestorm') || name.includes('fire storm') || name.includes('inferno')){
+        return 'fire-burst';
+    }
+    // Snowstorm, blizzard = ice, NOT lightning
+    if(name.includes('snowstorm') || name.includes('snow storm') || name.includes('blizzard')){
+        return 'ice-shard';
+    }
+    // Hurricane, cyclone, gust = air/wind, use slash
+    if(name.includes('hurricane') || name.includes('cyclone') || name.includes('gust') || name.includes('wind')){
+        return 'slash';
+    }
+
+    // ICE/FROST attacks - use ice shard or beam
     if(name.includes('frost') || name.includes('ice') || name.includes('freeze') ||
-       name.includes('blizzard') || name.includes('arctic') || name.includes('glacial') ||
-       name.includes('snow') || name.includes('frozen') || name.includes('icicle') ||
-       name.includes('cold') || element === 'ice'){
+       name.includes('arctic') || name.includes('glacial') || name.includes('snow') ||
+       name.includes('frozen') || name.includes('icicle') || name.includes('cold') ||
+       element === 'ice'){
         if(name.includes('beam') || name.includes('ray') || name.includes('blast') || name.includes('zero')){
             return 'beam';
         }
@@ -13847,28 +13865,37 @@ function getAttackAnimationType(moveName, element){
 
     // FIRE attacks - use fire burst
     if(name.includes('flame') || name.includes('fire') || name.includes('blaze') ||
-       name.includes('ember') || name.includes('inferno') || name.includes('lava') ||
-       name.includes('molten') || name.includes('scorch') || name.includes('burn') ||
-       name.includes('heat') || name.includes('cinder') || name.includes('magma') ||
+       name.includes('ember') || name.includes('lava') || name.includes('molten') ||
+       name.includes('scorch') || name.includes('burn') || name.includes('heat') ||
+       name.includes('cinder') || name.includes('magma') || name.includes('meteor') ||
        element === 'fire'){
         return 'fire-burst';
     }
 
-    // LIGHTNING attacks - use lightning strike
+    // EARTH/SAND attacks - use ground slam (check BEFORE lightning to catch "sand" properly)
+    if(name.includes('earth') || name.includes('rock') || name.includes('stone') ||
+       name.includes('sand') || name.includes('ground') || name.includes('quake') ||
+       name.includes('boulder') || name.includes('crystal') || name.includes('shard') ||
+       name.includes('slam') || name.includes('stomp') || name.includes('crush') ||
+       name.includes('smash') || name.includes('dune') || name.includes('desert') ||
+       element === 'earth'){
+        return 'slam';
+    }
+
+    // LIGHTNING attacks - use lightning strike (after earth check)
     if(name.includes('thunder') || name.includes('spark') || name.includes('volt') ||
-       name.includes('lightning') || name.includes('storm') || name.includes('static') ||
-       name.includes('tempest') || name.includes('electric') || name.includes('jolt') ||
+       name.includes('lightning') || name.includes('static') || name.includes('electric') ||
+       name.includes('jolt') || name.includes('shock') ||
        element === 'lightning'){
         return 'lightning';
     }
 
-    // EARTH attacks - use ground slam
-    if(name.includes('earth') || name.includes('rock') || name.includes('stone') ||
-       name.includes('sand') || name.includes('ground') || name.includes('quake') ||
-       name.includes('boulder') || name.includes('crystal') || name.includes('slam') ||
-       name.includes('stomp') || name.includes('crush') || name.includes('smash') ||
-       element === 'earth'){
-        return 'slam';
+    // WATER attacks - use projectile
+    if(name.includes('water') || name.includes('aqua') || name.includes('hydro') ||
+       name.includes('wave') || name.includes('tide') || name.includes('splash') ||
+       name.includes('whirlpool') || name.includes('tsunami') || name.includes('ocean') ||
+       element === 'water'){
+        return 'projectile';
     }
 
     // BITE/FANG attacks - use bite animation
@@ -13886,27 +13913,70 @@ function getAttackAnimationType(moveName, element){
     // SLASH/CLAW attacks - use multi-slash
     if(name.includes('claw') || name.includes('slash') || name.includes('strike') ||
        name.includes('cut') || name.includes('rend') || name.includes('tear') ||
-       name.includes('swipe') || name.includes('rip')){
+       name.includes('swipe') || name.includes('rip') || name.includes('whip') ||
+       name.includes('lash') || name.includes('antler')){
         return 'slash';
     }
 
     // PROJECTILE attacks - use element trail
     if(name.includes('shot') || name.includes('bolt') || name.includes('ball') ||
-       name.includes('missile') || name.includes('arrow') || name.includes('needle')){
+       name.includes('missile') || name.includes('arrow') || name.includes('needle') ||
+       name.includes('barrage') || name.includes('spray')){
         return 'projectile';
     }
 
     // Physical attacks - use impact
     if(name.includes('punch') || name.includes('tackle') || name.includes('charge') ||
-       name.includes('ram') || name.includes('bash') || name.includes('hit')){
+       name.includes('ram') || name.includes('bash') || name.includes('hit') ||
+       name.includes('rush') || name.includes('rampage') || name.includes('stampede')){
         return 'impact';
     }
 
-    // Default based on element
-    if(element === 'water') return 'projectile';
-    if(element === 'nature') return 'slash';
-    if(element === 'shadow' || element === 'void') return 'beam';
-    if(element === 'poison') return 'projectile';
+    // NATURE attacks - use slash
+    if(name.includes('vine') || name.includes('leaf') || name.includes('thorn') ||
+       name.includes('root') || name.includes('petal') || name.includes('spore') ||
+       name.includes('branch') || name.includes('moss') || name.includes('photo') ||
+       element === 'nature'){
+        return 'slash';
+    }
+
+    // POISON attacks - use projectile
+    if(name.includes('toxic') || name.includes('poison') || name.includes('venom') ||
+       name.includes('plague') || name.includes('acid') || name.includes('fungal') ||
+       element === 'poison'){
+        return 'projectile';
+    }
+
+    // SHADOW/VOID attacks - use beam
+    if(name.includes('shadow') || name.includes('dark') || name.includes('void') ||
+       name.includes('nightmare') || name.includes('null') || name.includes('dimension') ||
+       name.includes('mind') || name.includes('psychic') || name.includes('reality') ||
+       element === 'shadow' || element === 'void'){
+        return 'beam';
+    }
+
+    // LIGHT attacks - use beam
+    if(name.includes('light') || name.includes('rainbow') || name.includes('spectrum') ||
+       name.includes('prism') || name.includes('radiant') || name.includes('holy') ||
+       element === 'light'){
+        return 'beam';
+    }
+
+    // METAL attacks - use impact
+    if(name.includes('steel') || name.includes('iron') || name.includes('metal') ||
+       name.includes('gear') || name.includes('mecha') || name.includes('overclock') ||
+       element === 'metal'){
+        return 'impact';
+    }
+
+    // AIR attacks - use slash
+    if(element === 'air') return 'slash';
+
+    // BUG attacks - use slash
+    if(name.includes('pincer') || name.includes('hive') || name.includes('beetle') ||
+       name.includes('carapace') || element === 'bug'){
+        return 'slash';
+    }
 
     return 'slash'; // Default to slash
 }
