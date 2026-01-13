@@ -4813,45 +4813,64 @@ function getPartyTier(){
     return 'full';
 }
 
+// ============================================
+// DEBUG MODE - Toggle for combat logging
+// ============================================
+let DEBUG_MODE = true; // Set to true for detailed combat logs
+
+function debugLog(category, ...args) {
+    if (!DEBUG_MODE) return;
+    const colors = {
+        SCALING: 'color: #60a5fa; font-weight: bold',
+        DAMAGE: 'color: #f87171; font-weight: bold',
+        COMBAT: 'color: #4ade80; font-weight: bold',
+        TURN: 'color: #fbbf24; font-weight: bold',
+        BOSS: 'color: #a78bfa; font-weight: bold',
+        PARTY: 'color: #22d3ee; font-weight: bold'
+    };
+    console.log(`%c[${category}]`, colors[category] || '', ...args);
+}
+
 // Scaling multipliers by party size - LOOKUP TABLE
-// Each party size has carefully tuned multipliers
+// v54.4: REBALANCED - Enemies now scale MORE aggressively with ATK
+// Goal: Enemies should deal 25-40% of player HP per hit in larger parties
 const PARTY_SCALING = {
     // [HP, ATK, DEF, SPD] multipliers for each party size
     wild: {
-        1:  [0.6,  0.5,  0.5,  0.8],   // Solo: Very easy
-        2:  [0.8,  0.7,  0.6,  0.9],   // Duo: Easy
-        3:  [1.0,  0.9,  0.8,  1.0],   // Trio: Moderate
-        4:  [1.2,  1.1,  1.0,  1.05],  // Squad: Standard
-        5:  [1.5,  1.3,  1.1,  1.1],   // Team: Challenging
-        6:  [1.8,  1.5,  1.2,  1.15],  // Group: Hard
-        7:  [2.1,  1.7,  1.3,  1.2],   // Party: Very Hard
-        8:  [2.4,  1.9,  1.4,  1.25],  // Raid: Epic
-        9:  [2.7,  2.1,  1.5,  1.3],   // Full Class: Brutal
-        10: [3.0,  2.3,  1.6,  1.35]   // Max: Legendary
+        1:  [0.5,  0.6,  0.4,  0.85],  // Solo: Forgiving but can still hurt
+        2:  [0.7,  0.9,  0.5,  0.95],  // Duo: Noticeable damage
+        3:  [1.0,  1.3,  0.7,  1.0],   // Trio: Real threat - ATK boosted!
+        4:  [1.3,  1.6,  0.85, 1.05],  // Squad: Dangerous encounters
+        5:  [1.6,  2.0,  1.0,  1.1],   // Team: Very dangerous
+        6:  [2.0,  2.4,  1.1,  1.15],  // Group: Each hit matters
+        7:  [2.4,  2.8,  1.2,  1.2],   // Party: Punishing
+        8:  [2.8,  3.2,  1.3,  1.25],  // Raid: Brutal
+        9:  [3.2,  3.6,  1.4,  1.3],   // Full Class: Overwhelming
+        10: [3.6,  4.0,  1.5,  1.35]   // Max: Legendary threat
     },
     boss: {
-        1:  [0.5,  0.4,  0.4,  0.85],  // Solo: Manageable
-        2:  [0.7,  0.6,  0.5,  0.9],   // Duo: Challenging but fair
-        3:  [1.0,  0.85, 0.7,  0.95],  // Trio: Standard boss fight
-        4:  [1.3,  1.1,  0.9,  1.0],   // Squad: Tough fight
-        5:  [1.7,  1.4,  1.0,  1.05],  // Team: Hard boss
-        6:  [2.1,  1.7,  1.1,  1.1],   // Group: Very Hard
-        7:  [2.5,  2.0,  1.2,  1.15],  // Party: Epic boss
-        8:  [3.0,  2.3,  1.3,  1.2],   // Raid: Raid boss
-        9:  [3.5,  2.6,  1.4,  1.25],  // Full Class: World boss
-        10: [4.0,  3.0,  1.5,  1.3]    // Max: Ultimate challenge
+        1:  [0.6,  0.8,  0.5,  0.9],   // Solo: Manageable but scary
+        2:  [0.9,  1.2,  0.7,  0.95],  // Duo: Real boss fight
+        3:  [1.2,  1.6,  0.9,  1.0],   // Trio: Threatening
+        4:  [1.6,  2.1,  1.0,  1.05],  // Squad: Tough fight
+        5:  [2.0,  2.6,  1.1,  1.1],   // Team: Hard boss
+        6:  [2.5,  3.1,  1.2,  1.15],  // Group: Very Hard
+        7:  [3.0,  3.6,  1.3,  1.2],   // Party: Epic boss - can one-shot
+        8:  [3.6,  4.2,  1.4,  1.25],  // Raid: Raid boss
+        9:  [4.2,  4.8,  1.5,  1.3],   // Full Class: World boss
+        10: [5.0,  5.5,  1.6,  1.35]   // Max: Ultimate challenge
     },
     minion: {
-        1:  [0.4,  0.3,  0.4,  0.9],   // Solo: Weak adds
-        2:  [0.6,  0.5,  0.5,  0.95],  // Duo: Minor threat
-        3:  [0.8,  0.7,  0.6,  1.0],   // Trio: Nuisance
-        4:  [1.0,  0.9,  0.7,  1.0],   // Squad: Must handle
-        5:  [1.3,  1.1,  0.8,  1.05],  // Team: Real threat
-        6:  [1.6,  1.3,  0.9,  1.1],   // Group: Dangerous
-        7:  [1.9,  1.5,  1.0,  1.15],  // Party: Deadly
-        8:  [2.2,  1.8,  1.1,  1.2],   // Raid: Very dangerous
-        9:  [2.5,  2.0,  1.2,  1.25],  // Full Class: Lethal
-        10: [2.8,  2.2,  1.3,  1.3]    // Max: Must prioritize
+        1:  [0.4,  0.5,  0.4,  0.95],  // Solo: Weak but annoying
+        2:  [0.6,  0.8,  0.5,  1.0],   // Duo: Minor threat
+        3:  [0.9,  1.1,  0.6,  1.05],  // Trio: Nuisance
+        4:  [1.1,  1.4,  0.7,  1.1],   // Squad: Must handle
+        5:  [1.4,  1.7,  0.8,  1.15],  // Team: Real threat
+        6:  [1.7,  2.0,  0.9,  1.2],   // Group: Dangerous
+        7:  [2.0,  2.4,  1.0,  1.25],  // Party: Deadly
+        8:  [2.4,  2.8,  1.1,  1.3],   // Raid: Very dangerous
+        9:  [2.8,  3.2,  1.2,  1.35],  // Full Class: Lethal
+        10: [3.2,  3.6,  1.3,  1.4]    // Max: Must prioritize
     }
 };
 
@@ -4912,12 +4931,15 @@ function scaleWildEnemy(baseHP, baseATK, baseDEF, baseSPD){
     const size = Math.min(10, Math.max(1, getPartySize()));
     const scale = PARTY_SCALING.wild[size];
 
-    return {
+    const result = {
         hp: Math.floor(baseHP * scale[0]),
         atk: Math.floor(baseATK * scale[1]),
         def: Math.floor(baseDEF * scale[2]),
         spd: Math.floor(baseSPD * scale[3])
     };
+
+    debugLog('SCALING', `WILD Enemy | Party: ${size} | Base ATK: ${baseATK} → Scaled: ${result.atk} (x${scale[1]}) | HP: ${baseHP} → ${result.hp}`);
+    return result;
 }
 
 // Scale boss stats based on party size
@@ -4925,12 +4947,15 @@ function scaleBoss(baseHP, baseATK, baseDEF, baseSPD){
     const size = Math.min(10, Math.max(1, getPartySize()));
     const scale = PARTY_SCALING.boss[size];
 
-    return {
+    const result = {
         hp: Math.floor(baseHP * scale[0]),
         atk: Math.floor(baseATK * scale[1]),
         def: Math.floor(baseDEF * scale[2]),
         spd: Math.floor(baseSPD * scale[3])
     };
+
+    debugLog('BOSS', `BOSS Scaling | Party: ${size} | Base ATK: ${baseATK} → Scaled: ${result.atk} (x${scale[1]}) | HP: ${baseHP} → ${result.hp}`);
+    return result;
 }
 
 // Scale boss minion stats based on party size
@@ -4938,12 +4963,15 @@ function scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD){
     const size = Math.min(10, Math.max(1, getPartySize()));
     const scale = PARTY_SCALING.minion[size];
 
-    return {
+    const result = {
         hp: Math.floor(baseHP * scale[0]),
         atk: Math.floor(baseATK * scale[1]),
         def: Math.floor(baseDEF * scale[2]),
         spd: Math.floor(baseSPD * scale[3])
     };
+
+    debugLog('SCALING', `MINION Scaling | Party: ${size} | ATK: ${baseATK} → ${result.atk} | HP: ${baseHP} → ${result.hp}`);
+    return result;
 }
 
 // XP scaling - less XP per person in large parties (shared)
@@ -7527,8 +7555,16 @@ function forfeitArenaBattle(){
 // ============================================
 // ARENA VICTORY SCREEN WITH FIREWORKS
 // ============================================
+let arenaVictoryTimeout = null; // v54.4: Track auto-close timeout
+
 function showArenaVictory(){
     if(!arenaBattle) return;
+
+    // v54.4: Clear any existing victory timeout
+    if(arenaVictoryTimeout){
+        clearTimeout(arenaVictoryTimeout);
+        arenaVictoryTimeout = null;
+    }
 
     const isFFA = arenaBattle.isFFA;
     const winner = arenaBattle.winner;
@@ -7597,11 +7633,21 @@ function showArenaVictory(){
         }
     }
 
-    html += `<button class="arena-victory-btn" onclick="closeArenaVictory()">Continue</button>
+    // v54.4: Improved button with inline styles to ensure visibility
+    html += `<button class="arena-victory-btn" onclick="closeArenaVictory()" style="position:relative;z-index:10002;padding:15px 40px;font-size:1.2rem;background:linear-gradient(135deg,var(--gold),#d4a333);color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;margin-top:30px;">Continue</button>
+    <p style="color:#666;font-size:.8rem;margin-top:10px;">(or click anywhere)</p>
     </div>`;
 
     overlay.innerHTML = html;
     document.body.appendChild(overlay);
+
+    // v54.4: Click anywhere to close (backup for button)
+    overlay.addEventListener('click', (e) => {
+        // Only close if clicking the overlay background, not the content
+        if(e.target === overlay || e.target.classList.contains('arena-victory-btn')){
+            closeArenaVictory();
+        }
+    });
 
     // Start fireworks animation
     setTimeout(() => {
@@ -7611,11 +7657,23 @@ function showArenaVictory(){
         }
     }, 100);
 
+    // v54.4: SAFETY TIMEOUT - Auto-close after 15 seconds to prevent soft-lock
+    arenaVictoryTimeout = setTimeout(() => {
+        console.log('Arena victory auto-closing after timeout');
+        closeArenaVictory();
+    }, 15000);
+
     // Play victory sound
     playSound('victory');
 }
 
 function closeArenaVictory(){
+    // v54.4: Clear auto-close timeout
+    if(arenaVictoryTimeout){
+        clearTimeout(arenaVictoryTimeout);
+        arenaVictoryTimeout = null;
+    }
+
     const overlay = document.getElementById('arenaVictoryOverlay');
     if(overlay){
         overlay.classList.remove('active');
@@ -7628,6 +7686,7 @@ function closeArenaVictory(){
     currentScreen = 'arena';
     renderNav();
     renderMain();
+    debugLog('COMBAT', 'Arena victory closed');
 }
 
 // ============================================
@@ -7636,22 +7695,30 @@ function closeArenaVictory(){
 let fireworksActive = false;
 let fireworksParticles = [];
 let fireworksAnimFrame = null;
+let fireworksInterval = null; // v54.4: Store interval globally for proper cleanup
 
 function startFireworks(){
     const canvas = document.getElementById('fireworksCanvas');
-    if(!canvas) return;
+    if(!canvas){
+        console.warn('Fireworks canvas not found');
+        return;
+    }
 
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+    // Clear any existing fireworks
+    stopFireworks();
+
     fireworksActive = true;
     fireworksParticles = [];
 
-    // Launch fireworks at intervals
-    const launchInterval = setInterval(() => {
+    // Launch fireworks at intervals - v54.4: Store globally for cleanup
+    fireworksInterval = setInterval(() => {
         if(!fireworksActive){
-            clearInterval(launchInterval);
+            clearInterval(fireworksInterval);
+            fireworksInterval = null;
             return;
         }
         launchFirework(canvas, ctx);
@@ -7666,8 +7733,8 @@ function startFireworks(){
     function animate(){
         if(!fireworksActive) return;
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // v54.4: CLEAR canvas instead of filling with black (was causing black screen bug)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         fireworksParticles = fireworksParticles.filter(p => {
             p.x += p.vx;
@@ -7724,11 +7791,21 @@ function launchFirework(canvas, ctx){
 
 function stopFireworks(){
     fireworksActive = false;
+
+    // v54.4: Clear animation frame
     if(fireworksAnimFrame){
         cancelAnimationFrame(fireworksAnimFrame);
         fireworksAnimFrame = null;
     }
+
+    // v54.4: Clear interval - THIS WAS MISSING!
+    if(fireworksInterval){
+        clearInterval(fireworksInterval);
+        fireworksInterval = null;
+    }
+
     fireworksParticles = [];
+    debugLog('COMBAT', 'Fireworks stopped');
 }
 
 // NAVIGATION
@@ -7776,12 +7853,63 @@ function renderMain(){
     else if(currentScreen==='arenaBattle')renderArenaBattle(m);
 }
 
+// v54.4: REST FUNCTION - Restore all HP and Focus for the party
+function restParty(){
+    const active = getActiveStudents().filter(s => s.cid);
+    if(!active.length) return;
+
+    let healedCount = 0;
+    active.forEach(s => {
+        const lv = getLv(s.xp);
+        const st = getStats(s.cid, lv, s.nature);
+        const wasWounded = s.curHp !== undefined && s.curHp < st.hp;
+
+        // Restore to full HP and starting focus
+        s.curHp = st.hp;
+        s.curFocus = STARTING_FOCUS;
+
+        if(wasWounded) healedCount++;
+    });
+
+    save();
+    renderMain();
+
+    // Show feedback
+    if(healedCount > 0){
+        addStoryLog(`💤 The party rested! ${healedCount} creature${healedCount > 1 ? 's' : ''} fully healed.`, 'special');
+    }
+
+    debugLog('PARTY', `REST: ${active.length} creatures restored to full HP and ${STARTING_FOCUS} Focus`);
+}
+
+// Check if any party member needs healing
+function partyNeedsRest(){
+    const active = getActiveStudents().filter(s => s.cid);
+    return active.some(s => {
+        if(s.curHp === undefined) return false;
+        const lv = getLv(s.xp);
+        const st = getStats(s.cid, lv, s.nature);
+        return s.curHp < st.hp;
+    });
+}
+
 // RENDER: LEGENDS TEAM (Active students)
 function renderTeam(m){
     const active=getActiveStudents();
     const count=active.length;
-    
-    let html=`<h2 class="section-title">🏫 Legends Team</h2>`;
+
+    // v54.4: Check if party needs rest
+    const needsRest = partyNeedsRest();
+    const restBtnStyle = needsRest
+        ? 'background:linear-gradient(135deg,#4ade80,#22c55e);color:#000;'
+        : 'background:#333;color:#666;cursor:not-allowed;';
+
+    let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+        <h2 class="section-title" style="margin:0">🏫 Legends Team</h2>
+        <button onclick="${needsRest ? 'restParty()' : ''}" style="padding:10px 20px;border:none;border-radius:8px;font-weight:bold;${restBtnStyle}" ${needsRest ? '' : 'disabled'}>
+            💤 Rest Party ${needsRest ? '(Heal All)' : '(Full HP)'}
+        </button>
+    </div>`;
     
     if(!count){
         html+=`<div class="no-students"><h3>No Active Students</h3><p>Go to Teacher panel to take attendance!</p></div>`;
@@ -7862,6 +7990,32 @@ function renderTeam(m){
                 </div>
             </div>`;
             
+            // v54.4: Current HP/Focus display - shows combat readiness
+            const curHp = s.curHp !== undefined ? s.curHp : st.hp;
+            const curFocus = s.curFocus !== undefined ? s.curFocus : STARTING_FOCUS;
+            const hpPercent = Math.max(0, Math.min(100, (curHp / st.hp) * 100));
+            const focusPercent = Math.max(0, Math.min(100, (curFocus / MAX_FOCUS) * 100));
+            const hpColor = hpPercent > 50 ? '#4ade80' : hpPercent > 25 ? '#fbbf24' : '#f87171';
+            const isWounded = curHp < st.hp;
+            const isKO = curHp <= 0;
+
+            html+=`<div class="creature-status" style="margin:8px 0;padding:8px;background:rgba(0,0,0,.3);border-radius:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:.7rem;color:#aaa;">HP</span>
+                    <span style="font-size:.7rem;color:${hpColor};font-weight:bold;">${curHp}/${st.hp}${isKO ? ' 💀' : isWounded ? ' ⚠️' : ''}</span>
+                </div>
+                <div style="height:8px;background:rgba(0,0,0,.5);border-radius:4px;overflow:hidden;">
+                    <div style="width:${hpPercent}%;height:100%;background:${hpColor};border-radius:4px;transition:width .3s"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:4px;">
+                    <span style="font-size:.7rem;color:#aaa;">Focus</span>
+                    <span style="font-size:.7rem;color:#60a5fa;">${curFocus}/${MAX_FOCUS}</span>
+                </div>
+                <div style="height:6px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;">
+                    <div style="width:${focusPercent}%;height:100%;background:#60a5fa;border-radius:3px;transition:width .3s"></div>
+                </div>
+            </div>`;
+
             // Mini Stat Bar - With icons from UI_Elements
             html+=`<div class="mini-stats">
                 <div class="mini-stat hp"><img src="${G}/UI_Elements/Icon_Health.png" class="stat-icon-img" alt="HP" onerror="this.outerHTML='<span class=stat-label>HP</span>'"><span class="val">${st.hp}</span></div>
@@ -9611,39 +9765,46 @@ function createBossEnemy(id, boss, chapter){
     const partySize = activeParty.length;
     const avgLv = getAvgLevel();
     const partyPower = getPartyPower();
-    
+
+    // v54.4: PROGRESSIVE DIFFICULTY - bosses get harder as more are defeated
+    // Total bosses defeated provides a global difficulty increase
+    const totalDefeated = state.defeated ? state.defeated.length : 0;
+    const timesThisBossDefeated = state.defeated ? state.defeated.filter(d => d === id).length : 0;
+
+    // Progressive scale: +5% per boss defeated, +15% per time this specific boss defeated
+    const progressiveScale = 1 + (totalDefeated * 0.05) + (timesThisBossDefeated * 0.15);
+
     // Base scale from chapter progression
-    let scale = 1;
+    let scale = progressiveScale;
     if(chapter >= 4 && boss.tier <= 3){
-        const timesDefeated = state.defeated.filter(d => d === id).length;
-        scale = 1 + (chapter - 3) * 0.3 + timesDefeated * 0.2;
+        scale += (chapter - 3) * 0.3;
     }
-    
+
     // LEVEL SCALING - boss scales if party is higher level than expected
     const levelRatio = avgLv / boss.lv;
     const levelMultiplier = levelRatio > 1 ? 1 + (levelRatio - 1) * 0.5 : 1;
-    
+
     // Apply base scaling
     const baseHP = Math.floor(boss.hp * scale * levelMultiplier);
     const baseATK = Math.floor(boss.atk * scale * levelMultiplier);
     const baseDEF = Math.floor(boss.def * scale * levelMultiplier * 0.8);
     const baseSPD = Math.max(boss.spd || 25, 20);
-    
+
     // NEW ADAPTIVE PARTY SCALING
     const scaled = scaleBoss(baseHP, baseATK, baseDEF, baseSPD);
-    
-    // Ensure boss attack is threatening (minimum 25% of average party HP)
+
+    // v54.4: Ensure boss attack is VERY threatening (minimum 30% of average party HP)
     const avgPartyHP = activeParty.reduce((sum, s) => {
         const st = getStats(s.cid, getLv(s.xp), s.nature);
         return sum + st.hp;
     }, 0) / Math.max(1, partySize);
-    const minBossAtk = Math.floor(avgPartyHP * 0.25);
+    const minBossAtk = Math.floor(avgPartyHP * 0.30);
     const finalAtk = Math.max(minBossAtk, scaled.atk);
-    
+
     // Speed includes level bonus
     const finalSpd = Math.floor(scaled.spd + boss.lv * 0.5);
-    
-    console.log(`Boss ${boss.name}: Party ${partySize}, HP ${scaled.hp}, ATK ${finalAtk}, SPD ${finalSpd}`);
+
+    debugLog('BOSS', `Creating ${boss.name} | Progressive Scale: ${progressiveScale.toFixed(2)} (${totalDefeated} bosses defeated) | Party: ${partySize} | HP: ${scaled.hp} | ATK: ${finalAtk} | SPD: ${finalSpd}`);
     
     return {
         id: id,
@@ -10714,10 +10875,10 @@ function closeEventAndContinue(){
 // BATTLE SYSTEM
 function startBattleWith(enemy, sizeClass, additionalEnemies = []){
     const activeReady=getActiveStudents().filter(s=>s.cid);
-    
+
     // Combine main enemy with additional enemies
     const allEnemies = [enemy, ...additionalEnemies];
-    
+
     state.battle={
         enemy: enemy, // Primary enemy for backwards compatibility
         enemies: allEnemies, // All enemies array
@@ -10725,8 +10886,15 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
         sizeClass: sizeClass,
         team: activeReady.map(s=>{
             const l=getLv(s.xp),st=getStats(s.cid,l,s.nature);
-            return{...s,lv:l,curHp:st.hp,maxHp:st.hp,st,def:false,cooldown:0,
-                focus:STARTING_FOCUS,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN}; // FOCUS SYSTEM (v54.1)
+            // v54.4: HP PERSISTENCE - Use stored HP if available, otherwise full HP
+            // Creatures DON'T auto-heal between battles - must Rest!
+            const persistedHp = (s.curHp !== undefined && s.curHp > 0) ? Math.min(s.curHp, st.hp) : st.hp;
+            const persistedFocus = (s.curFocus !== undefined) ? s.curFocus : STARTING_FOCUS;
+
+            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus}`);
+
+            return{...s,lv:l,curHp:persistedHp,maxHp:st.hp,st,def:false,cooldown:0,
+                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN};
         }),
         isMultiEnemy: allEnemies.length > 1
     };
@@ -11261,8 +11429,8 @@ function doAction(a){
         return;
     }
     
-    const targetEnemy = b.enemies[targetIdx];
-    
+    let targetEnemy = b.enemies[targetIdx];
+
     // CRITICAL: Double-check target is alive
     if(targetEnemy.hp <= 0){
         console.error('Target is dead, skipping turn');
@@ -11272,10 +11440,24 @@ function doAction(a){
         setTimeout(nextTurn, 300);
         return;
     }
-    
+
+    // v54.4: MINION SHIELD MECHANIC - Must kill minions before attacking boss!
+    // If targeting boss and minions are alive, redirect to a random minion
+    if(targetEnemy.isBoss && (a === 'atk' || a === 'spec')){
+        const aliveMinions = b.enemies.filter(e => e.isMinion && e.hp > 0);
+        if(aliveMinions.length > 0){
+            // Redirect attack to random alive minion
+            const redirectedMinion = aliveMinions[Math.floor(Math.random() * aliveMinions.length)];
+            targetIdx = b.enemies.indexOf(redirectedMinion);
+            targetEnemy = redirectedMinion;
+            addLog(`🛡️ ${b.enemy.name} is shielded by minions! Attack redirected to ${redirectedMinion.name}!`, 'def');
+            debugLog('COMBAT', `Minion shield active! Redirected attack from boss to ${redirectedMinion.name}`);
+        }
+    }
+
     b.selectedTarget = undefined;
     b.targetingMode = false;
-    
+
     if(a==='atk'){
         const mv=getMove(m.cid,m.lv,'atk');
         const moveName = mv?.n || 'Attack';
@@ -12335,13 +12517,14 @@ function enemyAction(){
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
-                    // v54.2: AOE damage buffed from 0.5x to 0.75x ATK, reduced def scaling
-                    let baseDmg = Math.max(10, enemy.atk * 0.75 - (t.st.def * 0.1));
-                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.25));
+                    // v54.4: AOE damage - 85% ATK, minimal defense scaling
+                    let baseDmg = Math.max(15, enemy.atk * 0.85 - (t.st.def * 0.05));
+                    baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.3));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
                     const d = dmgResult.damage;
+                    debugLog('DAMAGE', `AOE Hit | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Base: ${baseDmg} | Final: ${d} | Target HP: ${t.curHp}/${t.maxHp}`);
                     t.curHp = Math.max(0, t.curHp - d);
 
                     const idx = b.team.indexOf(t);
@@ -12382,12 +12565,14 @@ function enemyAction(){
                 const element = spec.element || enemy.attackElement || 'energy';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let baseDmg = Math.max(15, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
-                    baseDmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.2));
-                    if(t.def) baseDmg = Math.floor(baseDmg * 0.6);
+                    // v54.4: Special attack - full power, minimal defense reduction
+                    let baseDmg = Math.max(20, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.08));
+                    baseDmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.25));
+                    if(t.def) baseDmg = Math.floor(baseDmg * 0.55);
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
                     const d = dmgResult.damage;
+                    debugLog('DAMAGE', `SPECIAL | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Power: ${spec.power} | Base: ${baseDmg} | Final: ${d}`);
                     t.curHp = Math.max(0, t.curHp - d);
 
                     enemy.specialCooldown = spec.cooldown || 3;
@@ -12436,13 +12621,14 @@ function enemyAction(){
                 const element = enemy.attackElement || 'physical';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    // v54.2: Basic attack damage buffed, reduced def scaling
-                    let baseDmg = Math.max(15, enemy.atk * 1.1 - (t.st.def * 0.15));
-                    baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.3));
+                    // v54.4: Basic attack - full ATK value, minimal defense reduction
+                    let baseDmg = Math.max(20, enemy.atk * 1.2 - (t.st.def * 0.08));
+                    baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.35));
                     if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
                     const d = dmgResult.damage;
+                    debugLog('DAMAGE', `BASIC ATK | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Base: ${baseDmg} | Final: ${d} | HP: ${t.curHp}/${t.maxHp}`);
                     t.curHp = Math.max(0, t.curHp - d);
 
                     // VISUAL EFFECTS - Impact + Slash (enhanced for devastating)
@@ -12522,18 +12708,32 @@ function endBattle(won){
     stopMusic(); // Stop battle music
     window.lastProcessingCheck = null; // Clean up processing watchdog
 
+    // v54.4: HP PERSISTENCE - Save HP/Focus back to student objects
+    // HP carries over between battles - no free healing!
+    if(b && b.team){
+        b.team.forEach(member => {
+            const student = state.students.find(s => s.id === member.id);
+            if(student){
+                // Store current HP (even if 0 - they're knocked out)
+                student.curHp = member.curHp;
+                student.curFocus = member.focus;
+                debugLog('COMBAT', `${student.name} exits battle | HP: ${student.curHp}/${member.maxHp} | Focus: ${student.curFocus}`);
+            }
+        });
+    }
+
     // Calculate total rewards from all enemies
     const totalXP = b.enemies.reduce((sum, e) => sum + (e.xp || 0), 0);
     const totalCoins = b.enemies.reduce((sum, e) => sum + (e.coins || 0), 0);
     const enemyNames = b.enemies.map(e => e.name).join(', ');
     const primaryEnemy = b.enemy;
-    
+
     if(won){
         playSound('victory');
-        
+
         // Track level-ups for sequential display
         const levelUps = [];
-        
+
         // Award XP and coins
         const activeStudents=getActiveStudents();
 
