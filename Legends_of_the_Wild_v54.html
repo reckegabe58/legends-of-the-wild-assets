@@ -1537,6 +1537,27 @@ body{
 .move-btn.special{border-color:rgba(251,191,36,.4);background:linear-gradient(180deg,#5a410f,#332508)}
 .move-btn.special:hover:not(:disabled){box-shadow:0 0 20px rgba(251,191,36,.3),0 6px 20px rgba(0,0,0,.4)}
 
+/* AOE/ST Labels for Special Attacks */
+.aoe-label,.st-label{
+    display:inline-block;
+    font-size:0.65rem;
+    font-weight:700;
+    padding:1px 5px;
+    border-radius:3px;
+    margin-left:4px;
+    vertical-align:middle;
+}
+.aoe-label{
+    background:linear-gradient(135deg,#f97316,#dc2626);
+    color:#fff;
+    box-shadow:0 0 6px rgba(249,115,22,0.4);
+}
+.st-label{
+    background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+    color:#fff;
+    box-shadow:0 0 6px rgba(59,130,246,0.4);
+}
+
 /* Battle Log - Compact */
 .battle-log{
     max-height:180px;
@@ -3898,12 +3919,47 @@ function scaleBoss(baseHP, baseATK, baseDEF, baseSPD){
 
 function scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD){
     const psf = getPartyScaleFactor();
-    
+
+    // BUFFED: Minions are now a real threat, can't be ignored
+    // They scale harder to punish players who focus only on the boss
     return {
-        hp: Math.floor(baseHP * (0.75 + (psf * 0.35))),   // 75% solo → 110% at 4p → 145% at 8p
-        atk: Math.floor(baseATK * (0.85 + (psf * 0.25))), // 85% solo → 110% at 4p → 135% at 8p
-        def: Math.floor(baseDEF * (0.85 + (psf * 0.25))), // Same as ATK
-        spd: Math.floor(baseSPD * (0.9 + (psf * 0.15)))   // 90% solo → 105% at 4p → 120% at 8p
+        hp: Math.floor(baseHP * (1.0 + (psf * 1.2))),     // 100% solo → 160% at 4p → 220% at 8p (TANKIER)
+        atk: Math.floor(baseATK * (1.0 + (psf * 0.8))),   // 100% solo → 140% at 4p → 180% at 8p (DANGEROUS)
+        def: Math.floor(baseDEF * (0.9 + (psf * 0.4))),   // 90% solo → 110% at 4p → 130% at 8p
+        spd: Math.floor(baseSPD * (0.95 + (psf * 0.25)))  // 95% solo → 108% at 4p → 120% at 8p
+    };
+}
+
+// ============================================
+// AOE SPECIAL DETECTION - Determines if special hits all enemies
+// ============================================
+// AOE specials do 65% damage but hit ALL enemies
+// Returns {isAOE: boolean, damageMultiplier: number}
+function getSpecialType(specialName){
+    if(!specialName) return {isAOE: false, mult: 1.0};
+
+    const name = specialName.toLowerCase();
+
+    // AOE KEYWORDS - Attacks that hit everything
+    const aoeKeywords = [
+        'tsunami', 'whirlpool', 'hurricane', 'tempest', 'storm',
+        'blizzard', 'avalanche', 'sandstorm', 'earthquake', 'quake',
+        'eruption', 'meltdown', 'nova', 'burst', 'wave', 'fury',
+        'plague', 'inferno', 'armageddon', 'extinction', 'apocalypse',
+        'realm', 'falls', 'barrage', 'swarm', 'horde', 'flood',
+        'shockwave', 'explosion', 'blast', 'rain', 'shower',
+        'world', 'stampede', 'rampage', 'frenzy'
+    ];
+
+    // Check if name contains any AOE keyword
+    const isAOE = aoeKeywords.some(kw => name.includes(kw));
+
+    // AOE does 65% damage per target (balanced for hitting multiple)
+    // Single target does full damage
+    return {
+        isAOE: isAOE,
+        mult: isAOE ? 0.65 : 1.0,
+        label: isAOE ? 'AOE' : 'ST'
     };
 }
 
@@ -7181,19 +7237,42 @@ function spawnBossMinions(bossId, tier, chapter){
 function checkBossMinionSummon(){
     const b = state.battle;
     if(!b) return;
-    
+
     // Find the boss in enemies array
     const boss = b.enemies.find(e => e.isBoss);
     if(!boss || boss.minionsSpawned) return;
-    
+
     // Check if boss is at or below 40% HP
     const hpPercent = boss.hp / boss.maxHp;
     if(hpPercent > 0.4) return;
-    
+
     // Check if boss has minions to spawn
     const minionPool = boss.minionPool;
-    if(!minionPool || !minionPool.length) return;
-    
+
+    // BOSSES WITHOUT MINIONS: Self-heal instead of summoning
+    if(!minionPool || !minionPool.length){
+        // Mark as used so we don't do it again
+        boss.minionsSpawned = true;
+
+        // Heal boss for 25% of max HP
+        const healAmount = Math.floor(boss.maxHp * 0.25);
+        const actualHeal = Math.min(healAmount, boss.maxHp - boss.hp);
+        boss.hp = Math.min(boss.maxHp, boss.hp + healAmount);
+
+        // Show heal animation and message
+        const bossEl = document.getElementById('enemyImg0');
+        if(bossEl){
+            bossEl.classList.add('anim-heal');
+            setTimeout(() => bossEl.classList.remove('anim-heal'), 550);
+            showFloatingDamage(bossEl, actualHeal, 'heal');
+        }
+
+        playSound('heal');
+        addLog(`💚 ${boss.name} channels dark energy and heals itself!`, 'enemy');
+        renderMain();
+        return;
+    }
+
     // Mark as spawned so we don't do it again
     boss.minionsSpawned = true;
     
@@ -8394,8 +8473,10 @@ function renderBattle(m){
         }
         
         if(hasSpec){
+            const specType = getSpecialType(specName);
+            const typeLabel = specType.isAOE ? '<span class="aoe-label">AOE</span>' : '<span class="st-label">ST</span>';
             html+=`<button class="move-btn special" ${buttonsDisabled||!canAffordSpec?'disabled':''} onclick="doAction('spec')">
-                <span class="move-name">⚡ ${specName}${activeMember.cooldown>0?' ('+activeMember.cooldown+')':''}</span>
+                <span class="move-name">⚡ ${specName} ${typeLabel}${activeMember.cooldown>0?' ('+activeMember.cooldown+')':''}</span>
                 <span class="move-cost${activeMember.focus<specCost?' insufficient':''}">${specCost} FP</span>
             </button>`;
         }
@@ -8673,104 +8754,170 @@ function doAction(a){
                 renderMain();
                 return;
             }
-            
+
             // SPEND FOCUS
             m.focus -= specCost;
-            
+
             const moveName = mv.n || 'Special';
             const element = mv.e || CREATURES[m.cid]?.type?.toLowerCase() || 'fire';
-            
-            // Calculate damage first so we can show it
-            // REBALANCED: Reduced from ATK×1.5 to ATK×1.2, capped bonus at 2.0
-            let baseDmg = m.st.atk * 1.2; // Was 1.5 - too strong
-            let bonusMult = Math.min(mv.p, 2.0); // Was 2.5 - capped lower
-            let defReduction = targetEnemy.def * 0.25; // Was 0.2 - more DEF reduction
-            let d = Math.floor((baseDmg * bonusMult - defReduction) * (.85 + Math.random() * .3));
-            d = Math.max(10, d);
-            
-            // Show action banner
-            showActionBanner(m.name||'Hero', moveName, d, 'special', true);
-            
+
+            // CHECK IF AOE OR SINGLE TARGET
+            const specType = getSpecialType(moveName);
+            const isAOE = specType.isAOE;
+            const aoeMult = specType.mult; // 0.65 for AOE, 1.0 for ST
+
+            m.cooldown = 4;
+
             // CHARGE UP animation
             const arenaCreature = document.getElementById('arenaC'+activeIdx);
             if(arenaCreature){
                 arenaCreature.classList.add('anim-charge');
                 setTimeout(()=>arenaCreature.classList.remove('anim-charge'), 500);
             }
-            
-            m.cooldown = 4;
-            
+
             setTimeout(()=>{
                 // SPECIAL DASH after charge
                 if(arenaCreature){
                     arenaCreature.classList.add('anim-special-dash');
                     setTimeout(()=>arenaCreature.classList.remove('anim-special-dash'),350);
                 }
-                
-                const enemyEl = document.getElementById('enemyImg'+targetIdx);
-                
-                // Fire BIG projectile
-                fireProjectile(arenaCreature, enemyEl, element, ()=>{
+
+                if(isAOE){
+                    // ============================================
+                    // AOE SPECIAL - Hit ALL alive enemies
+                    // ============================================
+                    const aliveEnemies = b.enemies.filter(e => e.hp > 0);
+                    let totalDamage = 0;
+
+                    // Show AOE action banner
+                    const baseDmgPreview = Math.floor(m.st.atk * 1.2 * Math.min(mv.p, 2.0) * aoeMult);
+                    showActionBanner(m.name||'Hero', moveName + ' (AOE)', baseDmgPreview, 'special', true);
+
                     playSound('crit');
-                    
-                    targetEnemy.chipHp = targetEnemy.hp;
-                    targetEnemy.hp = Math.max(0, targetEnemy.hp - d);
-                    
-                    // BIG impact effect for specials
-                    showImpactEffect(enemyEl, true, element);
-                    showElementEffect(enemyEl, element);
-                    
-                    // Strong shake for specials
-                    if(enemyEl){
-                        enemyEl.classList.add('anim-crit-shake','anim-hit-flash');
-                        setTimeout(()=>enemyEl.classList.remove('anim-crit-shake','anim-hit-flash'),350);
+
+                    // Screen shake for AOE
+                    const arena = document.getElementById('battleArena');
+                    if(arena){
+                        arena.classList.add('screen-shake');
+                        setTimeout(()=>arena.classList.remove('screen-shake'),400);
                     }
-                    
-                    // HP BAR UPDATE
-                    const hpBar = document.getElementById('enemyHpBar'+targetIdx);
-                    if(hpBar){
-                        const hpFill = hpBar.querySelector('.enemy-hp-fill');
-                        const chipFill = hpBar.querySelector('.enemy-hp-chip');
-                        if(hpFill){
-                            const newPct = (targetEnemy.hp / targetEnemy.maxHp) * 100;
-                            hpFill.style.width = newPct + '%';
+
+                    // Hit each enemy with delay for visual effect
+                    aliveEnemies.forEach((enemy, i) => {
+                        const enemyIdx = b.enemies.indexOf(enemy);
+                        const enemyEl = document.getElementById('enemyImg'+enemyIdx);
+
+                        setTimeout(() => {
+                            // Calculate damage for this enemy (with AOE reduction)
+                            let baseDmg = m.st.atk * 1.2;
+                            let bonusMult = Math.min(mv.p, 2.0);
+                            let defReduction = enemy.def * 0.25;
+                            let d = Math.floor((baseDmg * bonusMult * aoeMult - defReduction) * (.85 + Math.random() * .3));
+                            d = Math.max(10, d);
+                            totalDamage += d;
+
+                            // Apply damage
+                            enemy.chipHp = enemy.hp;
+                            enemy.hp = Math.max(0, enemy.hp - d);
+
+                            // Visual effects
+                            if(enemyEl){
+                                showImpactEffect(enemyEl, true, element);
+                                showElementEffect(enemyEl, element);
+                                enemyEl.classList.add('anim-crit-shake','anim-hit-flash');
+                                setTimeout(()=>enemyEl.classList.remove('anim-crit-shake','anim-hit-flash'),350);
+                                showFloatingDamage(enemyEl, d, 'crit');
+                            }
+
+                            // HP BAR UPDATE
+                            const hpBar = document.getElementById('enemyHpBar'+enemyIdx);
+                            if(hpBar){
+                                const hpFill = hpBar.querySelector('.enemy-hp-fill');
+                                const chipFill = hpBar.querySelector('.enemy-hp-chip');
+                                if(hpFill) hpFill.style.width = (enemy.hp / enemy.maxHp) * 100 + '%';
+                                if(chipFill) chipFill.style.width = (enemy.chipHp / enemy.maxHp) * 100 + '%';
+                            }
+                        }, i * 150); // Stagger hits for visual effect
+                    });
+
+                    // After all hits complete
+                    setTimeout(() => {
+                        addLog(`⚡ ${m.name||'Hero'} used ${moveName}! Hit ${aliveEnemies.length} enemies for ${totalDamage} total damage!`, 'spec');
+
+                        processing = false;
+                        checkBossMinionSummon();
+
+                        if(!processing){
+                            turnIdx++;
+                            renderMain();
+                            setTimeout(nextTurn, 500);
                         }
-                        if(chipFill){
-                            const chipPct = (targetEnemy.chipHp / targetEnemy.maxHp) * 100;
-                            chipFill.style.width = chipPct + '%';
+                    }, aliveEnemies.length * 150 + 200);
+
+                }else{
+                    // ============================================
+                    // SINGLE TARGET SPECIAL - Original behavior
+                    // ============================================
+                    // Calculate damage
+                    let baseDmg = m.st.atk * 1.2;
+                    let bonusMult = Math.min(mv.p, 2.0);
+                    let defReduction = targetEnemy.def * 0.25;
+                    let d = Math.floor((baseDmg * bonusMult - defReduction) * (.85 + Math.random() * .3));
+                    d = Math.max(10, d);
+
+                    // Show action banner
+                    showActionBanner(m.name||'Hero', moveName, d, 'special', true);
+
+                    const enemyEl = document.getElementById('enemyImg'+targetIdx);
+
+                    // Fire BIG projectile
+                    fireProjectile(arenaCreature, enemyEl, element, ()=>{
+                        playSound('crit');
+
+                        targetEnemy.chipHp = targetEnemy.hp;
+                        targetEnemy.hp = Math.max(0, targetEnemy.hp - d);
+
+                        showImpactEffect(enemyEl, true, element);
+                        showElementEffect(enemyEl, element);
+
+                        if(enemyEl){
+                            enemyEl.classList.add('anim-crit-shake','anim-hit-flash');
+                            setTimeout(()=>enemyEl.classList.remove('anim-crit-shake','anim-hit-flash'),350);
                         }
-                        hpBar.classList.add('anim-damage');
-                        setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
-                    }
-                    
-                    // Screen shake for big specials
-                    if(d > 80){
-                        const arena = document.getElementById('battleArena');
-                        if(arena){
-                            arena.classList.add('screen-shake');
-                            setTimeout(()=>arena.classList.remove('screen-shake'),250);
+
+                        // HP BAR UPDATE
+                        const hpBar = document.getElementById('enemyHpBar'+targetIdx);
+                        if(hpBar){
+                            const hpFill = hpBar.querySelector('.enemy-hp-fill');
+                            const chipFill = hpBar.querySelector('.enemy-hp-chip');
+                            if(hpFill) hpFill.style.width = (targetEnemy.hp / targetEnemy.maxHp) * 100 + '%';
+                            if(chipFill) chipFill.style.width = (targetEnemy.chipHp / targetEnemy.maxHp) * 100 + '%';
+                            hpBar.classList.add('anim-damage');
+                            setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
                         }
-                    }
-                    
-                    showFloatingDamage(enemyEl, d, 'crit');
-                    
-                    // Add to battle log
-                    addLog(`⚡ ${m.name||'Hero'} used ${moveName}! ${d} damage!`, 'spec');
-                    
-                    // CRITICAL: Clear processing flag BEFORE checking for summon
-                    processing = false;
-                    
-                    // Check if boss should summon minions (at 40% HP)
-                    // This may set processing = true if summon happens
-                    checkBossMinionSummon();
-                    
-                    // CRITICAL: Only advance turn if NOT processing (summon animation started)
-                    if(!processing){
-                        turnIdx++;
-                        renderMain();
-                        setTimeout(nextTurn, 500);
-                    }
-                });
+
+                        // Screen shake for big specials
+                        if(d > 80){
+                            const arena = document.getElementById('battleArena');
+                            if(arena){
+                                arena.classList.add('screen-shake');
+                                setTimeout(()=>arena.classList.remove('screen-shake'),250);
+                            }
+                        }
+
+                        showFloatingDamage(enemyEl, d, 'crit');
+                        addLog(`⚡ ${m.name||'Hero'} used ${moveName}! ${d} damage!`, 'spec');
+
+                        processing = false;
+                        checkBossMinionSummon();
+
+                        if(!processing){
+                            turnIdx++;
+                            renderMain();
+                            setTimeout(nextTurn, 500);
+                        }
+                    });
+                }
             }, 500); // After charge animation
         }else{
             doAction('atk');
@@ -9328,19 +9475,24 @@ function enemyAction(){
     // 3. AOE if boss with AOE ability AND multiple targets AND random
     // 4. Basic attack
     
-    // Check if should heal
+    // Check if should heal (requires focus like specials)
     if(enemy.canHeal && enemy.healAttack){
-        // Heal self if below 40%
-        if(hpPercent < 0.4 && Math.random() < 0.7){
-            actionType = 'heal';
-            healTarget = enemy;
-        }
-        // Heal wounded ally if any below 30%
-        else if(woundedAllies.length > 0){
-            const criticalAlly = woundedAllies.find(e => e.hp / e.maxHp < 0.3);
-            if(criticalAlly && Math.random() < 0.5){
+        const healCost = enemy.healAttack.focusCost || 30; // Heals cost 30 focus by default
+        const hasHealFocus = !enemy.focus || enemy.focus >= healCost;
+
+        if(hasHealFocus){
+            // Heal self if below 40%
+            if(hpPercent < 0.4 && Math.random() < 0.6){
                 actionType = 'heal';
-                healTarget = criticalAlly;
+                healTarget = enemy;
+            }
+            // Heal wounded ally if any below 30%
+            else if(woundedAllies.length > 0){
+                const criticalAlly = woundedAllies.find(e => e.hp / e.maxHp < 0.3);
+                if(criticalAlly && Math.random() < 0.4){
+                    actionType = 'heal';
+                    healTarget = criticalAlly;
+                }
             }
         }
     }
@@ -9558,14 +9710,20 @@ function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
     const heal = enemy.healAttack;
     const healAmount = Math.floor(target.maxHp * heal.power);
     const actualHeal = Math.min(healAmount, target.maxHp - target.hp);
-    
+
+    // DEDUCT FOCUS COST (prevents heal spam)
+    const healCost = heal.focusCost || 30;
+    if(enemy.focus !== undefined){
+        enemy.focus = Math.max(0, enemy.focus - healCost);
+    }
+
     // Animation
     if(enemyEl){
         enemyEl.classList.add('anim-heal');
         setTimeout(()=>enemyEl.classList.remove('anim-heal'),550);
     }
     playSound('heal');
-    
+
     target.hp = Math.min(target.maxHp, target.hp + healAmount);
     
     // Show floating heal number on healed target
