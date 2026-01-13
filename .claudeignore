@@ -1,0 +1,32 @@
+# Ignore image asset directories (these are large and not needed for code editing)
+Player_Creatures/
+Bosses/
+Minions/
+Wild_Encounters/
+Backgrounds/
+Encounters/
+Environments/
+Quest_Creatures/
+UI_Elements/
+TheCreator/
+
+# Common ignores
+.git/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.mp3
+*.wav
+*.ogg
+*.mp4
+*.webm
+
+# Build artifacts
+node_modules/
+dist/
+build/
+*.log
