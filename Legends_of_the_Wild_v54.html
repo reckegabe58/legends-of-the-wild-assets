@@ -525,11 +525,11 @@ body{
     transform:translateX(-50%);
     display:flex;
     align-items:center;
-    gap:6px;
+    gap:8px; /* v54.1: Increased gap for name readability */
     background:rgba(0,0,0,.9);
     border:1px solid rgba(255,255,255,.2);
     border-radius:25px;
-    padding:6px 14px;
+    padding:6px 14px 20px 14px; /* v54.1: Added bottom padding for names */
     z-index:999;
     box-shadow:0 4px 20px rgba(0,0,0,.8);
 }
@@ -538,7 +538,7 @@ body{
     height:40px;
     border-radius:50%;
     border:2px solid rgba(255,255,255,.15);
-    overflow:hidden;
+    overflow:visible; /* v54.1: Changed to show names below */
     background:rgba(0,0,0,.4);
     position:relative;
     transition:all .25s ease;
@@ -560,6 +560,7 @@ body{
     width:100%;
     height:100%;
     object-fit:cover;
+    border-radius:50%; /* v54.1: Clip image to circle since parent has overflow:visible */
 }
 .turn-order-portrait.ko{
     opacity:0.25;
@@ -3916,36 +3917,40 @@ function getPartyScaleFactor(){
 
 function scaleWildEnemy(baseHP, baseATK, baseDEF, baseSPD){
     const psf = getPartyScaleFactor();
-    
+
+    // v54.1: ENHANCED SCALING - Wild enemies are now a real threat
+    // Larger parties face significantly tougher wild encounters
     return {
-        hp: Math.floor(baseHP * (0.7 + (psf * 0.5))),    // 70% solo → 100% at 4p → 150% at 8p
-        atk: Math.floor(baseATK * (0.85 + (psf * 0.25))), // 85% solo → 110% at 4p → 135% at 8p
-        def: Math.floor(baseDEF * (0.85 + (psf * 0.25))), // Same as ATK
-        spd: Math.floor(baseSPD * (0.9 + (psf * 0.15)))   // 90% solo → 105% at 4p → 120% at 8p
+        hp: Math.floor(baseHP * (0.8 + (psf * 0.6))),     // 80% solo → 140% at 4p → 200% at 8p (BUFFED)
+        atk: Math.floor(baseATK * (0.85 + (psf * 0.425))), // 85% solo → 128% at 4p → 170% at 8p (BUFFED)
+        def: Math.floor(baseDEF * (0.85 + (psf * 0.325))), // 85% solo → 118% at 4p → 150% at 8p (BUFFED)
+        spd: Math.floor(baseSPD * (0.9 + (psf * 0.25)))    // 90% solo → 115% at 4p → 140% at 8p (BUFFED)
     };
 }
 
 function scaleBoss(baseHP, baseATK, baseDEF, baseSPD){
     const psf = getPartyScaleFactor();
-    
+
+    // v54.1: ENHANCED BOSS SCALING - Bosses are epic encounters
+    // Large parties need coordinated effort to take down bosses
     return {
-        hp: Math.floor(baseHP * (0.8 + (psf * 0.4))),     // 80% solo → 120% at 4p → 200% at 8p
-        atk: Math.floor(baseATK * (0.9 + (psf * 0.2))),   // 90% solo → 110% at 4p → 130% at 8p
-        def: Math.floor(baseDEF * (0.9 + (psf * 0.2))),   // Same as ATK
-        spd: Math.floor(baseSPD * (0.95 + (psf * 0.1)))   // 95% solo → 105% at 4p → 115% at 8p
+        hp: Math.floor(baseHP * (0.8 + (psf * 0.6))),     // 80% solo → 140% at 4p → 200% at 8p (TANKIER)
+        atk: Math.floor(baseATK * (0.9 + (psf * 0.3))),   // 90% solo → 120% at 4p → 150% at 8p (BUFFED)
+        def: Math.floor(baseDEF * (0.9 + (psf * 0.25))),  // 90% solo → 115% at 4p → 140% at 8p (BUFFED)
+        spd: Math.floor(baseSPD * (0.95 + (psf * 0.15)))  // 95% solo → 110% at 4p → 125% at 8p (FASTER)
     };
 }
 
 function scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD){
     const psf = getPartyScaleFactor();
 
-    // BUFFED: Minions are now a real threat, can't be ignored
-    // They scale harder to punish players who focus only on the boss
+    // v54.1: HEAVILY BUFFED - Minions are deadly threats that MUST be dealt with
+    // Ignoring minions = party wipe. They scale HARD to punish large parties
     return {
-        hp: Math.floor(baseHP * (1.0 + (psf * 1.2))),     // 100% solo → 160% at 4p → 220% at 8p (TANKIER)
-        atk: Math.floor(baseATK * (1.0 + (psf * 0.8))),   // 100% solo → 140% at 4p → 180% at 8p (DANGEROUS)
-        def: Math.floor(baseDEF * (0.9 + (psf * 0.4))),   // 90% solo → 110% at 4p → 130% at 8p
-        spd: Math.floor(baseSPD * (0.95 + (psf * 0.25)))  // 95% solo → 108% at 4p → 120% at 8p
+        hp: Math.floor(baseHP * (1.0 + (psf * 1.4))),     // 100% solo → 175% at 4p → 280% at 8p (VERY TANKY)
+        atk: Math.floor(baseATK * (1.0 + (psf * 1.0))),   // 100% solo → 150% at 4p → 220% at 8p (VERY DANGEROUS)
+        def: Math.floor(baseDEF * (0.9 + (psf * 0.5))),   // 90% solo → 115% at 4p → 150% at 8p (BUFFED)
+        spd: Math.floor(baseSPD * (0.95 + (psf * 0.35)))  // 95% solo → 113% at 4p → 140% at 8p (FASTER)
     };
 }
 
