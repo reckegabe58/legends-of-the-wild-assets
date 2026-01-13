@@ -3914,56 +3914,188 @@ function updateMusic(){
 }
 
 // ============================================
-// PARTY SCALING SYSTEM - Adaptive Difficulty
+// PARTY SCALING SYSTEM v54.3 - FULLY ADAPTIVE
 // ============================================
-// Scales enemy stats based on party size for balanced challenge
-// Solo players get easier enemies, full classrooms get tougher encounters
-function getPartyScaleFactor(){
-    const partySize = getActiveStudents().filter(s=>s.cid).length;
-    if(partySize <= 0) return 1.0; // Safety fallback
-    
-    // Base formula: PSF = partySize / 4
-    // 1 student = 0.25, 4 students = 1.0, 8 students = 2.0, 11 students = 2.75
-    return partySize / 4;
+// Designed for classroom play with 2-10 students
+// Every party size gets a unique, balanced experience
+// The game REACTS to current attendance dynamically
+
+// Get current party size (students with assigned creatures)
+function getPartySize(){
+    return getActiveStudents().filter(s=>s.cid).length || 1;
 }
 
+// Party Size Tiers - defines the game experience
+// TINY (1-2): Easy mode, learning the game
+// SMALL (3-4): Standard challenge
+// MEDIUM (5-6): Increased difficulty, teamwork matters
+// LARGE (7-8): Hard mode, coordination required
+// FULL CLASS (9-10): Epic mode, boss one-shots possible
+function getPartyTier(){
+    const size = getPartySize();
+    if(size <= 2) return 'tiny';
+    if(size <= 4) return 'small';
+    if(size <= 6) return 'medium';
+    if(size <= 8) return 'large';
+    return 'full';
+}
+
+// Scaling multipliers by party size - LOOKUP TABLE
+// Each party size has carefully tuned multipliers
+const PARTY_SCALING = {
+    // [HP, ATK, DEF, SPD] multipliers for each party size
+    wild: {
+        1:  [0.6,  0.5,  0.5,  0.8],   // Solo: Very easy
+        2:  [0.8,  0.7,  0.6,  0.9],   // Duo: Easy
+        3:  [1.0,  0.9,  0.8,  1.0],   // Trio: Moderate
+        4:  [1.2,  1.1,  1.0,  1.05],  // Squad: Standard
+        5:  [1.5,  1.3,  1.1,  1.1],   // Team: Challenging
+        6:  [1.8,  1.5,  1.2,  1.15],  // Group: Hard
+        7:  [2.1,  1.7,  1.3,  1.2],   // Party: Very Hard
+        8:  [2.4,  1.9,  1.4,  1.25],  // Raid: Epic
+        9:  [2.7,  2.1,  1.5,  1.3],   // Full Class: Brutal
+        10: [3.0,  2.3,  1.6,  1.35]   // Max: Legendary
+    },
+    boss: {
+        1:  [0.5,  0.4,  0.4,  0.85],  // Solo: Manageable
+        2:  [0.7,  0.6,  0.5,  0.9],   // Duo: Challenging but fair
+        3:  [1.0,  0.85, 0.7,  0.95],  // Trio: Standard boss fight
+        4:  [1.3,  1.1,  0.9,  1.0],   // Squad: Tough fight
+        5:  [1.7,  1.4,  1.0,  1.05],  // Team: Hard boss
+        6:  [2.1,  1.7,  1.1,  1.1],   // Group: Very Hard
+        7:  [2.5,  2.0,  1.2,  1.15],  // Party: Epic boss
+        8:  [3.0,  2.3,  1.3,  1.2],   // Raid: Raid boss
+        9:  [3.5,  2.6,  1.4,  1.25],  // Full Class: World boss
+        10: [4.0,  3.0,  1.5,  1.3]    // Max: Ultimate challenge
+    },
+    minion: {
+        1:  [0.4,  0.3,  0.4,  0.9],   // Solo: Weak adds
+        2:  [0.6,  0.5,  0.5,  0.95],  // Duo: Minor threat
+        3:  [0.8,  0.7,  0.6,  1.0],   // Trio: Nuisance
+        4:  [1.0,  0.9,  0.7,  1.0],   // Squad: Must handle
+        5:  [1.3,  1.1,  0.8,  1.05],  // Team: Real threat
+        6:  [1.6,  1.3,  0.9,  1.1],   // Group: Dangerous
+        7:  [1.9,  1.5,  1.0,  1.15],  // Party: Deadly
+        8:  [2.2,  1.8,  1.1,  1.2],   // Raid: Very dangerous
+        9:  [2.5,  2.0,  1.2,  1.25],  // Full Class: Lethal
+        10: [2.8,  2.2,  1.3,  1.3]    // Max: Must prioritize
+    }
+};
+
+// Boss one-shot chance - ONLY for large parties (7+)
+// Represents the danger of coordinating a large group
+function getBossOneShootChance(){
+    const size = getPartySize();
+    if(size < 7) return 0;      // No one-shots for small parties
+    if(size === 7) return 0.08; // 8% chance
+    if(size === 8) return 0.12; // 12% chance
+    if(size === 9) return 0.15; // 15% chance
+    return 0.18;                // 18% chance for 10
+}
+
+// Boss devastating blow multiplier - scales with party size
+function getBossDevastatingMult(){
+    const size = getPartySize();
+    if(size <= 4) return 1.5;   // Small party: 1.5x crit
+    if(size <= 6) return 1.7;   // Medium party: 1.7x crit
+    if(size <= 8) return 1.9;   // Large party: 1.9x crit
+    return 2.1;                 // Full class: 2.1x crit (can one-shot)
+}
+
+// Enemy count in wild encounters - based on party size
+function getWildEnemyCount(chapter){
+    const size = getPartySize();
+    let base = 1;
+
+    // Base enemies by chapter
+    if(chapter >= 5) base = 2;
+    else if(chapter >= 3) base = 1;
+
+    // Add enemies based on party size
+    let bonus = 0;
+    if(size >= 3) bonus = 1;
+    if(size >= 5) bonus = 2;
+    if(size >= 7) bonus = 3;
+    if(size >= 9) bonus = 4;
+
+    // Random variance
+    const variance = Math.random() < 0.3 ? 1 : 0;
+
+    return Math.min(6, base + bonus + variance); // Cap at 6 enemies
+}
+
+// Boss minion count - scales with party size
+function getBossMinionCount(baseMinionCount){
+    const size = getPartySize();
+    if(size <= 2) return Math.max(1, baseMinionCount - 1);
+    if(size <= 4) return baseMinionCount;
+    if(size <= 6) return baseMinionCount + 1;
+    if(size <= 8) return baseMinionCount + 2;
+    return baseMinionCount + 3; // 9-10 players: lots of minions
+}
+
+// Scale wild enemy stats based on party size
 function scaleWildEnemy(baseHP, baseATK, baseDEF, baseSPD){
-    const psf = getPartyScaleFactor();
+    const size = Math.min(10, Math.max(1, getPartySize()));
+    const scale = PARTY_SCALING.wild[size];
 
-    // v54.2: SIGNIFICANTLY BUFFED - Wild enemies are dangerous threats
-    // ~1.4x stronger than v54.1 across the board
     return {
-        hp: Math.floor(baseHP * (1.0 + (psf * 0.75))),     // 100% solo → 175% at 4p → 250% at 8p
-        atk: Math.floor(baseATK * (1.1 + (psf * 0.55))),   // 110% solo → 165% at 4p → 220% at 8p
-        def: Math.floor(baseDEF * (1.0 + (psf * 0.4))),    // 100% solo → 140% at 4p → 180% at 8p
-        spd: Math.floor(baseSPD * (1.0 + (psf * 0.3)))     // 100% solo → 130% at 4p → 160% at 8p
+        hp: Math.floor(baseHP * scale[0]),
+        atk: Math.floor(baseATK * scale[1]),
+        def: Math.floor(baseDEF * scale[2]),
+        spd: Math.floor(baseSPD * scale[3])
     };
 }
 
+// Scale boss stats based on party size
 function scaleBoss(baseHP, baseATK, baseDEF, baseSPD){
-    const psf = getPartyScaleFactor();
+    const size = Math.min(10, Math.max(1, getPartySize()));
+    const scale = PARTY_SCALING.boss[size];
 
-    // v54.2: BOSSES ARE NOW TERRIFYING - ~1.5x stronger than v54.1
-    // Large parties face truly epic boss battles
     return {
-        hp: Math.floor(baseHP * (1.0 + (psf * 0.8))),     // 100% solo → 180% at 4p → 260% at 8p
-        atk: Math.floor(baseATK * (1.2 + (psf * 0.5))),   // 120% solo → 170% at 4p → 220% at 8p (MAJOR BUFF)
-        def: Math.floor(baseDEF * (1.0 + (psf * 0.35))),  // 100% solo → 135% at 4p → 170% at 8p
-        spd: Math.floor(baseSPD * (1.0 + (psf * 0.2)))    // 100% solo → 120% at 4p → 140% at 8p
+        hp: Math.floor(baseHP * scale[0]),
+        atk: Math.floor(baseATK * scale[1]),
+        def: Math.floor(baseDEF * scale[2]),
+        spd: Math.floor(baseSPD * scale[3])
     };
 }
 
+// Scale boss minion stats based on party size
 function scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD){
-    const psf = getPartyScaleFactor();
+    const size = Math.min(10, Math.max(1, getPartySize()));
+    const scale = PARTY_SCALING.minion[size];
 
-    // v54.1: HEAVILY BUFFED - Minions are deadly threats that MUST be dealt with
-    // Ignoring minions = party wipe. They scale HARD to punish large parties
     return {
-        hp: Math.floor(baseHP * (1.0 + (psf * 1.4))),     // 100% solo → 175% at 4p → 280% at 8p (VERY TANKY)
-        atk: Math.floor(baseATK * (1.0 + (psf * 1.0))),   // 100% solo → 150% at 4p → 220% at 8p (VERY DANGEROUS)
-        def: Math.floor(baseDEF * (0.9 + (psf * 0.5))),   // 90% solo → 115% at 4p → 150% at 8p (BUFFED)
-        spd: Math.floor(baseSPD * (0.95 + (psf * 0.35)))  // 95% solo → 113% at 4p → 140% at 8p (FASTER)
+        hp: Math.floor(baseHP * scale[0]),
+        atk: Math.floor(baseATK * scale[1]),
+        def: Math.floor(baseDEF * scale[2]),
+        spd: Math.floor(baseSPD * scale[3])
     };
+}
+
+// XP scaling - less XP per person in large parties (shared)
+function getXPMultiplier(){
+    const size = getPartySize();
+    if(size <= 2) return 1.2;   // Bonus for small party
+    if(size <= 4) return 1.0;   // Standard
+    if(size <= 6) return 0.85;  // Slight reduction
+    if(size <= 8) return 0.7;   // Shared among many
+    return 0.6;                 // Large party shares XP
+}
+
+// Coin scaling - more coins total for bigger parties, but split
+function getCoinMultiplier(){
+    const size = getPartySize();
+    if(size <= 2) return 1.0;
+    if(size <= 4) return 1.2;
+    if(size <= 6) return 1.4;
+    if(size <= 8) return 1.6;
+    return 1.8;
+}
+
+// Legacy function for compatibility
+function getPartyScaleFactor(){
+    return getPartySize() / 4;
 }
 
 // ============================================
@@ -4010,29 +4142,51 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
 }
 
 // ============================================
-// ENEMY DAMAGE ADJUSTMENT (v54.1 - Phase 4)
+// ENEMY DAMAGE ADJUSTMENT (v54.3 - Party Size Aware)
 // ============================================
-// CRITICAL RULE: Bosses CAN one-shot for dramatic tension
-// CRITICAL RULE: Wild enemies can NEVER one-shot
-// Returns: {damage: number, isDevastating: boolean}
+// Bosses: Devastating blows scale with party size
+// Large parties (7+): One-shot mechanic enabled
+// Wild enemies: Damage capped based on party size
+// Returns: {damage: number, isDevastating: boolean, isOneShot: boolean}
 function adjustEnemyDamage(baseDamage, enemy, target){
     let finalDamage = baseDamage;
     let isDevastating = false;
+    let isOneShot = false;
+    const partySize = getPartySize();
 
     if(enemy.isBoss){
-        // BOSS DEVASTATING BLOW: 12% chance for 1.8x damage (can one-shot)
-        if(Math.random() < 0.12){
-            finalDamage = Math.floor(baseDamage * 1.8);
+        // ONE-SHOT MECHANIC: Only for large parties (7+)
+        // Creates dramatic tension and punishes poor coordination
+        const oneShotChance = getBossOneShootChance();
+        if(oneShotChance > 0 && Math.random() < oneShotChance){
+            // One-shot: Deal 999% of target's current HP
+            finalDamage = Math.floor(target.curHp * 10);
+            isDevastating = true;
+            isOneShot = true;
+            addLog(`💀 FATAL BLOW! ${enemy.name} strikes with lethal force!`, 'crit');
+        }
+        // DEVASTATING BLOW: Chance and multiplier scale with party size
+        else if(Math.random() < 0.12){
+            const devMult = getBossDevastatingMult();
+            finalDamage = Math.floor(baseDamage * devMult);
             isDevastating = true;
         }
         // No damage cap for bosses - they're meant to be deadly
     } else {
-        // WILD ENEMIES: Never deal more than 75% of target's max HP
-        const maxDamage = Math.floor(target.maxHp * 0.75);
+        // WILD ENEMIES: Damage cap scales with party size
+        // Small parties: 60% cap (forgiving)
+        // Large parties: 85% cap (dangerous)
+        let capPercent = 0.6;
+        if(partySize >= 3) capPercent = 0.65;
+        if(partySize >= 5) capPercent = 0.70;
+        if(partySize >= 7) capPercent = 0.75;
+        if(partySize >= 9) capPercent = 0.85;
+
+        const maxDamage = Math.floor(target.maxHp * capPercent);
         finalDamage = Math.min(baseDamage, maxDamage);
     }
 
-    return { damage: finalDamage, isDevastating };
+    return { damage: finalDamage, isDevastating, isOneShot };
 }
 
 // ============================================
@@ -7475,19 +7629,19 @@ function checkBossMinionSummon(){
         return;
     }
 
-    // Generate minions - MORE minions for bigger parties
-    // v54.1: Wave 2 spawns fewer but stronger minions
+    // v54.3: Party-aware minion spawning
     const avgLv = getAvgLevel();
-    const partySize = b.team.filter(t => t.curHp > 0).length;
-    
-    // v54.1: Wave-based minion count and strength
-    // Wave 1: Normal count, normal strength
-    // Wave 2: Fewer minions but 30% stronger (elite reinforcements)
+    const partySize = getPartySize();
+    const partyTier = getPartyTier();
+
+    // Wave 1: Full minion count based on party size
+    // Wave 2: Fewer but elite (30% stronger)
     const isWave2 = waveNumber === 2;
     const baseMinions = isWave2 ? 1 : 2;
-    const bonusMinions = Math.floor(Math.max(0, partySize - 2) / 2);
-    const numMinions = Math.min(baseMinions + bonusMinions, isWave2 ? 3 : 4);
-    const wave2Multiplier = isWave2 ? 1.3 : 1.0; // 30% stronger in wave 2
+    const numMinions = getBossMinionCount(baseMinions);
+    const wave2Multiplier = isWave2 ? 1.3 : 1.0;
+
+    console.log(`Boss Summon: Wave ${waveNumber}, Party ${partySize} (${partyTier}), spawning ${numMinions} minions`);
 
     const newMinions = [];
     for(let i = 0; i < numMinions; i++){
@@ -7700,29 +7854,12 @@ function startWildEncounter(avgLv,chapter){
     const regionCreatures = WILD_ENCOUNTERS[region] || WILD_ENCOUNTERS.forest;
     if(!regionCreatures.length){treasureEvent(chapter,avgLv);return}
     
-    // Get party info for balanced enemy count
-    const partySize = getActiveStudents().filter(s=>s.cid).length;
-    
-    // BALANCED enemy count formula
-    // Base enemies by chapter, modified by party size
-    let baseEnemies = 1;
-    if(chapter >= 2) baseEnemies = 1;
-    if(chapter >= 3) baseEnemies = 2;
-    if(chapter >= 4) baseEnemies = 2;
-    if(chapter >= 5) baseEnemies = 3;
-    
-    // Party size bonus: +1 enemy per 2 extra players
-    const partySizeBonus = Math.floor((partySize - 1) / 2);
-    
-    // Level bonus: every 15 levels = potential +1 enemy
-    const levelBonus = Math.floor(avgLv / 20);
-    
-    // Calculate max enemies (HARD CAP at 5)
-    const maxEnemies = Math.min(5, baseEnemies + partySizeBonus + levelBonus);
-    const minEnemies = Math.max(1, maxEnemies - 2);
-    
-    // Randomize within range
-    let numEnemies = minEnemies + Math.floor(Math.random() * (maxEnemies - minEnemies + 1));
+    // v54.3: Party-aware enemy count using new scaling system
+    const partySize = getPartySize();
+    const numEnemies = getWildEnemyCount(chapter);
+
+    // Log party tier for debugging
+    console.log(`Wild Encounter: Party size ${partySize} (${getPartyTier()}), ${numEnemies} enemies`);
     
     // ============================================
     // BUILD CREATURE POOL - BALANCED MIX
