@@ -3006,6 +3006,861 @@ body{
     box-shadow:none;
 }
 
+/* ============================================
+   BATTLE ARENA STYLES (v54.3)
+   ============================================ */
+
+/* Arena Screen - Mode Selection */
+.arena-screen{padding:20px;max-width:1200px;margin:0 auto}
+.arena-header{text-align:center;margin-bottom:30px}
+.arena-title{
+    font-family:'Uncial Antiqua',cursive;
+    font-size:2.5rem;
+    color:var(--gold);
+    text-shadow:0 0 30px rgba(232,184,74,.5),0 4px 15px rgba(0,0,0,.5);
+    margin-bottom:10px;
+    animation:arenaTitlePulse 2s ease-in-out infinite;
+}
+@keyframes arenaTitlePulse{
+    0%,100%{text-shadow:0 0 30px rgba(232,184,74,.5),0 4px 15px rgba(0,0,0,.5)}
+    50%{text-shadow:0 0 50px rgba(232,184,74,.8),0 4px 20px rgba(0,0,0,.5)}
+}
+.arena-subtitle{color:var(--txt-dim);font-size:1.1rem;font-style:italic}
+.arena-section-title{
+    font-family:'Cinzel',serif;
+    font-size:1.4rem;
+    color:var(--gold-lt);
+    margin-bottom:20px;
+    text-align:center;
+}
+.arena-notice{
+    text-align:center;
+    padding:40px;
+    background:rgba(255,100,100,.1);
+    border:2px solid rgba(255,100,100,.3);
+    border-radius:15px;
+    margin:20px 0;
+}
+.arena-notice h3{color:var(--red);margin-bottom:10px}
+
+/* Mode Selection Grid */
+.arena-mode-select{margin-bottom:40px}
+.arena-modes-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    max-width:950px;
+    margin:0 auto;
+}
+.arena-mode-card{
+    background:linear-gradient(135deg,rgba(50,40,70,.9),rgba(30,25,45,.9));
+    border:2px solid rgba(232,184,74,.3);
+    border-radius:15px;
+    padding:25px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:all .3s ease;
+    position:relative;
+    overflow:hidden;
+}
+.arena-mode-card::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 50% 0%,rgba(232,184,74,.15),transparent 60%);
+    opacity:0;
+    transition:opacity .3s;
+}
+.arena-mode-card:hover{
+    border-color:var(--gold);
+    transform:translateY(-5px);
+    box-shadow:0 10px 30px rgba(232,184,74,.3);
+}
+.arena-mode-card:hover::before{opacity:1}
+.arena-mode-card.disabled{
+    opacity:.5;
+    cursor:not-allowed;
+    filter:grayscale(.5);
+}
+.arena-mode-card.disabled:hover{
+    transform:none;
+    box-shadow:none;
+    border-color:rgba(232,184,74,.3);
+}
+.mode-icon{font-size:3rem;margin-bottom:10px}
+.mode-name{
+    font-family:'Cinzel',serif;
+    font-size:1.3rem;
+    color:var(--gold-lt);
+    margin-bottom:8px;
+}
+.mode-desc{color:var(--txt-dim);font-size:.9rem}
+.mode-disabled-reason{
+    display:block;
+    margin-top:10px;
+    color:var(--red);
+    font-size:.8rem;
+}
+
+/* Team Selection */
+.arena-team-select{margin-bottom:30px}
+.team-select-info{text-align:center;color:var(--txt-dim);margin-bottom:20px}
+.team-slots{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-bottom:30px;
+    flex-wrap:wrap;
+}
+.team-slot{
+    width:120px;
+    height:150px;
+    background:rgba(40,35,60,.8);
+    border:2px dashed rgba(232,184,74,.4);
+    border-radius:15px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    transition:all .3s;
+    cursor:pointer;
+    position:relative;
+}
+.team-slot.filled{
+    border-style:solid;
+    border-color:var(--gold);
+    background:linear-gradient(135deg,rgba(50,45,75,.9),rgba(35,30,55,.9));
+}
+.team-slot.filled:hover{border-color:var(--red)}
+.team-slot.filled:hover .slot-remove{opacity:1}
+.slot-img{width:70px;height:70px;object-fit:contain}
+.slot-name{font-size:.85rem;color:var(--txt);margin-top:5px;text-align:center}
+.slot-level{font-size:.75rem;color:var(--gold)}
+.slot-remove{
+    position:absolute;
+    top:5px;
+    right:5px;
+    color:var(--red);
+    font-size:1.2rem;
+    opacity:0;
+    transition:opacity .2s;
+}
+.slot-placeholder{
+    font-size:3rem;
+    color:rgba(232,184,74,.4);
+}
+.team-slot.empty{cursor:default}
+
+/* Available Fighters */
+.available-fighters{margin-bottom:20px}
+.available-fighters h3{
+    text-align:center;
+    color:var(--txt-dim);
+    margin-bottom:15px;
+    font-size:1rem;
+}
+.fighters-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:12px;
+    max-height:300px;
+    overflow-y:auto;
+    padding:10px;
+}
+.fighter-card{
+    background:linear-gradient(135deg,rgba(45,40,65,.9),rgba(30,25,45,.9));
+    border:2px solid rgba(255,255,255,.1);
+    border-radius:12px;
+    padding:12px;
+    cursor:pointer;
+    transition:all .2s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+.fighter-card:hover{
+    border-color:var(--gold);
+    transform:scale(1.03);
+    box-shadow:0 5px 20px rgba(232,184,74,.3);
+}
+.fighter-img-wrap{width:60px;height:60px;margin-bottom:8px}
+.fighter-img{width:100%;height:100%;object-fit:contain}
+.fighter-info{text-align:center;width:100%}
+.fighter-name{font-size:.9rem;color:var(--txt);font-weight:600;margin-bottom:3px}
+.fighter-level{font-size:.75rem;color:var(--gold);margin-bottom:5px}
+.fighter-stats{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    font-size:.7rem;
+    color:var(--txt-dim);
+    margin-bottom:3px;
+}
+.fighter-record{font-size:.7rem;color:var(--txt-muted)}
+
+/* Navigation Buttons */
+.team-select-buttons,.confirm-buttons{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    margin-top:20px;
+}
+.arena-btn{
+    padding:12px 30px;
+    font-family:'Cinzel',serif;
+    font-size:1rem;
+    border:2px solid;
+    border-radius:10px;
+    cursor:pointer;
+    transition:all .2s;
+}
+.arena-btn.back{
+    background:rgba(100,100,100,.3);
+    border-color:rgba(255,255,255,.2);
+    color:var(--txt-dim);
+}
+.arena-btn.back:hover{
+    background:rgba(100,100,100,.5);
+    border-color:rgba(255,255,255,.4);
+}
+.arena-btn.next{
+    background:linear-gradient(135deg,rgba(232,184,74,.3),rgba(180,140,50,.3));
+    border-color:var(--gold);
+    color:var(--gold-lt);
+}
+.arena-btn.next:hover{
+    background:linear-gradient(135deg,rgba(232,184,74,.5),rgba(180,140,50,.5));
+    box-shadow:0 5px 20px rgba(232,184,74,.3);
+}
+.arena-btn.next.disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+.arena-btn.fight{
+    background:linear-gradient(135deg,#e74c3c,#c0392b);
+    border-color:#e74c3c;
+    color:#fff;
+    font-size:1.2rem;
+    padding:15px 40px;
+    animation:fightBtnPulse 1.5s ease-in-out infinite;
+}
+@keyframes fightBtnPulse{
+    0%,100%{box-shadow:0 0 20px rgba(231,76,60,.4)}
+    50%{box-shadow:0 0 40px rgba(231,76,60,.7)}
+}
+.arena-btn.fight:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 50px rgba(231,76,60,.6);
+}
+
+/* Confirm Screen */
+.arena-matchup{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:30px;
+    margin:30px 0;
+    flex-wrap:wrap;
+}
+.vs-badge{
+    font-family:'Uncial Antiqua',cursive;
+    font-size:2.5rem;
+    color:var(--red);
+    text-shadow:0 0 20px rgba(255,80,80,.5);
+    animation:vsPulse 1s ease-in-out infinite;
+}
+@keyframes vsPulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.2)}
+}
+.matchup-team{text-align:center}
+.team-label{
+    font-family:'Cinzel',serif;
+    font-size:1.2rem;
+    margin-bottom:15px;
+}
+.team-1 .team-label{color:#e74c3c}
+.team-2 .team-label{color:#3498db}
+.matchup-fighters{display:flex;gap:15px;justify-content:center}
+.matchup-fighter{text-align:center}
+.fighter-frame{
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    overflow:hidden;
+    border:3px solid var(--gold);
+    margin-bottom:8px;
+}
+.fighter-frame img{width:100%;height:100%;object-fit:contain}
+.matchup-name{font-size:.9rem;color:var(--txt)}
+.matchup-level{font-size:.75rem;color:var(--gold)}
+
+/* FFA Layout */
+.ffa-fighters{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    flex-wrap:wrap;
+}
+.ffa-fighter{text-align:center}
+.fighter-label{margin-top:8px;font-size:.9rem;color:var(--txt)}
+
+/* Leaderboard */
+.arena-leaderboard{
+    background:linear-gradient(135deg,rgba(40,35,60,.8),rgba(25,20,40,.8));
+    border:2px solid rgba(232,184,74,.2);
+    border-radius:15px;
+    padding:25px;
+    margin-top:30px;
+}
+.leaderboard-list{display:flex;flex-direction:column;gap:10px}
+.leaderboard-entry{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 15px;
+    background:rgba(0,0,0,.3);
+    border-radius:10px;
+    transition:all .2s;
+}
+.leaderboard-entry:hover{background:rgba(232,184,74,.1)}
+.leaderboard-entry.champion{
+    background:linear-gradient(135deg,rgba(232,184,74,.2),rgba(180,140,50,.1));
+    border:1px solid var(--gold);
+}
+.lb-rank{font-size:1.5rem}
+.lb-img{width:50px;height:50px;border-radius:50%;object-fit:contain;border:2px solid rgba(255,255,255,.2)}
+.champion .lb-img{border-color:var(--gold)}
+.lb-info{flex:1}
+.lb-name{font-size:1rem;color:var(--txt);font-weight:600}
+.lb-stats{font-size:.8rem;color:var(--txt-dim)}
+.lb-streak{font-size:1.1rem;color:var(--gold)}
+.leaderboard-empty{
+    text-align:center;
+    padding:30px;
+    color:var(--txt-dim);
+    font-style:italic;
+}
+
+/* Arena Battle Screen */
+.arena-battle-container{
+    height:80vh;
+    max-height:80vh;
+    background-size:cover;
+    background-position:center;
+    border-radius:15px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+.arena-battle-container::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg,rgba(0,0,0,.2) 0%,rgba(0,0,0,.1) 40%,rgba(0,0,0,.6) 100%);
+    pointer-events:none;
+    z-index:0;
+}
+.arena-battle-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 25px;
+    background:linear-gradient(90deg,rgba(0,0,0,.8),rgba(0,0,0,.5),rgba(0,0,0,.8));
+    position:relative;
+    z-index:10;
+}
+.arena-battle-title{
+    font-family:'Uncial Antiqua',cursive;
+    font-size:1.5rem;
+    color:var(--gold);
+    text-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+.arena-forfeit-btn{
+    background:rgba(200,50,50,.3);
+    border:2px solid rgba(200,50,50,.5);
+    color:#fff;
+    padding:8px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    font-family:'Cinzel',serif;
+    font-size:.85rem;
+    transition:all .2s;
+}
+.arena-forfeit-btn:hover{
+    background:rgba(200,50,50,.5);
+    border-color:rgba(200,50,50,.8);
+}
+
+/* Turn Order Bar */
+.arena-turn-bar{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    padding:10px;
+    background:rgba(0,0,0,.5);
+    position:relative;
+    z-index:10;
+}
+.arena-turn-portrait{
+    width:50px;
+    height:60px;
+    border-radius:8px;
+    overflow:hidden;
+    border:2px solid rgba(255,255,255,.3);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    transition:all .3s;
+    background:rgba(0,0,0,.5);
+}
+.arena-turn-portrait img{
+    width:35px;
+    height:35px;
+    object-fit:contain;
+}
+.arena-turn-portrait .turn-name{
+    font-size:.6rem;
+    color:var(--txt-dim);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    width:100%;
+    text-align:center;
+    padding:0 2px;
+}
+.arena-turn-portrait.active{
+    border-color:var(--gold);
+    transform:scale(1.15);
+    box-shadow:0 0 15px rgba(232,184,74,.5);
+}
+.arena-turn-portrait.team0{border-left:3px solid #e74c3c}
+.arena-turn-portrait.team1{border-left:3px solid #3498db}
+.arena-turn-portrait.ffa{border-left:3px solid #9b59b6}
+.arena-turn-portrait.ko{opacity:.4;filter:grayscale(.8)}
+
+/* Battlefield */
+.arena-battlefield{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:60px;
+    padding:20px;
+    position:relative;
+    z-index:5;
+}
+.arena-team-side{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    align-items:center;
+}
+.red-team .arena-fighter{border-left:4px solid #e74c3c}
+.blue-team .arena-fighter{border-left:4px solid #3498db}
+
+.arena-fighter,.ffa-fighter{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:15px;
+    background:rgba(0,0,0,.4);
+    border-radius:15px;
+    border:2px solid rgba(255,255,255,.15);
+    transition:all .3s;
+    cursor:default;
+}
+.arena-fighter.active,.ffa-fighter.active{
+    border-color:var(--gold);
+    box-shadow:0 0 25px rgba(232,184,74,.4);
+    animation:activeFighterPulse 1.5s ease-in-out infinite;
+}
+@keyframes activeFighterPulse{
+    0%,100%{box-shadow:0 0 25px rgba(232,184,74,.4)}
+    50%{box-shadow:0 0 40px rgba(232,184,74,.6)}
+}
+.arena-fighter.ko,.ffa-fighter.ko{
+    opacity:.4;
+    filter:grayscale(.7);
+}
+.arena-fighter.targetable,.ffa-fighter.targetable{
+    cursor:pointer;
+    animation:targetableGlow 0.8s ease-in-out infinite;
+}
+.active-indicator{
+    position:absolute;
+    top:-25px;
+    left:50%;
+    transform:translateX(-50%);
+    color:var(--gold);
+    font-size:1.5rem;
+    animation:bounceArrow 0.6s ease-in-out infinite;
+}
+.fighter-creature{
+    width:90px;
+    height:90px;
+    margin-bottom:10px;
+}
+.fighter-creature img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    animation:creatureIdle 2s ease-in-out infinite;
+}
+.fighter-hud{
+    width:100%;
+    text-align:center;
+}
+.fighter-hud-name{
+    font-size:.85rem;
+    color:var(--txt);
+    margin-bottom:5px;
+    font-weight:600;
+}
+.fighter-hp-bar,.fighter-focus-bar{
+    height:8px;
+    background:rgba(0,0,0,.5);
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:4px;
+}
+.fighter-hp-fill{
+    height:100%;
+    background:linear-gradient(90deg,#e74c3c,#c0392b);
+    transition:width .3s;
+}
+.fighter-focus-fill{
+    height:100%;
+    background:linear-gradient(90deg,#3498db,#2980b9);
+    transition:width .3s;
+}
+.fighter-focus-bar{height:5px}
+
+/* VS Center Badge */
+.arena-vs-center{
+    font-family:'Uncial Antiqua',cursive;
+    font-size:3rem;
+    color:var(--gold);
+    text-shadow:0 0 30px rgba(232,184,74,.5);
+    animation:vsPulse 1.5s ease-in-out infinite;
+}
+
+/* FFA Arena Layout */
+.ffa-arena{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:25px;
+    max-width:600px;
+}
+
+/* Combat Log */
+.arena-log{
+    position:absolute;
+    bottom:100px;
+    left:20px;
+    width:350px;
+    max-height:200px;
+    overflow-y:auto;
+    background:rgba(0,0,0,.7);
+    border-radius:10px;
+    padding:10px;
+    z-index:20;
+}
+.arena-log-entry{
+    font-size:.8rem;
+    padding:5px 8px;
+    margin-bottom:4px;
+    border-radius:5px;
+    background:rgba(255,255,255,.05);
+}
+.arena-log-entry.log-atk{border-left:3px solid #e74c3c}
+.arena-log-entry.log-def{border-left:3px solid #3498db}
+.arena-log-entry.log-heal{border-left:3px solid #2ecc71}
+.arena-log-entry.log-spec{border-left:3px solid #f39c12}
+.arena-log-entry.log-focus{border-left:3px solid #9b59b6}
+
+/* Action Bar */
+.arena-action-bar{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    background:linear-gradient(180deg,rgba(0,0,0,.7),rgba(0,0,0,.95));
+    padding:15px 25px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    z-index:30;
+}
+.action-fighter-info{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.action-name{
+    font-family:'Cinzel',serif;
+    font-size:1.1rem;
+    color:var(--gold-lt);
+}
+.action-focus{
+    font-size:.9rem;
+    color:#3498db;
+}
+.arena-actions{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+.arena-action-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:12px 20px;
+    min-width:100px;
+    background:linear-gradient(135deg,rgba(60,55,85,.9),rgba(40,35,60,.9));
+    border:2px solid rgba(255,255,255,.2);
+    border-radius:12px;
+    cursor:pointer;
+    transition:all .2s;
+}
+.arena-action-btn:hover{
+    border-color:var(--gold);
+    transform:translateY(-3px);
+    box-shadow:0 5px 20px rgba(232,184,74,.3);
+}
+.arena-action-btn.disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+.arena-action-btn.disabled:hover{
+    transform:none;
+    box-shadow:none;
+    border-color:rgba(255,255,255,.2);
+}
+.arena-action-btn .btn-icon{font-size:1.5rem}
+.arena-action-btn .btn-label{
+    font-family:'Cinzel',serif;
+    font-size:.85rem;
+    color:var(--txt);
+}
+.arena-action-btn .btn-cost{
+    font-size:.7rem;
+    color:var(--txt-dim);
+}
+.arena-action-btn.attack:hover{border-color:#e74c3c;box-shadow:0 5px 20px rgba(231,76,60,.3)}
+.arena-action-btn.defend:hover{border-color:#3498db;box-shadow:0 5px 20px rgba(52,152,219,.3)}
+.arena-action-btn.heal:hover{border-color:#2ecc71;box-shadow:0 5px 20px rgba(46,204,113,.3)}
+.arena-action-btn.special:hover{border-color:#f39c12;box-shadow:0 5px 20px rgba(243,156,18,.3)}
+
+/* Targeting Overlay */
+.targeting-overlay{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(0,0,0,.8);
+    padding:20px 40px;
+    border-radius:15px;
+    border:2px solid var(--gold);
+    z-index:40;
+    animation:targetingPop .3s ease-out;
+}
+@keyframes targetingPop{
+    0%{transform:translate(-50%,-50%) scale(.8);opacity:0}
+    100%{transform:translate(-50%,-50%) scale(1);opacity:1}
+}
+.targeting-text{
+    font-family:'Cinzel',serif;
+    font-size:1.3rem;
+    color:var(--gold);
+}
+
+/* Damage/Heal Popups */
+.arena-dmg-popup,.arena-heal-popup{
+    position:absolute;
+    top:0;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:'Cinzel',serif;
+    font-size:1.5rem;
+    font-weight:bold;
+    animation:damageFloatUp 1s ease-out forwards;
+    z-index:100;
+    pointer-events:none;
+    text-shadow:0 2px 4px rgba(0,0,0,.8);
+}
+.arena-dmg-popup{color:#e74c3c}
+.arena-dmg-popup.crit{color:#ff6b6b;font-size:2rem}
+.arena-heal-popup{color:#2ecc71}
+
+/* Animation classes */
+.attack-anim{animation:arenaAttack .5s ease-out}
+@keyframes arenaAttack{
+    0%{transform:translateX(0)}
+    30%{transform:translateX(30px)}
+    100%{transform:translateX(0)}
+}
+.hit-shake{animation:hitShake .3s ease-out}
+.defend-glow{animation:defendGlow .5s ease-out}
+@keyframes defendGlow{
+    0%{box-shadow:0 0 0 rgba(52,152,219,0)}
+    50%{box-shadow:0 0 30px rgba(52,152,219,.8)}
+    100%{box-shadow:0 0 0 rgba(52,152,219,0)}
+}
+.heal-glow{animation:healGlowArena .6s ease-out}
+@keyframes healGlowArena{
+    0%{box-shadow:0 0 0 rgba(46,204,113,0)}
+    50%{box-shadow:0 0 40px rgba(46,204,113,.8)}
+    100%{box-shadow:0 0 0 rgba(46,204,113,0)}
+}
+.special-charge{animation:specialChargeArena .4s ease-out}
+@keyframes specialChargeArena{
+    0%{filter:brightness(1);transform:scale(1)}
+    50%{filter:brightness(1.5);transform:scale(1.1)}
+    100%{filter:brightness(1);transform:scale(1)}
+}
+
+/* Victory Overlay */
+.arena-victory-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.9);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:10000;
+    opacity:0;
+    transition:opacity .3s;
+}
+.arena-victory-overlay.active{opacity:1}
+.arena-victory-content{
+    position:relative;
+    text-align:center;
+    z-index:10001;
+}
+.fireworks-canvas{
+    position:fixed;
+    inset:0;
+    z-index:10000;
+    pointer-events:none;
+}
+.arena-victory-title{
+    font-family:'Uncial Antiqua',cursive;
+    font-size:4rem;
+    color:var(--gold);
+    text-shadow:0 0 50px rgba(232,184,74,.8),0 0 100px rgba(232,184,74,.5);
+    margin-bottom:30px;
+    animation:victoryTitleBounce 1s ease-out;
+}
+.arena-victory-title.draw{color:#9b59b6;text-shadow:0 0 50px rgba(155,89,182,.8)}
+@keyframes victoryTitleBounce{
+    0%{transform:scale(0);opacity:0}
+    50%{transform:scale(1.2)}
+    100%{transform:scale(1);opacity:1}
+}
+.arena-victory-subtitle{
+    font-size:1.3rem;
+    color:var(--txt-dim);
+    margin-bottom:20px;
+}
+.victory-champions{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    margin:30px 0;
+}
+.victory-champion{
+    text-align:center;
+    animation:championAppear .6s ease-out backwards;
+}
+.victory-champion:nth-child(2){animation-delay:.2s}
+.victory-champion:nth-child(3){animation-delay:.4s}
+@keyframes championAppear{
+    0%{transform:translateY(50px);opacity:0}
+    100%{transform:translateY(0);opacity:1}
+}
+.champion-frame{
+    width:150px;
+    height:150px;
+    border-radius:50%;
+    overflow:hidden;
+    border:4px solid var(--gold);
+    margin:0 auto 15px;
+    box-shadow:0 0 30px rgba(232,184,74,.5);
+    animation:championPulse 2s ease-in-out infinite;
+}
+@keyframes championPulse{
+    0%,100%{box-shadow:0 0 30px rgba(232,184,74,.5)}
+    50%{box-shadow:0 0 50px rgba(232,184,74,.8)}
+}
+.champion-img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    animation:victoryBounce 1s ease-in-out infinite;
+}
+.champion-name{
+    font-family:'Cinzel',serif;
+    font-size:1.3rem;
+    color:var(--txt);
+    margin-bottom:5px;
+}
+.champion-title{
+    font-size:1rem;
+    color:var(--gold);
+    font-weight:bold;
+}
+.victory-stats{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    margin:20px 0;
+}
+.stat-item{
+    font-size:1.1rem;
+    color:var(--txt);
+    background:rgba(255,255,255,.1);
+    padding:10px 20px;
+    border-radius:10px;
+}
+.arena-victory-btn{
+    margin-top:30px;
+    padding:15px 50px;
+    font-family:'Cinzel',serif;
+    font-size:1.2rem;
+    background:linear-gradient(135deg,var(--gold),#c9a227);
+    border:none;
+    border-radius:12px;
+    color:#1a1520;
+    cursor:pointer;
+    transition:all .2s;
+}
+.arena-victory-btn:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 30px rgba(232,184,74,.5);
+}
+
+/* Responsive adjustments */
+@media(max-width:768px){
+    .arena-title{font-size:1.8rem}
+    .arena-modes-grid{grid-template-columns:1fr 1fr}
+    .arena-mode-card{padding:15px}
+    .mode-icon{font-size:2rem}
+    .fighters-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+    .arena-battlefield{gap:30px;flex-wrap:wrap}
+    .fighter-creature{width:70px;height:70px}
+    .arena-log{width:250px;bottom:120px}
+    .arena-actions{gap:8px}
+    .arena-action-btn{min-width:80px;padding:10px 15px}
+    .arena-victory-title{font-size:2.5rem}
+    .champion-frame{width:100px;height:100px}
+}
+
 /* Toast notification */
 .toast{
     position:fixed;
@@ -5717,6 +6572,1165 @@ function migrateToV54_3_Natures(){
     console.log('✅ V54.3 Natures migration complete');
 }
 
+// ============================================
+// BATTLE ARENA - PvP System (v54.3)
+// ============================================
+
+const ARENA_MODES = {
+    '1v1': { name: '1v1 Duel', teamSize: 1, teams: 2, icon: '⚔️', desc: 'One champion vs one challenger!' },
+    '2v2': { name: '2v2 Tag Team', teamSize: 2, teams: 2, icon: '🤝', desc: 'Two partners fight together!' },
+    '3v3': { name: '3v3 Squad Battle', teamSize: 3, teams: 2, icon: '👥', desc: 'Squad up and dominate!' },
+    'ffa': { name: 'Free For All', teamSize: 1, teams: 'all', icon: '🌪️', desc: 'Everyone for themselves!' }
+};
+
+// Arena state (persists during setup)
+let arenaSetup = {
+    mode: null,
+    teams: [], // Array of arrays of student IDs
+    step: 'mode', // 'mode', 'team1', 'team2', 'confirm', etc.
+    currentTeamPicking: 0
+};
+
+// Active arena battle state
+let arenaBattle = null;
+
+// Arena records in state.arenaMode.records
+function getArenaRecord(studentId){
+    if(!state.arenaMode.records[studentId]){
+        state.arenaMode.records[studentId] = { wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0 };
+    }
+    return state.arenaMode.records[studentId];
+}
+
+function updateArenaRecord(studentId, result){
+    const r = getArenaRecord(studentId);
+    if(result === 'win'){
+        r.wins++;
+        r.streak++;
+        r.bestStreak = Math.max(r.bestStreak, r.streak);
+    } else if(result === 'loss'){
+        r.losses++;
+        r.streak = 0;
+    } else if(result === 'draw'){
+        r.draws++;
+    }
+    save();
+}
+
+// ============================================
+// ARENA MODE SELECTION UI
+// ============================================
+function renderArena(m){
+    const activeStudents = getActiveStudents().filter(s => s.cid);
+    const hasEnough = activeStudents.length >= 2;
+
+    let html = `<div class="arena-screen">`;
+
+    // Header with epic styling
+    html += `<div class="arena-header">
+        <h1 class="arena-title">⚔️ BATTLE ARENA ⚔️</h1>
+        <p class="arena-subtitle">Prove your strength against your classmates!</p>
+    </div>`;
+
+    if(!hasEnough){
+        html += `<div class="arena-notice">
+            <h3>🚫 Not Enough Fighters!</h3>
+            <p>You need at least 2 students with creatures to battle in the arena.</p>
+            <p>Current fighters: ${activeStudents.length}</p>
+        </div>`;
+        html += `</div>`;
+        m.innerHTML = html;
+        return;
+    }
+
+    // Arena setup flow
+    if(arenaSetup.step === 'mode'){
+        html += renderArenaModeSelect(activeStudents);
+    } else if(arenaSetup.step.startsWith('team')){
+        html += renderArenaTeamSelect(activeStudents);
+    } else if(arenaSetup.step === 'confirm'){
+        html += renderArenaConfirm(activeStudents);
+    }
+
+    // Leaderboard section
+    html += renderArenaLeaderboard(activeStudents);
+
+    html += `</div>`;
+    m.innerHTML = html;
+}
+
+function renderArenaModeSelect(activeStudents){
+    let html = `<div class="arena-mode-select">
+        <h2 class="arena-section-title">🎮 Choose Battle Mode</h2>
+        <div class="arena-modes-grid">`;
+
+    Object.entries(ARENA_MODES).forEach(([key, mode]) => {
+        const minPlayers = mode.teams === 'all' ? 3 : mode.teamSize * mode.teams;
+        const canPlay = activeStudents.length >= minPlayers;
+        const disabledClass = canPlay ? '' : 'disabled';
+        const disabledReason = canPlay ? '' : `<span class="mode-disabled-reason">Need ${minPlayers}+ fighters</span>`;
+
+        html += `<div class="arena-mode-card ${disabledClass}" onclick="${canPlay ? `selectArenaMode('${key}')` : ''}">
+            <div class="mode-icon">${mode.icon}</div>
+            <div class="mode-name">${mode.name}</div>
+            <div class="mode-desc">${mode.desc}</div>
+            ${disabledReason}
+        </div>`;
+    });
+
+    html += `</div></div>`;
+    return html;
+}
+
+function renderArenaTeamSelect(activeStudents){
+    const mode = ARENA_MODES[arenaSetup.mode];
+    const teamNum = arenaSetup.currentTeamPicking + 1;
+    const isFFA = arenaSetup.mode === 'ffa';
+    const teamLabel = isFFA ? `Fighter ${teamNum}` : `Team ${teamNum}`;
+    const alreadyPicked = arenaSetup.teams.flat();
+    const available = activeStudents.filter(s => !alreadyPicked.includes(s.id));
+    const currentTeam = arenaSetup.teams[arenaSetup.currentTeamPicking] || [];
+    const needMore = mode.teamSize - currentTeam.length;
+
+    let html = `<div class="arena-team-select">
+        <h2 class="arena-section-title">👥 Select ${teamLabel}</h2>
+        <p class="team-select-info">${isFFA ? 'Pick a fighter' : `Pick ${mode.teamSize} fighter${mode.teamSize > 1 ? 's' : ''}`}</p>
+
+        <div class="team-slots">`;
+
+    // Show current team slots
+    for(let i = 0; i < mode.teamSize; i++){
+        const studentId = currentTeam[i];
+        const student = studentId ? activeStudents.find(s => s.id === studentId) : null;
+
+        if(student){
+            const lv = getLv(student.xp);
+            const c = CREATURES[student.cid];
+            const evoIdx = getEvo(student.cid, lv);
+            html += `<div class="team-slot filled" onclick="removeFromArenaTeam(${student.id})">
+                <img src="${getImg(student.cid, lv)}" class="slot-img evo${evoIdx+1}">
+                <div class="slot-name">${student.name || c.names[evoIdx]}</div>
+                <div class="slot-level">Lv ${lv}</div>
+                <div class="slot-remove">✕</div>
+            </div>`;
+        } else {
+            html += `<div class="team-slot empty">
+                <div class="slot-placeholder">?</div>
+                <div class="slot-name">Pick Fighter</div>
+            </div>`;
+        }
+    }
+
+    html += `</div>
+
+        <div class="available-fighters">
+            <h3>Available Fighters</h3>
+            <div class="fighters-grid">`;
+
+    available.forEach(s => {
+        const lv = getLv(s.xp);
+        const c = CREATURES[s.cid];
+        const st = getStats(s.cid, lv, s.nature);
+        const evoIdx = getEvo(s.cid, lv);
+        const record = getArenaRecord(s.id);
+
+        html += `<div class="fighter-card" onclick="addToArenaTeam(${s.id})">
+            <div class="fighter-img-wrap">
+                <img src="${getImg(s.cid, lv)}" class="fighter-img evo${evoIdx+1}">
+            </div>
+            <div class="fighter-info">
+                <div class="fighter-name">${s.name || c.names[evoIdx]}</div>
+                <div class="fighter-level">Lv ${lv}</div>
+                <div class="fighter-stats">
+                    <span title="HP">❤️${st.hp}</span>
+                    <span title="ATK">⚔️${st.atk}</span>
+                    <span title="SPD">💨${st.spd}</span>
+                </div>
+                <div class="fighter-record">${record.wins}W - ${record.losses}L</div>
+            </div>
+        </div>`;
+    });
+
+    html += `</div></div>
+
+        <div class="team-select-buttons">
+            <button class="arena-btn back" onclick="arenaGoBack()">← Back</button>
+            <button class="arena-btn next ${currentTeam.length < mode.teamSize ? 'disabled' : ''}"
+                    onclick="${currentTeam.length >= mode.teamSize ? 'arenaNextTeam()' : ''}"
+                    ${currentTeam.length < mode.teamSize ? 'disabled' : ''}>
+                Next →
+            </button>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+function renderArenaConfirm(activeStudents){
+    const mode = ARENA_MODES[arenaSetup.mode];
+    const isFFA = arenaSetup.mode === 'ffa';
+
+    let html = `<div class="arena-confirm">
+        <h2 class="arena-section-title">⚡ Ready to Battle?</h2>
+        <div class="arena-matchup">`;
+
+    if(isFFA){
+        // FFA - Show all fighters in a circle-ish layout
+        html += `<div class="ffa-fighters">`;
+        arenaSetup.teams.forEach((team, idx) => {
+            const s = activeStudents.find(st => st.id === team[0]);
+            if(!s) return;
+            const lv = getLv(s.xp);
+            const c = CREATURES[s.cid];
+            const evoIdx = getEvo(s.cid, lv);
+            html += `<div class="ffa-fighter">
+                <div class="fighter-frame evo${evoIdx+1}">
+                    <img src="${getImg(s.cid, lv)}">
+                </div>
+                <div class="fighter-label">${s.name || c.names[evoIdx]}</div>
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        // Team vs Team
+        arenaSetup.teams.forEach((team, teamIdx) => {
+            if(teamIdx === 1) html += `<div class="vs-badge">VS</div>`;
+
+            html += `<div class="matchup-team team-${teamIdx + 1}">
+                <h3 class="team-label">${teamIdx === 0 ? '🔴 Red Team' : '🔵 Blue Team'}</h3>
+                <div class="matchup-fighters">`;
+
+            team.forEach(studentId => {
+                const s = activeStudents.find(st => st.id === studentId);
+                if(!s) return;
+                const lv = getLv(s.xp);
+                const c = CREATURES[s.cid];
+                const evoIdx = getEvo(s.cid, lv);
+                html += `<div class="matchup-fighter">
+                    <div class="fighter-frame evo${evoIdx+1}">
+                        <img src="${getImg(s.cid, lv)}">
+                    </div>
+                    <div class="matchup-name">${s.name || c.names[evoIdx]}</div>
+                    <div class="matchup-level">Lv ${lv}</div>
+                </div>`;
+            });
+
+            html += `</div></div>`;
+        });
+    }
+
+    html += `</div>
+
+        <div class="confirm-buttons">
+            <button class="arena-btn back" onclick="arenaGoBack()">← Change Teams</button>
+            <button class="arena-btn fight" onclick="startArenaBattle()">⚔️ FIGHT!</button>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+function renderArenaLeaderboard(activeStudents){
+    // Sort by wins, then win rate
+    const sortedStudents = [...activeStudents].sort((a, b) => {
+        const rA = getArenaRecord(a.id);
+        const rB = getArenaRecord(b.id);
+        if(rB.wins !== rA.wins) return rB.wins - rA.wins;
+        const totalA = rA.wins + rA.losses || 1;
+        const totalB = rB.wins + rB.losses || 1;
+        return (rB.wins / totalB) - (rA.wins / totalA);
+    });
+
+    let html = `<div class="arena-leaderboard">
+        <h2 class="arena-section-title">🏆 Arena Champions</h2>
+        <div class="leaderboard-list">`;
+
+    sortedStudents.slice(0, 5).forEach((s, idx) => {
+        const record = getArenaRecord(s.id);
+        const lv = getLv(s.xp);
+        const c = CREATURES[s.cid];
+        const evoIdx = getEvo(s.cid, lv);
+        const total = record.wins + record.losses || 1;
+        const winRate = Math.round((record.wins / total) * 100);
+        const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+
+        html += `<div class="leaderboard-entry ${idx === 0 ? 'champion' : ''}">
+            <span class="lb-rank">${medals[idx]}</span>
+            <img src="${getImg(s.cid, lv)}" class="lb-img evo${evoIdx+1}">
+            <div class="lb-info">
+                <div class="lb-name">${s.name || c.names[evoIdx]}</div>
+                <div class="lb-stats">${record.wins}W - ${record.losses}L (${winRate}%)</div>
+            </div>
+            <div class="lb-streak" title="Best Win Streak">🔥${record.bestStreak}</div>
+        </div>`;
+    });
+
+    if(sortedStudents.length === 0){
+        html += `<div class="leaderboard-empty">No battles yet! Be the first to compete!</div>`;
+    }
+
+    html += `</div></div>`;
+    return html;
+}
+
+// ============================================
+// ARENA SETUP FUNCTIONS
+// ============================================
+function selectArenaMode(mode){
+    arenaSetup.mode = mode;
+    arenaSetup.teams = [];
+    arenaSetup.currentTeamPicking = 0;
+
+    const modeData = ARENA_MODES[mode];
+    const numTeams = mode === 'ffa' ? getActiveStudents().filter(s => s.cid).length : modeData.teams;
+
+    // Initialize empty team arrays
+    for(let i = 0; i < numTeams; i++){
+        arenaSetup.teams.push([]);
+    }
+
+    arenaSetup.step = 'team1';
+    renderMain();
+}
+
+function addToArenaTeam(studentId){
+    const mode = ARENA_MODES[arenaSetup.mode];
+    const currentTeam = arenaSetup.teams[arenaSetup.currentTeamPicking];
+
+    if(currentTeam.length < mode.teamSize){
+        currentTeam.push(studentId);
+        renderMain();
+    }
+}
+
+function removeFromArenaTeam(studentId){
+    const currentTeam = arenaSetup.teams[arenaSetup.currentTeamPicking];
+    const idx = currentTeam.indexOf(studentId);
+    if(idx > -1){
+        currentTeam.splice(idx, 1);
+        renderMain();
+    }
+}
+
+function arenaNextTeam(){
+    const mode = ARENA_MODES[arenaSetup.mode];
+    const isFFA = arenaSetup.mode === 'ffa';
+    const totalTeams = isFFA ? arenaSetup.teams.length : mode.teams;
+
+    arenaSetup.currentTeamPicking++;
+
+    if(arenaSetup.currentTeamPicking >= totalTeams){
+        arenaSetup.step = 'confirm';
+    } else {
+        arenaSetup.step = `team${arenaSetup.currentTeamPicking + 1}`;
+    }
+
+    renderMain();
+}
+
+function arenaGoBack(){
+    if(arenaSetup.step === 'confirm'){
+        arenaSetup.currentTeamPicking = arenaSetup.teams.length - 1;
+        arenaSetup.step = `team${arenaSetup.currentTeamPicking + 1}`;
+    } else if(arenaSetup.currentTeamPicking > 0){
+        arenaSetup.currentTeamPicking--;
+        arenaSetup.step = `team${arenaSetup.currentTeamPicking + 1}`;
+    } else {
+        arenaSetup.step = 'mode';
+        arenaSetup.mode = null;
+        arenaSetup.teams = [];
+    }
+    renderMain();
+}
+
+function resetArenaSetup(){
+    arenaSetup = {
+        mode: null,
+        teams: [],
+        step: 'mode',
+        currentTeamPicking: 0
+    };
+}
+
+// ============================================
+// PVP COMBAT ENGINE
+// ============================================
+function startArenaBattle(){
+    const activeStudents = getActiveStudents().filter(s => s.cid);
+    const mode = ARENA_MODES[arenaSetup.mode];
+    const isFFA = arenaSetup.mode === 'ffa';
+
+    // Build combatants from setup
+    const combatants = [];
+
+    arenaSetup.teams.forEach((team, teamIdx) => {
+        team.forEach(studentId => {
+            const s = activeStudents.find(st => st.id === studentId);
+            if(!s) return;
+
+            const lv = getLv(s.xp);
+            const st = getStats(s.cid, lv, s.nature);
+
+            combatants.push({
+                ...s,
+                lv: lv,
+                team: isFFA ? studentId : teamIdx, // FFA: each player is their own team
+                curHp: st.hp,
+                maxHp: st.hp,
+                st: st,
+                def: false,
+                cooldown: 0,
+                focus: STARTING_FOCUS,
+                focusMax: MAX_FOCUS,
+                focusRegen: FOCUS_REGEN_PER_TURN
+            });
+        });
+    });
+
+    // Initialize arena battle state
+    arenaBattle = {
+        mode: arenaSetup.mode,
+        isFFA: isFFA,
+        combatants: combatants,
+        turnQueue: [],
+        turnIdx: 0,
+        log: [],
+        selectedTarget: null,
+        targetingMode: null,
+        winner: null,
+        processing: false
+    };
+
+    buildArenaTurnOrder();
+    currentScreen = 'arenaBattle';
+    renderNav();
+    renderMain();
+
+    // Play battle music
+    updateMusic();
+}
+
+function buildArenaTurnOrder(){
+    if(!arenaBattle) return;
+
+    arenaBattle.turnQueue = [];
+
+    arenaBattle.combatants.forEach((c, idx) => {
+        if(c.curHp > 0){
+            arenaBattle.turnQueue.push({ idx: idx, spd: c.st.spd });
+        }
+    });
+
+    // Sort by speed (highest first)
+    arenaBattle.turnQueue.sort((a, b) => b.spd - a.spd);
+    arenaBattle.turnIdx = 0;
+}
+
+function getAliveCombatants(){
+    return arenaBattle.combatants.filter(c => c.curHp > 0);
+}
+
+function getAliveTeams(){
+    const alive = getAliveCombatants();
+    const teams = new Set(alive.map(c => c.team));
+    return [...teams];
+}
+
+function checkArenaVictory(){
+    const aliveTeams = getAliveTeams();
+
+    if(aliveTeams.length <= 1){
+        // We have a winner (or draw if 0)
+        if(aliveTeams.length === 1){
+            arenaBattle.winner = aliveTeams[0];
+        } else {
+            arenaBattle.winner = 'draw';
+        }
+        return true;
+    }
+    return false;
+}
+
+function arenaNextTurn(){
+    if(!arenaBattle) return;
+    if(arenaBattle.processing) return;
+
+    // Check for victory
+    if(checkArenaVictory()){
+        setTimeout(() => showArenaVictory(), 500);
+        return;
+    }
+
+    // Advance turn index
+    arenaBattle.turnIdx++;
+
+    // Rebuild queue if exhausted
+    if(arenaBattle.turnIdx >= arenaBattle.turnQueue.length){
+        buildArenaTurnOrder();
+    }
+
+    // Skip dead combatants
+    let cur = arenaBattle.turnQueue[arenaBattle.turnIdx];
+    let safetyCounter = 0;
+    while(cur && arenaBattle.combatants[cur.idx].curHp <= 0){
+        arenaBattle.turnIdx++;
+        if(arenaBattle.turnIdx >= arenaBattle.turnQueue.length){
+            buildArenaTurnOrder();
+        }
+        cur = arenaBattle.turnQueue[arenaBattle.turnIdx];
+        safetyCounter++;
+        if(safetyCounter > 50) break;
+    }
+
+    if(!cur) return;
+
+    // Focus regen at start of turn
+    const combatant = arenaBattle.combatants[cur.idx];
+    if(combatant.curHp > 0){
+        const oldFocus = combatant.focus;
+        combatant.focus = Math.min(combatant.focusMax, combatant.focus + combatant.focusRegen);
+        if(combatant.focus > oldFocus){
+            arenaBattle.log.unshift({ t: 'focus', m: `🔷 ${combatant.name} regains ${combatant.focus - oldFocus} Focus` });
+        }
+
+        // Reduce cooldowns
+        if(combatant.cooldown > 0) combatant.cooldown--;
+    }
+
+    arenaBattle.processing = false;
+    renderMain();
+}
+
+function doArenaAction(action){
+    if(!arenaBattle || arenaBattle.processing) return;
+
+    const cur = arenaBattle.turnQueue[arenaBattle.turnIdx];
+    if(!cur) return;
+
+    const attacker = arenaBattle.combatants[cur.idx];
+    if(attacker.curHp <= 0) { arenaNextTurn(); return; }
+
+    const c = CREATURES[attacker.cid];
+
+    // Get valid targets (alive enemies)
+    const validTargets = arenaBattle.combatants.filter(t => t.curHp > 0 && t.team !== attacker.team);
+
+    if(validTargets.length === 0){
+        // No targets, check victory
+        if(checkArenaVictory()){
+            setTimeout(() => showArenaVictory(), 500);
+        }
+        return;
+    }
+
+    // Target selection for attacks
+    if((action === 'atk' || action === 'spec') && validTargets.length > 1 && arenaBattle.selectedTarget === null){
+        arenaBattle.targetingMode = action;
+        renderMain();
+        return;
+    }
+
+    arenaBattle.processing = true;
+
+    // Get target
+    let target;
+    if(arenaBattle.selectedTarget !== null){
+        target = arenaBattle.combatants[arenaBattle.selectedTarget];
+    } else {
+        target = validTargets[0];
+    }
+
+    // Clear targeting
+    arenaBattle.targetingMode = null;
+    arenaBattle.selectedTarget = null;
+
+    const move = getMove(attacker.cid, attacker.lv, action);
+    const attackerEl = document.getElementById(`arenaFighter${cur.idx}`);
+    const targetIdx = arenaBattle.combatants.indexOf(target);
+    const targetEl = document.getElementById(`arenaFighter${targetIdx}`);
+
+    attacker.def = false;
+
+    if(action === 'atk'){
+        // Basic attack - PvP balanced damage
+        const dmgMult = move ? move.p : 1.0;
+        // PvP formula: Lower damage, more strategic
+        const rawDmg = Math.floor(attacker.st.atk * dmgMult * 0.8);
+        const defReduction = target.def ? 0.5 : 1.0;
+        const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+
+        // Animation
+        if(attackerEl) attackerEl.classList.add('attack-anim');
+
+        setTimeout(() => {
+            target.curHp = Math.max(0, target.curHp - finalDmg);
+            if(targetEl){
+                targetEl.classList.add('hit-shake');
+                showArenaDamage(targetIdx, finalDmg, false);
+            }
+
+            arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.name} attacks ${target.name} for ${finalDmg} damage!` });
+
+            setTimeout(() => {
+                if(attackerEl) attackerEl.classList.remove('attack-anim');
+                if(targetEl) targetEl.classList.remove('hit-shake');
+                arenaBattle.processing = false;
+                arenaNextTurn();
+            }, 400);
+        }, 300);
+
+    } else if(action === 'def'){
+        // Defend - Gain focus and reduce incoming damage
+        attacker.def = true;
+        attacker.focus = Math.min(attacker.focusMax, attacker.focus + 5);
+
+        if(attackerEl) attackerEl.classList.add('defend-glow');
+
+        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.name} defends and gains Focus!` });
+
+        setTimeout(() => {
+            if(attackerEl) attackerEl.classList.remove('defend-glow');
+            arenaBattle.processing = false;
+            arenaNextTurn();
+        }, 500);
+
+    } else if(action === 'heal'){
+        // Heal move
+        const healMove = getMove(attacker.cid, attacker.lv, 'heal');
+        if(!healMove || attacker.focus < (healMove.f || 0)){
+            arenaBattle.processing = false;
+            return;
+        }
+
+        attacker.focus -= healMove.f || 0;
+        const healAmt = Math.floor(attacker.maxHp * (healMove.p || 0.3));
+        attacker.curHp = Math.min(attacker.maxHp, attacker.curHp + healAmt);
+
+        if(attackerEl) attackerEl.classList.add('heal-glow');
+        showArenaHeal(cur.idx, healAmt);
+
+        arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.name} heals for ${healAmt} HP!` });
+
+        setTimeout(() => {
+            if(attackerEl) attackerEl.classList.remove('heal-glow');
+            arenaBattle.processing = false;
+            arenaNextTurn();
+        }, 600);
+
+    } else if(action === 'spec'){
+        // Special attack
+        const specMove = getMove(attacker.cid, attacker.lv, 'spec');
+        if(!specMove) { arenaBattle.processing = false; return; }
+
+        const evoStage = getEvo(attacker.cid, attacker.lv);
+        const specCost = calculateSpecialCost(evoStage, specMove.p * 100, specMove.n, false);
+
+        if(attacker.focus < specCost || attacker.cooldown > 0){
+            arenaBattle.processing = false;
+            return;
+        }
+
+        attacker.focus -= specCost;
+        attacker.cooldown = 3;
+
+        // Check if AOE
+        const specType = getSpecialType(specMove.n);
+        const isAOE = specType.isAOE;
+
+        const dmgMult = specMove.p;
+        const rawDmg = Math.floor(attacker.st.atk * dmgMult * 1.2);
+
+        if(attackerEl) attackerEl.classList.add('special-charge');
+
+        setTimeout(() => {
+            if(isAOE){
+                // Hit all enemies
+                validTargets.forEach(t => {
+                    const tIdx = arenaBattle.combatants.indexOf(t);
+                    const aoeDmg = Math.floor(rawDmg * 0.7); // AOE penalty
+                    const defReduction = t.def ? 0.5 : 1.0;
+                    const finalDmg = Math.max(1, Math.floor((aoeDmg - t.st.def * 0.25) * defReduction));
+                    t.curHp = Math.max(0, t.curHp - finalDmg);
+
+                    const tEl = document.getElementById(`arenaFighter${tIdx}`);
+                    if(tEl) tEl.classList.add('hit-shake');
+                    showArenaDamage(tIdx, finalDmg, true);
+                });
+                arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} hitting all enemies!` });
+            } else {
+                // Single target
+                const defReduction = target.def ? 0.5 : 1.0;
+                const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+                target.curHp = Math.max(0, target.curHp - finalDmg);
+
+                if(targetEl) targetEl.classList.add('hit-shake');
+                showArenaDamage(targetIdx, finalDmg, true);
+                arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.name} uses ${specMove.n} for ${finalDmg} damage!` });
+            }
+
+            setTimeout(() => {
+                if(attackerEl) attackerEl.classList.remove('special-charge');
+                document.querySelectorAll('.hit-shake').forEach(el => el.classList.remove('hit-shake'));
+                arenaBattle.processing = false;
+                arenaNextTurn();
+            }, 500);
+        }, 400);
+    }
+}
+
+function selectArenaTarget(idx){
+    if(!arenaBattle || !arenaBattle.targetingMode) return;
+
+    arenaBattle.selectedTarget = idx;
+    doArenaAction(arenaBattle.targetingMode);
+}
+
+function showArenaDamage(idx, dmg, isCrit){
+    const el = document.getElementById(`arenaFighter${idx}`);
+    if(!el) return;
+
+    const popup = document.createElement('div');
+    popup.className = `arena-dmg-popup ${isCrit ? 'crit' : ''}`;
+    popup.textContent = `-${dmg}`;
+    el.appendChild(popup);
+
+    setTimeout(() => popup.remove(), 1000);
+}
+
+function showArenaHeal(idx, amt){
+    const el = document.getElementById(`arenaFighter${idx}`);
+    if(!el) return;
+
+    const popup = document.createElement('div');
+    popup.className = 'arena-heal-popup';
+    popup.textContent = `+${amt}`;
+    el.appendChild(popup);
+
+    setTimeout(() => popup.remove(), 1000);
+}
+
+// ============================================
+// ARENA BATTLE UI
+// ============================================
+function renderArenaBattle(m){
+    if(!arenaBattle){
+        currentScreen = 'arena';
+        renderArena(m);
+        return;
+    }
+
+    const cur = arenaBattle.turnQueue[arenaBattle.turnIdx];
+    const activeCombatant = cur ? arenaBattle.combatants[cur.idx] : null;
+    const isTargeting = arenaBattle.targetingMode !== null;
+
+    let html = `<div class="arena-battle-container" style="background-image:url('${G}/Backgrounds/Backgrounds_VolcanoArena.png')">`;
+
+    // Header
+    html += `<div class="arena-battle-header">
+        <div class="arena-battle-title">⚔️ ${ARENA_MODES[arenaBattle.mode].name.toUpperCase()} ⚔️</div>
+        <button class="arena-forfeit-btn" onclick="forfeitArenaBattle()">🏳️ Forfeit</button>
+    </div>`;
+
+    // Turn order bar
+    html += `<div class="arena-turn-bar">`;
+    const upcomingTurns = arenaBattle.turnQueue.slice(arenaBattle.turnIdx, Math.min(arenaBattle.turnIdx + 8, arenaBattle.turnQueue.length));
+    upcomingTurns.forEach((turn, offset) => {
+        const combatant = arenaBattle.combatants[turn.idx];
+        const isActive = offset === 0;
+        const isKO = combatant.curHp <= 0;
+        const teamColor = arenaBattle.isFFA ? 'ffa' : `team${combatant.team}`;
+
+        html += `<div class="arena-turn-portrait ${teamColor} ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''}">
+            <img src="${getImg(combatant.cid, combatant.lv)}">
+            <span class="turn-name">${(combatant.name || 'Hero').substring(0, 6)}</span>
+        </div>`;
+    });
+    html += `</div>`;
+
+    // Battle Arena
+    html += `<div class="arena-battlefield">`;
+
+    if(arenaBattle.isFFA){
+        // FFA - Circular arrangement
+        html += `<div class="ffa-arena">`;
+        arenaBattle.combatants.forEach((combatant, idx) => {
+            const isActive = cur && cur.idx === idx;
+            const isKO = combatant.curHp <= 0;
+            const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
+            const evoIdx = getEvo(combatant.cid, combatant.lv);
+
+            html += `<div class="ffa-fighter ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''} ${isValidTarget ? 'targetable' : ''}"
+                        id="arenaFighter${idx}"
+                        onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}">
+                ${isActive && !isKO ? '<div class="active-indicator">▼</div>' : ''}
+                <div class="fighter-creature evo${evoIdx+1}">
+                    <img src="${getImg(combatant.cid, combatant.lv)}">
+                </div>
+                <div class="fighter-hud">
+                    <div class="fighter-hud-name">${(combatant.name || 'Hero').substring(0, 10)}</div>
+                    <div class="fighter-hp-bar">
+                        <div class="fighter-hp-fill" style="width:${Math.max(0, (combatant.curHp/combatant.maxHp)*100)}%"></div>
+                    </div>
+                    <div class="fighter-focus-bar">
+                        <div class="fighter-focus-fill" style="width:${Math.max(0, (combatant.focus/combatant.focusMax)*100)}%"></div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        // Team vs Team
+        const team0 = arenaBattle.combatants.filter(c => c.team === 0);
+        const team1 = arenaBattle.combatants.filter(c => c.team === 1);
+
+        // Red Team (Left)
+        html += `<div class="arena-team-side red-team">`;
+        team0.forEach(combatant => {
+            const idx = arenaBattle.combatants.indexOf(combatant);
+            const isActive = cur && cur.idx === idx;
+            const isKO = combatant.curHp <= 0;
+            const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
+            const evoIdx = getEvo(combatant.cid, combatant.lv);
+
+            html += `<div class="arena-fighter ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''} ${isValidTarget ? 'targetable' : ''}"
+                        id="arenaFighter${idx}"
+                        onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}">
+                ${isActive && !isKO ? '<div class="active-indicator">▼</div>' : ''}
+                <div class="fighter-creature evo${evoIdx+1}">
+                    <img src="${getImg(combatant.cid, combatant.lv)}">
+                </div>
+                <div class="fighter-hud">
+                    <div class="fighter-hud-name">${(combatant.name || 'Hero').substring(0, 10)}</div>
+                    <div class="fighter-hp-bar">
+                        <div class="fighter-hp-fill" style="width:${Math.max(0, (combatant.curHp/combatant.maxHp)*100)}%"></div>
+                    </div>
+                    <div class="fighter-focus-bar">
+                        <div class="fighter-focus-fill" style="width:${Math.max(0, (combatant.focus/combatant.focusMax)*100)}%"></div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+
+        // VS Badge
+        html += `<div class="arena-vs-center">VS</div>`;
+
+        // Blue Team (Right)
+        html += `<div class="arena-team-side blue-team">`;
+        team1.forEach(combatant => {
+            const idx = arenaBattle.combatants.indexOf(combatant);
+            const isActive = cur && cur.idx === idx;
+            const isKO = combatant.curHp <= 0;
+            const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
+            const evoIdx = getEvo(combatant.cid, combatant.lv);
+
+            html += `<div class="arena-fighter ${isActive ? 'active' : ''} ${isKO ? 'ko' : ''} ${isValidTarget ? 'targetable' : ''}"
+                        id="arenaFighter${idx}"
+                        onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}">
+                ${isActive && !isKO ? '<div class="active-indicator">▼</div>' : ''}
+                <div class="fighter-creature evo${evoIdx+1}">
+                    <img src="${getImg(combatant.cid, combatant.lv)}">
+                </div>
+                <div class="fighter-hud">
+                    <div class="fighter-hud-name">${(combatant.name || 'Hero').substring(0, 10)}</div>
+                    <div class="fighter-hp-bar">
+                        <div class="fighter-hp-fill" style="width:${Math.max(0, (combatant.curHp/combatant.maxHp)*100)}%"></div>
+                    </div>
+                    <div class="fighter-focus-bar">
+                        <div class="fighter-focus-fill" style="width:${Math.max(0, (combatant.focus/combatant.focusMax)*100)}%"></div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    html += `</div>`; // End battlefield
+
+    // Combat Log
+    html += `<div class="arena-log">
+        ${arenaBattle.log.slice(0, 8).map(e => `<div class="arena-log-entry log-${e.t}">${e.m}</div>`).join('')}
+    </div>`;
+
+    // Action buttons (only show for active turn)
+    if(activeCombatant && activeCombatant.curHp > 0 && !arenaBattle.processing){
+        const hasHeal = CREATURES[activeCombatant.cid]?.canHeal && getMove(activeCombatant.cid, activeCombatant.lv, 'heal');
+        const hasSpec = getMove(activeCombatant.cid, activeCombatant.lv, 'spec');
+        const specMove = hasSpec ? getMove(activeCombatant.cid, activeCombatant.lv, 'spec') : null;
+        const healMove = hasHeal ? getMove(activeCombatant.cid, activeCombatant.lv, 'heal') : null;
+
+        const evoStage = getEvo(activeCombatant.cid, activeCombatant.lv);
+        const specCost = specMove ? calculateSpecialCost(evoStage, specMove.p * 100, specMove.n, false) : 0;
+        const healCost = healMove ? healMove.f || 0 : 0;
+
+        const canSpec = hasSpec && activeCombatant.focus >= specCost && activeCombatant.cooldown === 0;
+        const canHeal = hasHeal && activeCombatant.focus >= healCost;
+
+        html += `<div class="arena-action-bar">
+            <div class="action-fighter-info">
+                <span class="action-name">${activeCombatant.name}'s Turn</span>
+                <span class="action-focus">🔷 ${activeCombatant.focus}/${activeCombatant.focusMax}</span>
+            </div>
+            <div class="arena-actions">
+                <button class="arena-action-btn attack" onclick="doArenaAction('atk')">
+                    <span class="btn-icon">⚔️</span>
+                    <span class="btn-label">Attack</span>
+                </button>
+                <button class="arena-action-btn defend" onclick="doArenaAction('def')">
+                    <span class="btn-icon">🛡️</span>
+                    <span class="btn-label">Defend</span>
+                    <span class="btn-cost">+5 FP</span>
+                </button>`;
+
+        if(hasHeal){
+            html += `<button class="arena-action-btn heal ${!canHeal ? 'disabled' : ''}" ${!canHeal ? 'disabled' : ''} onclick="doArenaAction('heal')">
+                <span class="btn-icon">💚</span>
+                <span class="btn-label">Heal</span>
+                <span class="btn-cost">${healCost} FP</span>
+            </button>`;
+        }
+
+        if(hasSpec){
+            html += `<button class="arena-action-btn special ${!canSpec ? 'disabled' : ''}" ${!canSpec ? 'disabled' : ''} onclick="doArenaAction('spec')">
+                <span class="btn-icon">⚡</span>
+                <span class="btn-label">${specMove.n}${activeCombatant.cooldown > 0 ? ` (${activeCombatant.cooldown})` : ''}</span>
+                <span class="btn-cost">${specCost} FP</span>
+            </button>`;
+        }
+
+        html += `</div></div>`;
+    }
+
+    // Targeting instruction
+    if(isTargeting){
+        html += `<div class="targeting-overlay">
+            <div class="targeting-text">🎯 Select a target!</div>
+        </div>`;
+    }
+
+    html += `</div>`; // End arena-battle-container
+    m.innerHTML = html;
+}
+
+function forfeitArenaBattle(){
+    if(!arenaBattle) return;
+
+    // Mark all of current player's team as losers
+    // For simplicity, just end the battle
+    arenaBattle = null;
+    resetArenaSetup();
+    currentScreen = 'arena';
+    renderNav();
+    renderMain();
+}
+
+// ============================================
+// ARENA VICTORY SCREEN WITH FIREWORKS
+// ============================================
+function showArenaVictory(){
+    if(!arenaBattle) return;
+
+    const isFFA = arenaBattle.isFFA;
+    const winner = arenaBattle.winner;
+
+    // Determine winners and losers
+    let winners = [];
+    let losers = [];
+
+    if(winner === 'draw'){
+        // Everyone draws
+        arenaBattle.combatants.forEach(c => {
+            updateArenaRecord(c.id, 'draw');
+        });
+    } else {
+        arenaBattle.combatants.forEach(c => {
+            if(c.team === winner){
+                winners.push(c);
+                updateArenaRecord(c.id, 'win');
+            } else {
+                losers.push(c);
+                updateArenaRecord(c.id, 'loss');
+            }
+        });
+    }
+
+    save();
+
+    // Create victory overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'arena-victory-overlay';
+    overlay.id = 'arenaVictoryOverlay';
+
+    let html = `<div class="arena-victory-content">`;
+
+    // Fireworks canvas
+    html += `<canvas id="fireworksCanvas" class="fireworks-canvas"></canvas>`;
+
+    if(winner === 'draw'){
+        html += `<h1 class="arena-victory-title draw">🤝 IT'S A DRAW! 🤝</h1>
+            <p class="arena-victory-subtitle">Both sides fought valiantly!</p>`;
+    } else {
+        html += `<h1 class="arena-victory-title">🏆 VICTORY! 🏆</h1>`;
+
+        // Show winning creature(s)
+        html += `<div class="victory-champions">`;
+        winners.forEach(w => {
+            const evoIdx = getEvo(w.cid, w.lv);
+            const c = CREATURES[w.cid];
+            html += `<div class="victory-champion">
+                <div class="champion-frame evo${evoIdx+1}">
+                    <img src="${getImg(w.cid, w.lv)}" class="champion-img">
+                </div>
+                <div class="champion-name">${w.name || c.names[evoIdx]}</div>
+                <div class="champion-title">Champion!</div>
+            </div>`;
+        });
+        html += `</div>`;
+
+        // Winner stats
+        if(winners.length > 0){
+            const record = getArenaRecord(winners[0].id);
+            html += `<div class="victory-stats">
+                <span class="stat-item">🔥 Win Streak: ${record.streak}</span>
+                <span class="stat-item">🏆 Total Wins: ${record.wins}</span>
+            </div>`;
+        }
+    }
+
+    html += `<button class="arena-victory-btn" onclick="closeArenaVictory()">Continue</button>
+    </div>`;
+
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+
+    // Start fireworks animation
+    setTimeout(() => {
+        overlay.classList.add('active');
+        if(winner !== 'draw'){
+            startFireworks();
+        }
+    }, 100);
+
+    // Play victory sound
+    playSound('victory');
+}
+
+function closeArenaVictory(){
+    const overlay = document.getElementById('arenaVictoryOverlay');
+    if(overlay){
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.remove(), 300);
+    }
+
+    stopFireworks();
+    arenaBattle = null;
+    resetArenaSetup();
+    currentScreen = 'arena';
+    renderNav();
+    renderMain();
+}
+
+// ============================================
+// FIREWORKS ANIMATION
+// ============================================
+let fireworksActive = false;
+let fireworksParticles = [];
+let fireworksAnimFrame = null;
+
+function startFireworks(){
+    const canvas = document.getElementById('fireworksCanvas');
+    if(!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    fireworksActive = true;
+    fireworksParticles = [];
+
+    // Launch fireworks at intervals
+    const launchInterval = setInterval(() => {
+        if(!fireworksActive){
+            clearInterval(launchInterval);
+            return;
+        }
+        launchFirework(canvas, ctx);
+    }, 400);
+
+    // Initial burst
+    for(let i = 0; i < 5; i++){
+        setTimeout(() => launchFirework(canvas, ctx), i * 100);
+    }
+
+    // Animation loop
+    function animate(){
+        if(!fireworksActive) return;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        fireworksParticles = fireworksParticles.filter(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05; // gravity
+            p.life -= 0.02;
+            p.size *= 0.98;
+
+            if(p.life <= 0) return false;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.life})`;
+            ctx.fill();
+
+            // Trail
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3);
+            ctx.strokeStyle = `hsla(${p.hue}, 100%, 70%, ${p.life * 0.5})`;
+            ctx.lineWidth = p.size * 0.5;
+            ctx.stroke();
+
+            return true;
+        });
+
+        fireworksAnimFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+function launchFirework(canvas, ctx){
+    const x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+    const y = canvas.height * 0.3 + Math.random() * canvas.height * 0.3;
+    const hue = Math.random() * 360;
+    const particleCount = 50 + Math.floor(Math.random() * 30);
+
+    for(let i = 0; i < particleCount; i++){
+        const angle = (Math.PI * 2 / particleCount) * i + Math.random() * 0.5;
+        const speed = 2 + Math.random() * 4;
+
+        fireworksParticles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 2,
+            hue: hue + Math.random() * 30 - 15,
+            life: 1,
+            size: 3 + Math.random() * 2
+        });
+    }
+}
+
+function stopFireworks(){
+    fireworksActive = false;
+    if(fireworksAnimFrame){
+        cancelAnimationFrame(fireworksAnimFrame);
+        fireworksAnimFrame = null;
+    }
+    fireworksParticles = [];
+}
+
 // NAVIGATION
 function switchScreen(s){currentScreen=s;renderNav();renderMain();updateMusic()}
 function renderNav(){
@@ -5724,6 +7738,7 @@ function renderNav(){
         {id:'team',label:'Legends'},
         {id:'homebase',label:'Home Base'},
         {id:'adventure',label:'Adventure'},
+        {id:'arena',label:'⚔️ Arena'},
         {id:'shop',label:'🛒 Shop'},
         {id:'storylog',label:'Story'},
         {id:'trophies',label:'Trophies'},
@@ -5751,12 +7766,14 @@ function renderMain(){
     if(currentScreen==='team')renderTeam(m);
     else if(currentScreen==='homebase')renderHomeBase(m);
     else if(currentScreen==='adventure')renderAdventure(m);
+    else if(currentScreen==='arena')renderArena(m);
     else if(currentScreen==='shop')renderShop(m);
     else if(currentScreen==='storylog')renderStoryLog(m);
     else if(currentScreen==='trophies')renderTrophies(m);
     else if(currentScreen==='bestiary')renderBestiary(m);
     else if(currentScreen==='teacher')renderTeacher(m);
     else if(currentScreen==='battle')renderBattle(m);
+    else if(currentScreen==='arenaBattle')renderArenaBattle(m);
 }
 
 // RENDER: LEGENDS TEAM (Active students)
