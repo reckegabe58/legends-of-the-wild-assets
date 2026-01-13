@@ -7955,20 +7955,116 @@ function startWildEncounter(avgLv,chapter){
     });
     
     // ============================================
-    // ADD DEFEATED BOSSES FROM PREVIOUS TIERS
+    // v54.3: MULTI-BOSS ENCOUNTER SYSTEM
+    // ============================================
+    // Chapter 3: 10% chance for 2 Tier 1 bosses
+    // Chapter 4: 12% chance for 2 Tier 1/2 bosses
+    // Chapter 5: 15% chance for 2-3 bosses of any tier
+
+    let multiBossEncounter = false;
+    let bossesToFight = [];
+
+    // Check for multi-boss encounter first (higher priority)
+    if(chapter >= 3){
+        let multiBossChance = 0;
+        let maxBosses = 2;
+        let eligibleTiers = [];
+
+        if(chapter === 3){
+            multiBossChance = 0.10;
+            maxBosses = 2;
+            eligibleTiers = [TIER1_BOSSES];
+        } else if(chapter === 4){
+            multiBossChance = 0.12;
+            maxBosses = 2;
+            eligibleTiers = [TIER1_BOSSES, TIER2_BOSSES];
+        } else if(chapter >= 5){
+            multiBossChance = 0.15;
+            maxBosses = Math.random() < 0.3 ? 3 : 2; // 30% chance for 3 bosses
+            eligibleTiers = [TIER1_BOSSES, TIER2_BOSSES, TIER3_BOSSES];
+        }
+
+        if(Math.random() < multiBossChance){
+            // Collect all eligible defeated bosses
+            let eligibleBosses = [];
+            eligibleTiers.forEach(tierList => {
+                tierList.forEach(bid => {
+                    if(state.defeated.includes(bid) && BOSSES[bid]){
+                        const tier = TIER1_BOSSES.includes(bid) ? 1 : TIER2_BOSSES.includes(bid) ? 2 : 3;
+                        eligibleBosses.push({id: bid, ...BOSSES[bid], tier: tier});
+                    }
+                });
+            });
+
+            // Need at least 2 defeated bosses for multi-boss
+            if(eligibleBosses.length >= 2){
+                multiBossEncounter = true;
+                // Shuffle and pick
+                eligibleBosses.sort(() => Math.random() - 0.5);
+                bossesToFight = eligibleBosses.slice(0, Math.min(maxBosses, eligibleBosses.length));
+            }
+        }
+    }
+
+    // If multi-boss encounter triggered
+    if(multiBossEncounter && bossesToFight.length >= 2){
+        const lvScale = 1 + (avgLv - bossesToFight[0].lv) * 0.03;
+        const partyScale = 1 + (partySize - 1) * 0.1;
+        // Multi-boss = each boss is weaker (60% stats)
+        const multiBossNerf = 0.6;
+
+        const scaledBosses = bossesToFight.map((boss, idx) => ({
+            ...boss,
+            id: boss.id + '_multi' + idx,
+            name: `${boss.name}`,
+            lv: Math.max(boss.lv, avgLv - 5),
+            hp: Math.floor(boss.hp * lvScale * partyScale * multiBossNerf),
+            maxHp: Math.floor(boss.hp * lvScale * partyScale * multiBossNerf),
+            atk: Math.floor(boss.atk * lvScale * partyScale * multiBossNerf),
+            def: Math.floor(boss.def * lvScale * multiBossNerf),
+            spd: boss.spd,
+            xp: Math.floor(boss.xp * 0.6),
+            coins: Math.floor(boss.coins * 0.6),
+            img: boss.img,
+            isBoss: true,
+            isMultiBoss: true,
+            attacks: boss.atks,
+            minionPool: [] // No minions in multi-boss fights
+        }));
+
+        const bossNames = scaledBosses.map(b => b.name).join(' & ');
+        const narratives = [
+            `The ground trembles as not one, but ${scaledBosses.length} monstrous forms emerge! ${bossNames} have formed an unholy alliance!`,
+            `Your worst nightmare comes true - ${bossNames} attack TOGETHER! This will be your greatest challenge yet!`,
+            `"Alone we fell. Together, we shall CRUSH you!" ${bossNames} roar in unison as they charge!`,
+            `The defeated bosses have learned from their failures. ${bossNames} combine their powers against you!`
+        ];
+        const narrative = narratives[Math.floor(Math.random() * narratives.length)];
+
+        addStoryLog(`💀💀 MULTI-BOSS ENCOUNTER: ${bossNames}!`, 'battle');
+
+        showEventOverlay(`💀💀 ${scaledBosses.length} BOSSES ATTACK!`, narrative, 'red', ()=>{
+            // First boss is main, rest are additional enemies
+            startBattleWith(scaledBosses[0], 'tier' + bossesToFight[0].tier, scaledBosses.slice(1));
+        });
+        return;
+    }
+
+    // ============================================
+    // SINGLE REVENGE BOSS ENCOUNTER
     // ============================================
     // Chapter 2+ can encounter defeated Tier 1 bosses
     // Chapter 3+ can encounter defeated Tier 1 & 2 bosses
     // Chapter 4+ can encounter all defeated bosses
     // 15% chance to encounter a previous boss instead of regular enemies
-    
+
     const previousBossEncounter = Math.random() < 0.15;
     let bossToFight = null;
-    
+
     if(previousBossEncounter && chapter >= 2){
         // Get defeated bosses from previous tiers
         let eligibleBosses = [];
-        
+
         if(chapter >= 2){
             // Add defeated Tier 1 bosses
             TIER1_BOSSES.forEach(bid => {
@@ -7993,7 +8089,7 @@ function startWildEncounter(avgLv,chapter){
                 }
             });
         }
-        
+
         if(eligibleBosses.length > 0){
             bossToFight = eligibleBosses[Math.floor(Math.random() * eligibleBosses.length)];
         }
@@ -8036,10 +8132,11 @@ function startWildEncounter(avgLv,chapter){
         let sizeClass = 'tier1';
         if(bossToFight.tier === 2) sizeClass = 'tier2';
         else if(bossToFight.tier === 3) sizeClass = 'tier3';
-        
-        showEventOverlay('💀 REVENGE ENCOUNTER!', narrative, 'red', bossToFight.img, ()=>{
+
+        // v54.3: Fixed parameter order - callback before image
+        showEventOverlay('💀 REVENGE ENCOUNTER!', narrative, 'red', ()=>{
             startBattleWith(scaledBoss, sizeClass);
-        });
+        }, bossToFight.img);
         return;
     }
     
@@ -9875,67 +9972,106 @@ function enemyAction(){
     const arena = document.getElementById('battleArena');
     
     // ============================================
-    // SMART AI DECISION MAKING
+    // v54.3: INTELLIGENT AI DECISION MAKING
     // ============================================
+    // Enemies now make tactical decisions based on:
+    // - Their HP status, focus levels, and available abilities
+    // - Ally status (heal wounded allies)
+    // - Target priorities (finish low HP enemies)
+    // - Resource management (defend to charge focus)
+
     const hpPercent = enemy.hp / enemy.maxHp;
     const allEnemies = b.enemies.filter(e => e.hp > 0);
     const woundedAllies = allEnemies.filter(e => e.hp / e.maxHp < 0.5);
-    
-    let actionType = 'basic'; // basic, special, heal, aoe
-    let healTarget = null;
-    
-    // Decision priority:
-    // 1. Heal if we can AND (self low HP OR ally very low)
-    // 2. Use special if ready AND (enemy low HP for kill OR random 30%)
-    // 3. AOE if boss with AOE ability AND multiple targets AND random
-    // 4. Basic attack
-    
-    // Check if should heal (requires focus like specials)
-    if(enemy.canHeal && enemy.healAttack){
-        const healCost = enemy.healAttack.focusCost || 30; // Heals cost 30 focus by default
-        const hasHealFocus = !enemy.focus || enemy.focus >= healCost;
+    const currentFocus = enemy.focus || 0;
+    const maxFocus = enemy.focusMax || MAX_FOCUS;
 
-        if(hasHealFocus){
-            // Heal self if below 40%
-            if(hpPercent < 0.4 && Math.random() < 0.6){
-                actionType = 'heal';
-                healTarget = enemy;
-            }
-            // Heal wounded ally if any below 30%
-            else if(woundedAllies.length > 0){
-                const criticalAlly = woundedAllies.find(e => e.hp / e.maxHp < 0.3);
-                if(criticalAlly && Math.random() < 0.4){
-                    actionType = 'heal';
-                    healTarget = criticalAlly;
-                }
-            }
+    let actionType = 'basic'; // basic, special, heal, aoe, defend
+    let healTarget = null;
+
+    // Calculate costs for abilities
+    const healCost = enemy.healAttack?.focusCost || 30;
+    const spec = enemy.specialAttack;
+    const specialCost = spec ? calculateSpecialCost(enemy.evoStage || 0, (spec.power || 1.5) * 100, spec.n || spec.name, false) : 100;
+    const hasHealFocus = currentFocus >= healCost;
+    const hasSpecialFocus = currentFocus >= specialCost;
+    const focusNeededForSpecial = specialCost - currentFocus;
+    const turnsToSpecial = Math.ceil(focusNeededForSpecial / (FOCUS_REGEN_PER_TURN + 5)); // +5 for defend bonus
+
+    // ============================================
+    // DECISION PRIORITY (smartest first)
+    // ============================================
+
+    // 1. EMERGENCY HEAL - Self at critical HP
+    if(enemy.canHeal && enemy.healAttack && hasHealFocus && hpPercent < 0.25){
+        if(Math.random() < 0.8){
+            actionType = 'heal';
+            healTarget = enemy;
         }
     }
-    
-    // Check if should use special
-    if(actionType === 'basic' && enemy.hasSpecial && enemy.specialAttack && enemy.specialCooldown === 0){
-        // v54.1: Dynamic focus cost calculation for enemies
-        const spec = enemy.specialAttack;
-        const specialCost = calculateSpecialCost(enemy.evoStage || 0, (spec.power || 1.5) * 100, spec.n || spec.name, false);
-        const hasFocus = !enemy.focus || enemy.focus >= specialCost;
-        
-        if(hasFocus){
-            const lowestTarget = alive.reduce((a,b) => a.curHp < b.curHp ? a : b);
-            const canKill = lowestTarget.curHp < enemy.atk * enemy.specialAttack.power * 0.8;
-            
-            // Use special for kill shot OR 35% random chance
-            if(canKill || Math.random() < 0.35){
-                actionType = 'special';
-            }
+
+    // 2. HEAL CRITICAL ALLY - Ally about to die
+    if(actionType === 'basic' && enemy.canHeal && enemy.healAttack && hasHealFocus){
+        const dyingAlly = woundedAllies.find(e => e !== enemy && e.hp / e.maxHp < 0.2);
+        if(dyingAlly && Math.random() < 0.7){
+            actionType = 'heal';
+            healTarget = dyingAlly;
         }
     }
-    
-    // Check for AOE (bosses only)
+
+    // 3. FINISH LOW HP TARGET - Use special for kill shot
+    if(actionType === 'basic' && enemy.hasSpecial && spec && enemy.specialCooldown === 0 && hasSpecialFocus){
+        const lowestTarget = alive.reduce((a,b) => a.curHp < b.curHp ? a : b);
+        const estimatedDmg = enemy.atk * (spec.power || 1.5) * 0.7;
+        const canKill = lowestTarget.curHp < estimatedDmg;
+        if(canKill){
+            actionType = 'special';
+        }
+    }
+
+    // 4. DEFEND TO CHARGE FOCUS - Strategic resource building
+    // Defend if: has special but not enough focus, AND can reach it in 1-2 turns
+    if(actionType === 'basic' && enemy.hasSpecial && spec && !hasSpecialFocus){
+        if(turnsToSpecial <= 2 && Math.random() < 0.5){
+            actionType = 'defend';
+        }
+    }
+
+    // 5. DEFEND WHEN WOUNDED - Reduce incoming damage
+    if(actionType === 'basic' && hpPercent < 0.35 && hpPercent > 0.15){
+        // Lower HP = more likely to defend
+        const defendChance = (1 - hpPercent) * 0.4;
+        if(Math.random() < defendChance){
+            actionType = 'defend';
+        }
+    }
+
+    // 6. USE SPECIAL ATTACK - Ready and able
+    if(actionType === 'basic' && enemy.hasSpecial && spec && enemy.specialCooldown === 0 && hasSpecialFocus){
+        // Use special 40% of the time when available
+        if(Math.random() < 0.4){
+            actionType = 'special';
+        }
+    }
+
+    // 7. AOE ATTACK - Boss ability when multiple targets
     if(actionType === 'basic' && enemy.isBoss && enemy.attacks?.a?.length && alive.length >= 2){
-        if(Math.random() < 0.3){
+        // More likely with more targets
+        const aoeChance = 0.2 + (alive.length * 0.08);
+        if(Math.random() < aoeChance){
             actionType = 'aoe';
         }
     }
+
+    // 8. HEAL SELF - Moderate HP
+    if(actionType === 'basic' && enemy.canHeal && enemy.healAttack && hasHealFocus && hpPercent < 0.5){
+        if(Math.random() < 0.4){
+            actionType = 'heal';
+            healTarget = enemy;
+        }
+    }
+
+    // 9. BASIC ATTACK - Default fallback (already set)
     
     // Choose target for attacks
     const targetMember = alive[Math.floor(Math.random()*alive.length)];
@@ -9944,13 +10080,44 @@ function enemyAction(){
     // ============================================
     // EXECUTE ACTION
     // ============================================
-    
+
     if(actionType === 'heal'){
         // HEAL ACTION
         executeEnemyHeal(enemy, enemyIdx, healTarget, enemyEl);
         return;
     }
-    
+
+    if(actionType === 'defend'){
+        // DEFEND ACTION - Enemy takes defensive stance, gains focus
+        enemy.def = true; // Mark as defending (halves incoming damage)
+        const focusGain = 5; // Bonus focus for defending
+        enemy.focus = Math.min(maxFocus, currentFocus + focusGain);
+
+        // Visual feedback
+        if(enemyEl){
+            enemyEl.classList.add('defending');
+            setTimeout(()=> enemyEl.classList.remove('defending'), 500);
+        }
+
+        // Get defend move name if available
+        const defName = enemy.moves?.def?.n || 'Guard';
+        addLog(`🛡️ ${enemy.name} uses ${defName}! (+${focusGain} Focus)`, 'def');
+
+        // Show floating text
+        const floatEl = document.createElement('div');
+        floatEl.className = 'floating-text defend';
+        floatEl.textContent = 'DEFEND';
+        floatEl.style.cssText = 'position:absolute;top:30%;left:50%;transform:translateX(-50%);color:#60a5fa;font-weight:bold;font-size:1.2rem;animation:floatUp 1s forwards;pointer-events:none;z-index:100';
+        if(enemyEl?.parentElement) enemyEl.parentElement.appendChild(floatEl);
+        setTimeout(()=> floatEl.remove(), 1000);
+
+        turnIdx++;
+        processing = false;
+        renderMain();
+        setTimeout(nextTurn, 600);
+        return;
+    }
+
     // TELEGRAPH PHASE (0.4s) for attacks
     if(actionType !== 'aoe'){
         const arenaTarget = document.getElementById('arenaC'+targetMemberIdx);
