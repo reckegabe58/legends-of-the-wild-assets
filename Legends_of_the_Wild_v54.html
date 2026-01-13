@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+<!-- Legends of the Wild v54.6 - Enhanced Animations & Heal Scaling -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Legends of the Wild</title>
+<title>Legends of the Wild v54.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
 <style>
@@ -1989,6 +1990,457 @@ body{
     0%{transform:scale(0);opacity:1}
     50%{transform:scale(1.2);opacity:1}
     100%{transform:scale(0.5);opacity:0}
+}
+
+/* ============================================
+   v54.6: ENHANCED ATTACK ANIMATIONS
+   Multi-slash, element trails, combos
+   ============================================ */
+
+/* Multi-slash effect - diagonal slashes for heavy attacks */
+.multi-slash{
+    position:fixed;
+    pointer-events:none;
+    z-index:2500;
+    width:120px;
+    height:120px;
+}
+.multi-slash .slash-line{
+    position:absolute;
+    width:100%;
+    height:4px;
+    background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.9) 20%,rgba(255,255,255,1) 50%,rgba(255,255,255,0.9) 80%,transparent 100%);
+    border-radius:2px;
+    transform-origin:center;
+    opacity:0;
+    filter:drop-shadow(0 0 8px rgba(255,255,255,0.8));
+}
+.multi-slash .slash-line:nth-child(1){
+    top:30%;left:0;
+    transform:rotate(-45deg);
+    animation:slashAppear 150ms 0ms ease-out forwards;
+}
+.multi-slash .slash-line:nth-child(2){
+    top:50%;left:0;
+    transform:rotate(45deg);
+    animation:slashAppear 150ms 80ms ease-out forwards;
+}
+.multi-slash .slash-line:nth-child(3){
+    top:70%;left:0;
+    transform:rotate(-15deg);
+    animation:slashAppear 150ms 160ms ease-out forwards;
+}
+@keyframes slashAppear{
+    0%{opacity:0;transform:rotate(var(--rot,-45deg)) scaleX(0)}
+    30%{opacity:1;transform:rotate(var(--rot,-45deg)) scaleX(1.2)}
+    100%{opacity:0;transform:rotate(var(--rot,-45deg)) scaleX(1.5) translateX(30px)}
+}
+
+/* Element trail particles */
+.element-trail{
+    position:fixed;
+    pointer-events:none;
+    z-index:2450;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    animation:trailFade 400ms ease-out forwards;
+}
+.element-trail.fire{
+    background:radial-gradient(circle,#ff9500,#ff4500);
+    box-shadow:0 0 12px #ff6b00,0 0 24px #ff4500;
+}
+.element-trail.ice{
+    background:radial-gradient(circle,#b3e5fc,#4fc3f7);
+    box-shadow:0 0 10px #4fc3f7,0 0 20px #81d4fa;
+}
+.element-trail.nature{
+    background:radial-gradient(circle,#a5d6a7,#4caf50);
+    box-shadow:0 0 10px #4caf50,0 0 18px #81c784;
+}
+.element-trail.lightning{
+    background:radial-gradient(circle,#fff59d,#ffeb3b);
+    box-shadow:0 0 15px #ffeb3b,0 0 30px #ffc107;
+}
+.element-trail.water{
+    background:radial-gradient(circle,#81d4fa,#0288d1);
+    box-shadow:0 0 10px #0288d1,0 0 20px #4fc3f7;
+}
+.element-trail.earth{
+    background:radial-gradient(circle,#d7ccc8,#8d6e63);
+    box-shadow:0 0 8px #795548;
+}
+.element-trail.shadow,.element-trail.void{
+    background:radial-gradient(circle,#ce93d8,#7b1fa2);
+    box-shadow:0 0 12px #9c27b0,0 0 24px #7b1fa2;
+}
+.element-trail.poison{
+    background:radial-gradient(circle,#e1bee7,#9c27b0);
+    box-shadow:0 0 10px #9c27b0;
+}
+@keyframes trailFade{
+    0%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(0.3)}
+}
+
+/* Combo indicator */
+.combo-indicator{
+    position:fixed;
+    pointer-events:none;
+    z-index:2600;
+    font-family:'Fredoka One',cursive;
+    font-size:1.4rem;
+    font-weight:bold;
+    color:#fbbf24;
+    text-shadow:2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,0 0 20px rgba(251,191,36,0.6);
+    animation:comboPopIn 600ms ease-out forwards;
+}
+@keyframes comboPopIn{
+    0%{opacity:0;transform:scale(0.5) translateY(10px)}
+    40%{opacity:1;transform:scale(1.3) translateY(-15px)}
+    100%{opacity:0;transform:scale(1) translateY(-40px)}
+}
+
+/* Lightning strike effect */
+.lightning-strike{
+    position:fixed;
+    pointer-events:none;
+    z-index:2550;
+    width:60px;
+    height:200px;
+    background:linear-gradient(180deg,
+        rgba(255,255,150,0) 0%,
+        rgba(255,255,100,0.9) 10%,
+        rgba(255,255,255,1) 50%,
+        rgba(255,255,100,0.9) 90%,
+        rgba(255,255,150,0) 100%);
+    clip-path:polygon(45% 0%,55% 0%,60% 25%,70% 25%,40% 55%,55% 55%,30% 100%,35% 55%,20% 55%,50% 25%,40% 25%);
+    animation:lightningStrike 300ms ease-out forwards;
+    filter:drop-shadow(0 0 20px #ffeb3b) drop-shadow(0 0 40px #ffc107);
+}
+@keyframes lightningStrike{
+    0%{opacity:0;transform:scaleY(0);transform-origin:top}
+    20%{opacity:1;transform:scaleY(1)}
+    50%{opacity:1}
+    100%{opacity:0}
+}
+
+/* Ground slam / earth crack effect */
+.ground-slam{
+    position:fixed;
+    pointer-events:none;
+    z-index:2400;
+    width:200px;
+    height:40px;
+    animation:groundSlamAnim 500ms ease-out forwards;
+}
+.ground-slam::before{
+    content:'';
+    position:absolute;
+    width:100%;
+    height:100%;
+    background:radial-gradient(ellipse at center bottom,rgba(139,90,43,0.8) 0%,rgba(101,67,33,0.4) 50%,transparent 70%);
+    animation:crackExpand 400ms ease-out forwards;
+}
+.ground-slam .crack-line{
+    position:absolute;
+    bottom:50%;
+    height:3px;
+    background:linear-gradient(90deg,transparent,#5d4037,#8d6e63,#5d4037,transparent);
+    transform-origin:center bottom;
+}
+.ground-slam .crack-line:nth-child(1){left:50%;width:80px;transform:translateX(-50%) rotate(-15deg);animation:crackAppear 200ms 50ms ease-out forwards}
+.ground-slam .crack-line:nth-child(2){left:30%;width:50px;transform:rotate(-35deg);animation:crackAppear 200ms 100ms ease-out forwards}
+.ground-slam .crack-line:nth-child(3){left:60%;width:60px;transform:rotate(25deg);animation:crackAppear 200ms 150ms ease-out forwards}
+@keyframes crackExpand{
+    0%{transform:scaleX(0.3) scaleY(0.5);opacity:0}
+    50%{transform:scaleX(1.2) scaleY(1);opacity:1}
+    100%{transform:scaleX(1.5) scaleY(0.8);opacity:0}
+}
+@keyframes crackAppear{
+    0%{opacity:0;transform:scaleX(0)}
+    50%{opacity:1;transform:scaleX(1)}
+    100%{opacity:0;transform:scaleX(1.2)}
+}
+
+/* Beam attack effect */
+.beam-attack{
+    position:fixed;
+    pointer-events:none;
+    z-index:2500;
+    height:20px;
+    background:linear-gradient(90deg,
+        rgba(255,255,255,0.3) 0%,
+        rgba(255,255,255,0.9) 10%,
+        rgba(255,255,255,1) 50%,
+        rgba(255,255,255,0.9) 90%,
+        rgba(255,255,255,0.3) 100%);
+    border-radius:10px;
+    transform-origin:left center;
+    animation:beamFire 400ms ease-out forwards;
+}
+.beam-attack.fire{background:linear-gradient(90deg,transparent,#ff6b00,#ff9500,#ffcc00,#ff9500,#ff6b00,transparent);box-shadow:0 0 30px #ff6b00}
+.beam-attack.ice{background:linear-gradient(90deg,transparent,#4fc3f7,#81d4fa,#e1f5fe,#81d4fa,#4fc3f7,transparent);box-shadow:0 0 30px #4fc3f7}
+.beam-attack.lightning{background:linear-gradient(90deg,transparent,#ffc107,#ffeb3b,#fff9c4,#ffeb3b,#ffc107,transparent);box-shadow:0 0 30px #ffeb3b}
+.beam-attack.nature{background:linear-gradient(90deg,transparent,#4caf50,#81c784,#c8e6c9,#81c784,#4caf50,transparent);box-shadow:0 0 30px #4caf50}
+.beam-attack.shadow,.beam-attack.void{background:linear-gradient(90deg,transparent,#7b1fa2,#9c27b0,#ce93d8,#9c27b0,#7b1fa2,transparent);box-shadow:0 0 30px #9c27b0}
+.beam-attack.water{background:linear-gradient(90deg,transparent,#0288d1,#4fc3f7,#b3e5fc,#4fc3f7,#0288d1,transparent);box-shadow:0 0 30px #0288d1}
+@keyframes beamFire{
+    0%{transform:scaleX(0);opacity:0.5}
+    30%{transform:scaleX(1);opacity:1}
+    70%{transform:scaleX(1);opacity:1}
+    100%{transform:scaleX(1);opacity:0}
+}
+
+/* ============================================
+   v54.6: STATUS EFFECT ANIMATIONS
+   Visual indicators for debuffs/buffs
+   ============================================ */
+
+/* Burn status - orange flicker */
+.status-burn{
+    animation:burnFlicker 500ms infinite;
+}
+@keyframes burnFlicker{
+    0%,100%{filter:brightness(1) sepia(0)}
+    25%{filter:brightness(1.2) sepia(0.3) hue-rotate(-10deg)}
+    50%{filter:brightness(1.1) sepia(0.2)}
+    75%{filter:brightness(1.3) sepia(0.4) hue-rotate(-15deg)}
+}
+
+/* Burn particles */
+.burn-particles{
+    position:absolute;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    overflow:visible;
+}
+.burn-particle{
+    position:absolute;
+    width:8px;
+    height:8px;
+    background:radial-gradient(circle,#ff6b00,#ff4500);
+    border-radius:50%;
+    animation:burnFloat 1s infinite ease-out;
+    box-shadow:0 0 6px #ff6b00;
+}
+.burn-particle:nth-child(1){left:20%;animation-delay:0s}
+.burn-particle:nth-child(2){left:50%;animation-delay:0.3s}
+.burn-particle:nth-child(3){left:80%;animation-delay:0.6s}
+@keyframes burnFloat{
+    0%{bottom:10%;opacity:1;transform:scale(1)}
+    100%{bottom:90%;opacity:0;transform:scale(0.3)}
+}
+
+/* Poison status - purple drip */
+.status-poison{
+    animation:poisonPulse 800ms infinite;
+}
+@keyframes poisonPulse{
+    0%,100%{filter:brightness(1) hue-rotate(0deg)}
+    50%{filter:brightness(0.9) hue-rotate(280deg) saturate(1.3)}
+}
+
+/* Poison drip particles */
+.poison-drip{
+    position:absolute;
+    width:6px;
+    height:10px;
+    background:linear-gradient(180deg,#9c27b0,#7b1fa2);
+    border-radius:50% 50% 50% 50% / 40% 40% 60% 60%;
+    animation:poisonDrip 1.2s infinite ease-in;
+    box-shadow:0 0 8px #9c27b0;
+}
+@keyframes poisonDrip{
+    0%{top:20%;opacity:0;transform:scale(0.5)}
+    20%{opacity:1;transform:scale(1)}
+    100%{top:110%;opacity:0;transform:scale(0.7)}
+}
+
+/* Freeze status - ice shimmer */
+.status-freeze{
+    animation:freezeShiver 200ms infinite;
+    filter:brightness(1.1) saturate(0.7) hue-rotate(180deg);
+}
+@keyframes freezeShiver{
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-2px)}
+    75%{transform:translateX(2px)}
+}
+
+/* Ice crystals overlay */
+.ice-crystals{
+    position:absolute;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    background:
+        radial-gradient(ellipse at 20% 30%,rgba(179,229,252,0.6) 0%,transparent 30%),
+        radial-gradient(ellipse at 80% 40%,rgba(129,212,250,0.5) 0%,transparent 25%),
+        radial-gradient(ellipse at 50% 80%,rgba(179,229,252,0.4) 0%,transparent 35%);
+    animation:iceSparkleOverlay 1s infinite;
+}
+@keyframes iceSparkleOverlay{
+    0%,100%{opacity:0.7}
+    50%{opacity:1}
+}
+
+/* Stun status - stars circling */
+.status-stun{
+    animation:stunDaze 300ms infinite;
+}
+@keyframes stunDaze{
+    0%,100%{transform:rotate(0deg)}
+    25%{transform:rotate(-3deg)}
+    75%{transform:rotate(3deg)}
+}
+
+/* Stun stars container */
+.stun-stars{
+    position:absolute;
+    top:-20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:60px;
+    height:30px;
+    animation:starsOrbit 1s linear infinite;
+}
+.stun-star{
+    position:absolute;
+    font-size:1.2rem;
+    animation:starTwinkle 0.5s infinite alternate;
+}
+.stun-star:nth-child(1){left:0;top:50%;animation-delay:0s}
+.stun-star:nth-child(2){left:50%;top:0;transform:translateX(-50%);animation-delay:0.15s}
+.stun-star:nth-child(3){right:0;top:50%;animation-delay:0.3s}
+@keyframes starsOrbit{
+    0%{transform:translateX(-50%) rotate(0deg)}
+    100%{transform:translateX(-50%) rotate(360deg)}
+}
+@keyframes starTwinkle{
+    0%{opacity:0.5;transform:scale(0.8)}
+    100%{opacity:1;transform:scale(1.2)}
+}
+
+/* Buff glow - colored outline */
+.status-buff-atk{
+    filter:drop-shadow(0 0 8px rgba(248,113,113,0.8)) drop-shadow(0 0 16px rgba(248,113,113,0.4));
+    animation:buffPulseRed 1s infinite;
+}
+.status-buff-def{
+    filter:drop-shadow(0 0 8px rgba(96,165,250,0.8)) drop-shadow(0 0 16px rgba(96,165,250,0.4));
+    animation:buffPulseBlue 1s infinite;
+}
+.status-buff-spd{
+    filter:drop-shadow(0 0 8px rgba(74,222,128,0.8)) drop-shadow(0 0 16px rgba(74,222,128,0.4));
+    animation:buffPulseGreen 1s infinite;
+}
+@keyframes buffPulseRed{
+    0%,100%{filter:drop-shadow(0 0 8px rgba(248,113,113,0.8))}
+    50%{filter:drop-shadow(0 0 16px rgba(248,113,113,1)) drop-shadow(0 0 24px rgba(248,113,113,0.5))}
+}
+@keyframes buffPulseBlue{
+    0%,100%{filter:drop-shadow(0 0 8px rgba(96,165,250,0.8))}
+    50%{filter:drop-shadow(0 0 16px rgba(96,165,250,1)) drop-shadow(0 0 24px rgba(96,165,250,0.5))}
+}
+@keyframes buffPulseGreen{
+    0%,100%{filter:drop-shadow(0 0 8px rgba(74,222,128,0.8))}
+    50%{filter:drop-shadow(0 0 16px rgba(74,222,128,1)) drop-shadow(0 0 24px rgba(74,222,128,0.5))}
+}
+
+/* Weaken debuff - darkened appearance */
+.status-weaken{
+    filter:brightness(0.7) saturate(0.6);
+    animation:weakenPulse 1.5s infinite;
+}
+@keyframes weakenPulse{
+    0%,100%{filter:brightness(0.7) saturate(0.6)}
+    50%{filter:brightness(0.6) saturate(0.5)}
+}
+
+/* Protect buff - shimmering shield */
+.status-protect{
+    position:relative;
+}
+.status-protect::after{
+    content:'';
+    position:absolute;
+    inset:-5px;
+    border:2px solid rgba(96,165,250,0.6);
+    border-radius:12px;
+    animation:protectShimmer 1.5s infinite;
+    pointer-events:none;
+}
+@keyframes protectShimmer{
+    0%,100%{border-color:rgba(96,165,250,0.4);box-shadow:0 0 10px rgba(96,165,250,0.2)}
+    50%{border-color:rgba(96,165,250,0.8);box-shadow:0 0 20px rgba(96,165,250,0.5)}
+}
+
+/* ============================================
+   v54.6: ENHANCED HEAL ANIMATIONS
+   Rising sparkles, nature wrap, light pillar
+   ============================================ */
+
+/* Heal sparkles rising */
+.heal-sparkles{
+    position:fixed;
+    pointer-events:none;
+    z-index:2500;
+    width:100px;
+    height:150px;
+}
+.heal-sparkle{
+    position:absolute;
+    width:8px;
+    height:8px;
+    background:radial-gradient(circle,#4ade80,#22c55e);
+    border-radius:50%;
+    box-shadow:0 0 10px #4ade80;
+    animation:sparkleRise 1s ease-out forwards;
+}
+@keyframes sparkleRise{
+    0%{opacity:1;transform:translateY(0) scale(1)}
+    100%{opacity:0;transform:translateY(-120px) scale(0.3)}
+}
+
+/* Light pillar for heals */
+.light-pillar{
+    position:fixed;
+    pointer-events:none;
+    z-index:2400;
+    width:80px;
+    height:200px;
+    background:linear-gradient(180deg,
+        rgba(74,222,128,0) 0%,
+        rgba(74,222,128,0.3) 20%,
+        rgba(134,239,172,0.6) 50%,
+        rgba(74,222,128,0.3) 80%,
+        rgba(74,222,128,0) 100%);
+    animation:pillarDescend 800ms ease-out forwards;
+}
+@keyframes pillarDescend{
+    0%{opacity:0;transform:translateY(-50px)}
+    30%{opacity:1;transform:translateY(0)}
+    70%{opacity:1}
+    100%{opacity:0}
+}
+
+/* Critical heal burst */
+.crit-heal-burst{
+    position:fixed;
+    pointer-events:none;
+    z-index:2550;
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(74,222,128,0.8) 0%,rgba(34,197,94,0.4) 50%,transparent 70%);
+    animation:critHealPop 600ms ease-out forwards;
+}
+@keyframes critHealPop{
+    0%{transform:scale(0);opacity:1}
+    50%{transform:scale(1.5);opacity:0.8}
+    100%{transform:scale(2);opacity:0}
 }
 
 /* ============================================
@@ -11731,19 +12183,39 @@ function doAction(a){
         }
         
         const enemyEl = document.getElementById('enemyImg'+targetIdx);
-        
-        // Fire projectile for ranged-looking attacks
+
+        // v54.6: ENHANCED ATTACK ANIMATIONS
+        // Fire projectile with element trail for ranged-looking attacks
         setTimeout(()=>{
+            // Show element trail particles along projectile path
+            showElementTrail(arenaCreature, enemyEl, element);
+
             fireProjectile(arenaCreature, enemyEl, element, ()=>{
                 playSound(isCrit ? 'crit' : 'hit');
-                
+
                 // Store chip HP for delayed drain effect
                 targetEnemy.chipHp = targetEnemy.hp;
                 targetEnemy.hp = Math.max(0, targetEnemy.hp - d);
-                
+
+                // v54.6: ELEMENT-SPECIFIC IMPACT EFFECTS
+                // Lightning gets a lightning strike from above
+                if(element === 'lightning'){
+                    showLightningStrike(enemyEl);
+                }
+                // Earth gets a ground slam effect
+                else if(element === 'earth'){
+                    showGroundSlam(enemyEl);
+                }
+
                 // Show impact effect
                 showImpactEffect(enemyEl, isCrit, element);
-                showSlashEffect(enemyEl, isCrit);
+
+                // v54.6: Multi-slash for critical hits or high damage
+                if(isCrit || d > 80){
+                    showMultiSlash(enemyEl, element);
+                } else {
+                    showSlashEffect(enemyEl, isCrit);
+                }
                 
                 // TARGET SHAKE ANIMATION
                 if(enemyEl){
@@ -11902,7 +12374,7 @@ function doAction(a){
 
                 if(isAOE){
                     // ============================================
-                    // AOE SPECIAL - Hit ALL alive enemies
+                    // v54.6: ENHANCED AOE SPECIAL - Hit ALL enemies
                     // ============================================
                     const aliveEnemies = b.enemies.filter(e => e.hp > 0);
                     let totalDamage = 0;
@@ -11918,6 +12390,19 @@ function doAction(a){
                     if(arena){
                         arena.classList.add('screen-shake');
                         setTimeout(()=>arena.classList.remove('screen-shake'),400);
+                    }
+
+                    // v54.6: Element-specific AOE effects
+                    if(element === 'lightning'){
+                        // Lightning storm - strikes on all enemies
+                        aliveEnemies.forEach((enemy, i) => {
+                            const enemyEl = document.getElementById('enemyImg'+b.enemies.indexOf(enemy));
+                            setTimeout(() => showLightningStrike(enemyEl), i * 100);
+                        });
+                    } else if(element === 'earth'){
+                        // Earthquake - ground slam under first target
+                        const firstEnemyEl = document.getElementById('enemyImg'+b.enemies.indexOf(aliveEnemies[0]));
+                        showGroundSlam(firstEnemyEl);
                     }
 
                     // Hit each enemy with delay for visual effect
@@ -11938,10 +12423,11 @@ function doAction(a){
                             enemy.chipHp = enemy.hp;
                             enemy.hp = Math.max(0, enemy.hp - d);
 
-                            // Visual effects
+                            // v54.6: Enhanced visual effects
                             if(enemyEl){
                                 showImpactEffect(enemyEl, true, element);
                                 showElementEffect(enemyEl, element);
+                                showMultiSlash(enemyEl, element); // Multi-slash on AOE hits
                                 enemyEl.classList.add('anim-crit-shake','anim-hit-flash');
                                 setTimeout(()=>enemyEl.classList.remove('anim-crit-shake','anim-hit-flash'),350);
                                 showFloatingDamage(enemyEl, d, 'crit');
@@ -11974,7 +12460,7 @@ function doAction(a){
 
                 }else{
                     // ============================================
-                    // SINGLE TARGET SPECIAL - Original behavior
+                    // v54.6: ENHANCED SINGLE TARGET SPECIAL
                     // ============================================
                     // Calculate damage
                     let baseDmg = m.st.atk * 1.2;
@@ -11988,15 +12474,37 @@ function doAction(a){
 
                     const enemyEl = document.getElementById('enemyImg'+targetIdx);
 
-                    // Fire BIG projectile
-                    fireProjectile(arenaCreature, enemyEl, element, ()=>{
+                    // v54.6: HIGH-POWER SPECIALS USE BEAM ATTACK
+                    // Use beam for power >= 1.5, projectile for lower
+                    const isHighPower = mv.p >= 1.5;
+
+                    // Show element trail for all specials
+                    showElementTrail(arenaCreature, enemyEl, element);
+
+                    // Fire beam or projectile based on power level
+                    if(isHighPower){
+                        showBeamAttack(arenaCreature, enemyEl, element);
+                    }
+
+                    // Callback function for impact
+                    const onSpecialImpact = () => {
                         playSound('crit');
 
                         targetEnemy.chipHp = targetEnemy.hp;
                         targetEnemy.hp = Math.max(0, targetEnemy.hp - d);
 
+                        // v54.6: ELEMENT-SPECIFIC SPECIAL EFFECTS
+                        if(element === 'lightning'){
+                            showLightningStrike(enemyEl);
+                        } else if(element === 'earth'){
+                            showGroundSlam(enemyEl);
+                        }
+
                         showImpactEffect(enemyEl, true, element);
                         showElementEffect(enemyEl, element);
+
+                        // v54.6: Always show multi-slash for specials
+                        showMultiSlash(enemyEl, element);
 
                         if(enemyEl){
                             enemyEl.classList.add('anim-crit-shake','anim-hit-flash');
@@ -12015,7 +12523,7 @@ function doAction(a){
                         }
 
                         // Screen shake for big specials
-                        if(d > 80){
+                        if(d > 60){
                             const arena = document.getElementById('battleArena');
                             if(arena){
                                 arena.classList.add('screen-shake');
@@ -12034,7 +12542,14 @@ function doAction(a){
                             renderMain();
                             setTimeout(nextTurn, 500);
                         }
-                    });
+                    };
+
+                    // High power uses beam (delayed impact), low power uses projectile
+                    if(isHighPower){
+                        setTimeout(onSpecialImpact, 400); // Beam animation duration
+                    } else {
+                        fireProjectile(arenaCreature, enemyEl, element, onSpecialImpact);
+                    }
                 }
             }, 500); // After charge animation
         }else{
@@ -12359,16 +12874,363 @@ function showImpactEffect(targetEl, isCrit = false, element = null){
 // Show heal burst effect
 function showHealEffect(targetEl){
     if(!targetEl) return;
-    
+
     const heal = document.createElement('div');
     heal.className = 'heal-burst';
-    
+
     const rect = targetEl.getBoundingClientRect();
     heal.style.left = rect.left + rect.width/2 - 50 + 'px';
     heal.style.top = rect.top + rect.height/2 - 50 + 'px';
-    
+
     document.body.appendChild(heal);
     setTimeout(() => heal.remove(), 900);
+}
+
+// ============================================
+// v54.6: ENHANCED ATTACK ANIMATIONS
+// ============================================
+
+// Multi-slash effect for heavy/critical attacks
+function showMultiSlash(targetEl, element = 'default'){
+    if(!targetEl) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const container = document.createElement('div');
+    container.className = 'multi-slash';
+    container.style.left = rect.left + rect.width/2 - 60 + 'px';
+    container.style.top = rect.top + rect.height/2 - 60 + 'px';
+
+    // Create 3 slash lines with element colors
+    const colors = {
+        fire: '#ff6b00',
+        ice: '#4fc3f7',
+        nature: '#4caf50',
+        lightning: '#ffeb3b',
+        water: '#0288d1',
+        earth: '#8d6e63',
+        shadow: '#9c27b0',
+        void: '#7b1fa2',
+        poison: '#9c27b0',
+        default: '#ffffff'
+    };
+    const color = colors[element] || colors.default;
+
+    for(let i = 0; i < 3; i++){
+        const slash = document.createElement('div');
+        slash.className = 'slash-line';
+        slash.style.background = `linear-gradient(90deg,transparent 0%,${color}99 20%,${color} 50%,${color}99 80%,transparent 100%)`;
+        slash.style.filter = `drop-shadow(0 0 8px ${color})`;
+        container.appendChild(slash);
+    }
+
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 500);
+}
+
+// Element trail particles following projectile path
+function showElementTrail(fromEl, toEl, element){
+    if(!fromEl || !toEl) return;
+
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+
+    const startX = fromRect.left + fromRect.width/2;
+    const startY = fromRect.top + fromRect.height/2;
+    const endX = toRect.left + toRect.width/2;
+    const endY = toRect.top + toRect.height/2;
+
+    // Create 8 trail particles along path
+    for(let i = 0; i < 8; i++){
+        setTimeout(() => {
+            const progress = i / 8;
+            const x = startX + (endX - startX) * progress;
+            const y = startY + (endY - startY) * progress;
+
+            const particle = document.createElement('div');
+            particle.className = `element-trail ${element || 'fire'}`;
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 400);
+        }, i * 40);
+    }
+}
+
+// Combo indicator display
+function showComboIndicator(targetEl, comboCount){
+    if(!targetEl || comboCount < 2) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const combo = document.createElement('div');
+    combo.className = 'combo-indicator';
+    combo.textContent = comboCount >= 3 ? `${comboCount}x COMBO!` : `${comboCount}x HIT!`;
+    combo.style.left = rect.left + rect.width/2 - 40 + 'px';
+    combo.style.top = rect.top - 30 + 'px';
+
+    // Bigger text for higher combos
+    if(comboCount >= 4) combo.style.fontSize = '1.8rem';
+    if(comboCount >= 5) combo.style.color = '#f87171';
+
+    document.body.appendChild(combo);
+    setTimeout(() => combo.remove(), 700);
+}
+
+// Lightning strike effect for lightning-type attacks
+function showLightningStrike(targetEl){
+    if(!targetEl) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const bolt = document.createElement('div');
+    bolt.className = 'lightning-strike';
+    bolt.style.left = rect.left + rect.width/2 - 30 + 'px';
+    bolt.style.top = rect.top - 150 + 'px';
+
+    document.body.appendChild(bolt);
+
+    // Screen flash for dramatic effect
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,200,0.3);pointer-events:none;z-index:3000;animation:critFlash 200ms ease-out forwards';
+    document.body.appendChild(flash);
+
+    setTimeout(() => {
+        bolt.remove();
+        flash.remove();
+    }, 350);
+}
+
+// Ground slam effect for earth-type attacks
+function showGroundSlam(targetEl){
+    if(!targetEl) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const slam = document.createElement('div');
+    slam.className = 'ground-slam';
+    slam.style.left = rect.left + rect.width/2 - 100 + 'px';
+    slam.style.top = rect.top + rect.height - 20 + 'px';
+
+    // Add crack lines
+    for(let i = 0; i < 3; i++){
+        const crack = document.createElement('div');
+        crack.className = 'crack-line';
+        slam.appendChild(crack);
+    }
+
+    document.body.appendChild(slam);
+    setTimeout(() => slam.remove(), 600);
+}
+
+// Beam attack effect for high-power specials
+function showBeamAttack(fromEl, toEl, element){
+    if(!fromEl || !toEl) return;
+
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+
+    const startX = fromRect.left + fromRect.width/2;
+    const startY = fromRect.top + fromRect.height/2;
+    const endX = toRect.left + toRect.width/2;
+    const endY = toRect.top + toRect.height/2;
+
+    const beam = document.createElement('div');
+    beam.className = `beam-attack ${element || 'fire'}`;
+
+    // Calculate beam length and angle
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const length = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    beam.style.left = startX + 'px';
+    beam.style.top = startY - 10 + 'px';
+    beam.style.width = length + 'px';
+    beam.style.transform = `rotate(${angle}deg)`;
+
+    document.body.appendChild(beam);
+    setTimeout(() => beam.remove(), 450);
+}
+
+// ============================================
+// v54.6: ENHANCED HEAL ANIMATIONS
+// ============================================
+
+// Enhanced heal with light pillar and sparkles
+function showEnhancedHealEffect(targetEl, isEmergency = false){
+    if(!targetEl) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const centerX = rect.left + rect.width/2;
+    const centerY = rect.top + rect.height/2;
+
+    // Light pillar descending
+    const pillar = document.createElement('div');
+    pillar.className = 'light-pillar';
+    pillar.style.left = centerX - 40 + 'px';
+    pillar.style.top = centerY - 150 + 'px';
+    document.body.appendChild(pillar);
+    setTimeout(() => pillar.remove(), 900);
+
+    // Rising sparkles
+    const sparkleContainer = document.createElement('div');
+    sparkleContainer.className = 'heal-sparkles';
+    sparkleContainer.style.left = centerX - 50 + 'px';
+    sparkleContainer.style.top = centerY + 'px';
+
+    for(let i = 0; i < 12; i++){
+        const sparkle = document.createElement('div');
+        sparkle.className = 'heal-sparkle';
+        sparkle.style.left = Math.random() * 100 + 'px';
+        sparkle.style.bottom = '0';
+        sparkle.style.animationDelay = (i * 0.08) + 's';
+        sparkleContainer.appendChild(sparkle);
+    }
+    document.body.appendChild(sparkleContainer);
+    setTimeout(() => sparkleContainer.remove(), 1200);
+
+    // Critical heal burst for emergency heals
+    if(isEmergency){
+        const burst = document.createElement('div');
+        burst.className = 'crit-heal-burst';
+        burst.style.left = centerX - 60 + 'px';
+        burst.style.top = centerY - 60 + 'px';
+        document.body.appendChild(burst);
+        setTimeout(() => burst.remove(), 700);
+    }
+}
+
+// ============================================
+// v54.6: STATUS EFFECT VISUAL HELPERS
+// ============================================
+
+// Apply status effect visual to element
+function applyStatusEffect(targetEl, status){
+    if(!targetEl) return;
+
+    // Remove any existing status classes
+    targetEl.classList.remove('status-burn','status-poison','status-freeze','status-stun','status-weaken','status-protect','status-buff-atk','status-buff-def','status-buff-spd');
+
+    // Add the new status class
+    targetEl.classList.add(`status-${status}`);
+
+    // Add particle effects for certain statuses
+    if(status === 'burn'){
+        const particles = document.createElement('div');
+        particles.className = 'burn-particles';
+        particles.id = 'burnParticles_' + targetEl.id;
+        for(let i = 0; i < 3; i++){
+            const p = document.createElement('div');
+            p.className = 'burn-particle';
+            particles.appendChild(p);
+        }
+        targetEl.style.position = 'relative';
+        targetEl.appendChild(particles);
+    }
+
+    if(status === 'freeze'){
+        const ice = document.createElement('div');
+        ice.className = 'ice-crystals';
+        ice.id = 'iceCrystals_' + targetEl.id;
+        targetEl.style.position = 'relative';
+        targetEl.appendChild(ice);
+    }
+
+    if(status === 'stun'){
+        const stars = document.createElement('div');
+        stars.className = 'stun-stars';
+        stars.id = 'stunStars_' + targetEl.id;
+        for(let i = 0; i < 3; i++){
+            const star = document.createElement('span');
+            star.className = 'stun-star';
+            star.textContent = '⭐';
+            stars.appendChild(star);
+        }
+        targetEl.style.position = 'relative';
+        targetEl.appendChild(stars);
+    }
+}
+
+// Remove status effect visual from element
+function removeStatusEffect(targetEl, status){
+    if(!targetEl) return;
+
+    targetEl.classList.remove(`status-${status}`);
+
+    // Remove particle effects
+    const burnParticles = document.getElementById('burnParticles_' + targetEl.id);
+    const iceCrystals = document.getElementById('iceCrystals_' + targetEl.id);
+    const stunStars = document.getElementById('stunStars_' + targetEl.id);
+
+    if(burnParticles) burnParticles.remove();
+    if(iceCrystals) iceCrystals.remove();
+    if(stunStars) stunStars.remove();
+}
+
+// Show status apply animation
+function showStatusApplyEffect(targetEl, status){
+    if(!targetEl) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const statusColors = {
+        burn: '#ff6b00',
+        poison: '#9c27b0',
+        freeze: '#4fc3f7',
+        stun: '#fbbf24',
+        weaken: '#666666',
+        protect: '#60a5fa',
+        'buff-atk': '#f87171',
+        'buff-def': '#60a5fa',
+        'buff-spd': '#4ade80'
+    };
+
+    const color = statusColors[status] || '#ffffff';
+
+    // Status apply burst
+    const burst = document.createElement('div');
+    burst.style.cssText = `
+        position:fixed;
+        pointer-events:none;
+        z-index:2500;
+        width:80px;
+        height:80px;
+        border-radius:50%;
+        background:radial-gradient(circle, ${color}cc 0%, ${color}66 50%, transparent 70%);
+        left:${rect.left + rect.width/2 - 40}px;
+        top:${rect.top + rect.height/2 - 40}px;
+        animation:impactBurst 400ms ease-out forwards;
+    `;
+    document.body.appendChild(burst);
+    setTimeout(() => burst.remove(), 450);
+
+    // Status text popup
+    const statusNames = {
+        burn: '🔥 BURN!',
+        poison: '☠️ POISON!',
+        freeze: '❄️ FREEZE!',
+        stun: '💫 STUN!',
+        weaken: '⬇️ WEAKEN!',
+        protect: '🛡️ PROTECT!',
+        'buff-atk': '⚔️ ATK UP!',
+        'buff-def': '🛡️ DEF UP!',
+        'buff-spd': '💨 SPD UP!'
+    };
+
+    const text = document.createElement('div');
+    text.style.cssText = `
+        position:fixed;
+        pointer-events:none;
+        z-index:2600;
+        font-family:'Fredoka One',cursive;
+        font-size:1rem;
+        font-weight:bold;
+        color:${color};
+        text-shadow:2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;
+        left:${rect.left + rect.width/2 - 40}px;
+        top:${rect.top - 20}px;
+        animation:comboPopIn 600ms ease-out forwards;
+    `;
+    text.textContent = statusNames[status] || status.toUpperCase();
+    document.body.appendChild(text);
+    setTimeout(() => text.remove(), 700);
 }
 
 // ACTION BANNER DISPLAY - Shows move name and result
@@ -12443,28 +13305,35 @@ function cancelTargeting(){
 }
 
 // Heal target selection system
+// v54.6: Enhanced heal scaling with level bonus
 function showHealTargetSelection(healerIdx, move){
     const b = state.battle;
     const healer = b.team[healerIdx];
-    const healAmount = Math.floor(healer.maxHp * move.p);
-    
+
+    // v54.6: ENHANCED HEAL FORMULA
+    // Base heal from move power, scaled by level
+    const baseHealPct = move.p || 0.3;
+    const baseHeal = healer.maxHp * baseHealPct;
+    const levelBonus = 1 + (healer.lv * 0.015); // +1.5% per level (Level 30 = +45%)
+    const healAmount = Math.floor(baseHeal * levelBonus);
+
     // Get allies who need healing (not full HP, not dead)
     const healableAllies = b.team.filter((t, i) => t.curHp > 0 && t.curHp < t.maxHp);
-    
+
     if(healableAllies.length === 0){
         // No one needs healing, do attack instead
         addLog(`${healer.name||'Hero'}: No allies need healing!`,'info');
         doAction('atk');
         return;
     }
-    
+
     // If only one ally needs healing, heal them automatically
     if(healableAllies.length === 1){
         const targetIdx = b.team.indexOf(healableAllies[0]);
         executeHeal(healerIdx, targetIdx, healAmount);
         return;
     }
-    
+
     // Enter heal targeting mode - allies become clickable
     b.healTargetingMode = true;
     b.healerIdx = healerIdx;
@@ -12490,18 +13359,25 @@ function selectHealTarget(allyIdx){
     executeHeal(healerIdx, allyIdx, healAmount);
 }
 
+// v54.6: Enhanced executeHeal with emergency bonus and improved animations
 function executeHeal(healerIdx, targetIdx, healAmount){
     const b = state.battle;
     const healer = b.team[healerIdx];
     const target = b.team[targetIdx];
     const mv = getMove(healer.cid, healer.lv, 'heal');
-    
+
     // SPEND FOCUS for heal
     const healCost = mv?.f || 0;
     healer.focus -= healCost;
-    
+
     processing = true;
-    
+
+    // v54.6: EMERGENCY HEAL BONUS
+    // +25% healing when target is below 30% HP (critically wounded)
+    const isEmergency = target.curHp < target.maxHp * 0.3;
+    const emergencyBonus = isEmergency ? 1.25 : 1.0;
+    const finalHealAmount = Math.floor(healAmount * emergencyBonus);
+
     // HEALER ANIMATION
     const healerEl = document.getElementById('c' + healerIdx);
     if(healerEl){
@@ -12509,10 +13385,10 @@ function executeHeal(healerIdx, targetIdx, healAmount){
         setTimeout(()=>healerEl.classList.remove('anim-heal'),550);
     }
     playSound('heal');
-    
-    const actualHeal = Math.min(healAmount, target.maxHp - target.curHp);
-    target.curHp = Math.min(target.maxHp, target.curHp + healAmount);
-    
+
+    const actualHeal = Math.min(finalHealAmount, target.maxHp - target.curHp);
+    target.curHp = Math.min(target.maxHp, target.curHp + finalHealAmount);
+
     // TARGET HEAL ANIMATION
     const targetFrameEl = document.getElementById('c' + targetIdx);
     const targetEl = document.getElementById('m' + targetIdx);
@@ -12520,22 +13396,29 @@ function executeHeal(healerIdx, targetIdx, healAmount){
         targetFrameEl.classList.add('anim-heal');
         setTimeout(()=>targetFrameEl.classList.remove('anim-heal'),550);
     }
-    
+
     // HP BAR HEAL FLASH
     const hpBar = document.getElementById('hpBar' + targetIdx);
     if(hpBar){
         hpBar.classList.add('anim-heal');
         setTimeout(()=>hpBar.classList.remove('anim-heal'),300);
     }
-    
-    // HEAL VISUAL EFFECT
+
+    // v54.6: ENHANCED HEAL VISUAL EFFECTS
     const arenaTarget = document.getElementById('arenaC' + targetIdx);
-    if(arenaTarget) showHealEffect(arenaTarget);
-    
-    // FLOATING HEAL NUMBER
-    if(targetEl) showFloatingDamage(targetEl, actualHeal, 'heal');
-    
-    addLog(`💚 ${healer.name||'Hero'}: ${mv?.n||'Heal'} → ${target.name||'Ally'} +${actualHeal} HP!`,'heal');
+    if(arenaTarget){
+        // Use enhanced heal effect with light pillar and sparkles
+        showEnhancedHealEffect(arenaTarget, isEmergency);
+        // Also show original heal burst
+        showHealEffect(arenaTarget);
+    }
+
+    // FLOATING HEAL NUMBER - use crit style for emergency heals
+    if(targetEl) showFloatingDamage(targetEl, actualHeal, isEmergency ? 'crit' : 'heal');
+
+    // Log with emergency indicator
+    const emergencyText = isEmergency ? ' (EMERGENCY!)' : '';
+    addLog(`💚 ${healer.name||'Hero'}: ${mv?.n||'Heal'} → ${target.name||'Ally'} +${actualHeal} HP!${emergencyText}`,'heal');
     turnIdx++;
     renderMain();
     setTimeout(nextTurn, 500);
