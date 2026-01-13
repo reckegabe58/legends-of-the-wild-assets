@@ -2008,24 +2008,25 @@ body{
 
 /* Battle Log - Chat style vertical stacking */
 .battle-log{
-    background:rgba(0,0,0,.5);
+    background:rgba(0,0,0,.85);
     padding:10px 14px;
     margin:0 15px 15px;
     border-radius:10px;
-    max-height:120px;
+    max-height:200px;
     overflow-y:auto;
     display:flex;
     flex-direction:column;
-    gap:4px
+    gap:4px;
+    border:1px solid rgba(255,255,255,.15)
 }
 .battle-log::-webkit-scrollbar{width:6px}
-.battle-log::-webkit-scrollbar-track{background:rgba(0,0,0,.2);border-radius:3px}
-.battle-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+.battle-log::-webkit-scrollbar-track{background:rgba(0,0,0,.3);border-radius:3px}
+.battle-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
 .log-entry{
     font-size:.8rem;
     padding:6px 10px;
     border-radius:6px;
-    background:rgba(0,0,0,.3);
+    background:rgba(0,0,0,.4);
     border-left:3px solid #666
 }
 .log-entry.log-dmg{border-left-color:#f87171;color:#fca5a5}
@@ -2034,6 +2035,7 @@ body{
 .log-entry.log-spec{border-left-color:#fbbf24;color:#fde047}
 .log-entry.log-info{border-left-color:#94a3b8;color:#cbd5e1}
 .log-entry.log-enemy{border-left-color:#f87171;color:#fca5a5;background:rgba(127,29,29,.2)}
+.log-entry.log-crit{border-left-color:#ff0000;color:#ff6666;background:rgba(200,0,0,.3);font-weight:bold}
 
 /* Heal Target Overlay */
 .heal-target-overlay{text-align:center}
@@ -3912,56 +3914,188 @@ function updateMusic(){
 }
 
 // ============================================
-// PARTY SCALING SYSTEM - Adaptive Difficulty
+// PARTY SCALING SYSTEM v54.3 - FULLY ADAPTIVE
 // ============================================
-// Scales enemy stats based on party size for balanced challenge
-// Solo players get easier enemies, full classrooms get tougher encounters
-function getPartyScaleFactor(){
-    const partySize = getActiveStudents().filter(s=>s.cid).length;
-    if(partySize <= 0) return 1.0; // Safety fallback
-    
-    // Base formula: PSF = partySize / 4
-    // 1 student = 0.25, 4 students = 1.0, 8 students = 2.0, 11 students = 2.75
-    return partySize / 4;
+// Designed for classroom play with 2-10 students
+// Every party size gets a unique, balanced experience
+// The game REACTS to current attendance dynamically
+
+// Get current party size (students with assigned creatures)
+function getPartySize(){
+    return getActiveStudents().filter(s=>s.cid).length || 1;
 }
 
+// Party Size Tiers - defines the game experience
+// TINY (1-2): Easy mode, learning the game
+// SMALL (3-4): Standard challenge
+// MEDIUM (5-6): Increased difficulty, teamwork matters
+// LARGE (7-8): Hard mode, coordination required
+// FULL CLASS (9-10): Epic mode, boss one-shots possible
+function getPartyTier(){
+    const size = getPartySize();
+    if(size <= 2) return 'tiny';
+    if(size <= 4) return 'small';
+    if(size <= 6) return 'medium';
+    if(size <= 8) return 'large';
+    return 'full';
+}
+
+// Scaling multipliers by party size - LOOKUP TABLE
+// Each party size has carefully tuned multipliers
+const PARTY_SCALING = {
+    // [HP, ATK, DEF, SPD] multipliers for each party size
+    wild: {
+        1:  [0.6,  0.5,  0.5,  0.8],   // Solo: Very easy
+        2:  [0.8,  0.7,  0.6,  0.9],   // Duo: Easy
+        3:  [1.0,  0.9,  0.8,  1.0],   // Trio: Moderate
+        4:  [1.2,  1.1,  1.0,  1.05],  // Squad: Standard
+        5:  [1.5,  1.3,  1.1,  1.1],   // Team: Challenging
+        6:  [1.8,  1.5,  1.2,  1.15],  // Group: Hard
+        7:  [2.1,  1.7,  1.3,  1.2],   // Party: Very Hard
+        8:  [2.4,  1.9,  1.4,  1.25],  // Raid: Epic
+        9:  [2.7,  2.1,  1.5,  1.3],   // Full Class: Brutal
+        10: [3.0,  2.3,  1.6,  1.35]   // Max: Legendary
+    },
+    boss: {
+        1:  [0.5,  0.4,  0.4,  0.85],  // Solo: Manageable
+        2:  [0.7,  0.6,  0.5,  0.9],   // Duo: Challenging but fair
+        3:  [1.0,  0.85, 0.7,  0.95],  // Trio: Standard boss fight
+        4:  [1.3,  1.1,  0.9,  1.0],   // Squad: Tough fight
+        5:  [1.7,  1.4,  1.0,  1.05],  // Team: Hard boss
+        6:  [2.1,  1.7,  1.1,  1.1],   // Group: Very Hard
+        7:  [2.5,  2.0,  1.2,  1.15],  // Party: Epic boss
+        8:  [3.0,  2.3,  1.3,  1.2],   // Raid: Raid boss
+        9:  [3.5,  2.6,  1.4,  1.25],  // Full Class: World boss
+        10: [4.0,  3.0,  1.5,  1.3]    // Max: Ultimate challenge
+    },
+    minion: {
+        1:  [0.4,  0.3,  0.4,  0.9],   // Solo: Weak adds
+        2:  [0.6,  0.5,  0.5,  0.95],  // Duo: Minor threat
+        3:  [0.8,  0.7,  0.6,  1.0],   // Trio: Nuisance
+        4:  [1.0,  0.9,  0.7,  1.0],   // Squad: Must handle
+        5:  [1.3,  1.1,  0.8,  1.05],  // Team: Real threat
+        6:  [1.6,  1.3,  0.9,  1.1],   // Group: Dangerous
+        7:  [1.9,  1.5,  1.0,  1.15],  // Party: Deadly
+        8:  [2.2,  1.8,  1.1,  1.2],   // Raid: Very dangerous
+        9:  [2.5,  2.0,  1.2,  1.25],  // Full Class: Lethal
+        10: [2.8,  2.2,  1.3,  1.3]    // Max: Must prioritize
+    }
+};
+
+// Boss one-shot chance - ONLY for large parties (7+)
+// Represents the danger of coordinating a large group
+function getBossOneShootChance(){
+    const size = getPartySize();
+    if(size < 7) return 0;      // No one-shots for small parties
+    if(size === 7) return 0.08; // 8% chance
+    if(size === 8) return 0.12; // 12% chance
+    if(size === 9) return 0.15; // 15% chance
+    return 0.18;                // 18% chance for 10
+}
+
+// Boss devastating blow multiplier - scales with party size
+function getBossDevastatingMult(){
+    const size = getPartySize();
+    if(size <= 4) return 1.5;   // Small party: 1.5x crit
+    if(size <= 6) return 1.7;   // Medium party: 1.7x crit
+    if(size <= 8) return 1.9;   // Large party: 1.9x crit
+    return 2.1;                 // Full class: 2.1x crit (can one-shot)
+}
+
+// Enemy count in wild encounters - based on party size
+function getWildEnemyCount(chapter){
+    const size = getPartySize();
+    let base = 1;
+
+    // Base enemies by chapter
+    if(chapter >= 5) base = 2;
+    else if(chapter >= 3) base = 1;
+
+    // Add enemies based on party size
+    let bonus = 0;
+    if(size >= 3) bonus = 1;
+    if(size >= 5) bonus = 2;
+    if(size >= 7) bonus = 3;
+    if(size >= 9) bonus = 4;
+
+    // Random variance
+    const variance = Math.random() < 0.3 ? 1 : 0;
+
+    return Math.min(6, base + bonus + variance); // Cap at 6 enemies
+}
+
+// Boss minion count - scales with party size
+function getBossMinionCount(baseMinionCount){
+    const size = getPartySize();
+    if(size <= 2) return Math.max(1, baseMinionCount - 1);
+    if(size <= 4) return baseMinionCount;
+    if(size <= 6) return baseMinionCount + 1;
+    if(size <= 8) return baseMinionCount + 2;
+    return baseMinionCount + 3; // 9-10 players: lots of minions
+}
+
+// Scale wild enemy stats based on party size
 function scaleWildEnemy(baseHP, baseATK, baseDEF, baseSPD){
-    const psf = getPartyScaleFactor();
+    const size = Math.min(10, Math.max(1, getPartySize()));
+    const scale = PARTY_SCALING.wild[size];
 
-    // v54.1: ENHANCED SCALING - Wild enemies are now a real threat
-    // Larger parties face significantly tougher wild encounters
     return {
-        hp: Math.floor(baseHP * (0.8 + (psf * 0.6))),     // 80% solo → 140% at 4p → 200% at 8p (BUFFED)
-        atk: Math.floor(baseATK * (0.85 + (psf * 0.425))), // 85% solo → 128% at 4p → 170% at 8p (BUFFED)
-        def: Math.floor(baseDEF * (0.85 + (psf * 0.325))), // 85% solo → 118% at 4p → 150% at 8p (BUFFED)
-        spd: Math.floor(baseSPD * (0.9 + (psf * 0.25)))    // 90% solo → 115% at 4p → 140% at 8p (BUFFED)
+        hp: Math.floor(baseHP * scale[0]),
+        atk: Math.floor(baseATK * scale[1]),
+        def: Math.floor(baseDEF * scale[2]),
+        spd: Math.floor(baseSPD * scale[3])
     };
 }
 
+// Scale boss stats based on party size
 function scaleBoss(baseHP, baseATK, baseDEF, baseSPD){
-    const psf = getPartyScaleFactor();
+    const size = Math.min(10, Math.max(1, getPartySize()));
+    const scale = PARTY_SCALING.boss[size];
 
-    // v54.1: ENHANCED BOSS SCALING - Bosses are epic encounters
-    // Large parties need coordinated effort to take down bosses
     return {
-        hp: Math.floor(baseHP * (0.8 + (psf * 0.6))),     // 80% solo → 140% at 4p → 200% at 8p (TANKIER)
-        atk: Math.floor(baseATK * (0.9 + (psf * 0.3))),   // 90% solo → 120% at 4p → 150% at 8p (BUFFED)
-        def: Math.floor(baseDEF * (0.9 + (psf * 0.25))),  // 90% solo → 115% at 4p → 140% at 8p (BUFFED)
-        spd: Math.floor(baseSPD * (0.95 + (psf * 0.15)))  // 95% solo → 110% at 4p → 125% at 8p (FASTER)
+        hp: Math.floor(baseHP * scale[0]),
+        atk: Math.floor(baseATK * scale[1]),
+        def: Math.floor(baseDEF * scale[2]),
+        spd: Math.floor(baseSPD * scale[3])
     };
 }
 
+// Scale boss minion stats based on party size
 function scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD){
-    const psf = getPartyScaleFactor();
+    const size = Math.min(10, Math.max(1, getPartySize()));
+    const scale = PARTY_SCALING.minion[size];
 
-    // v54.1: HEAVILY BUFFED - Minions are deadly threats that MUST be dealt with
-    // Ignoring minions = party wipe. They scale HARD to punish large parties
     return {
-        hp: Math.floor(baseHP * (1.0 + (psf * 1.4))),     // 100% solo → 175% at 4p → 280% at 8p (VERY TANKY)
-        atk: Math.floor(baseATK * (1.0 + (psf * 1.0))),   // 100% solo → 150% at 4p → 220% at 8p (VERY DANGEROUS)
-        def: Math.floor(baseDEF * (0.9 + (psf * 0.5))),   // 90% solo → 115% at 4p → 150% at 8p (BUFFED)
-        spd: Math.floor(baseSPD * (0.95 + (psf * 0.35)))  // 95% solo → 113% at 4p → 140% at 8p (FASTER)
+        hp: Math.floor(baseHP * scale[0]),
+        atk: Math.floor(baseATK * scale[1]),
+        def: Math.floor(baseDEF * scale[2]),
+        spd: Math.floor(baseSPD * scale[3])
     };
+}
+
+// XP scaling - less XP per person in large parties (shared)
+function getXPMultiplier(){
+    const size = getPartySize();
+    if(size <= 2) return 1.2;   // Bonus for small party
+    if(size <= 4) return 1.0;   // Standard
+    if(size <= 6) return 0.85;  // Slight reduction
+    if(size <= 8) return 0.7;   // Shared among many
+    return 0.6;                 // Large party shares XP
+}
+
+// Coin scaling - more coins total for bigger parties, but split
+function getCoinMultiplier(){
+    const size = getPartySize();
+    if(size <= 2) return 1.0;
+    if(size <= 4) return 1.2;
+    if(size <= 6) return 1.4;
+    if(size <= 8) return 1.6;
+    return 1.8;
+}
+
+// Legacy function for compatibility
+function getPartyScaleFactor(){
+    return getPartySize() / 4;
 }
 
 // ============================================
@@ -4008,29 +4142,51 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
 }
 
 // ============================================
-// ENEMY DAMAGE ADJUSTMENT (v54.1 - Phase 4)
+// ENEMY DAMAGE ADJUSTMENT (v54.3 - Party Size Aware)
 // ============================================
-// CRITICAL RULE: Bosses CAN one-shot for dramatic tension
-// CRITICAL RULE: Wild enemies can NEVER one-shot
-// Returns: {damage: number, isDevastating: boolean}
+// Bosses: Devastating blows scale with party size
+// Large parties (7+): One-shot mechanic enabled
+// Wild enemies: Damage capped based on party size
+// Returns: {damage: number, isDevastating: boolean, isOneShot: boolean}
 function adjustEnemyDamage(baseDamage, enemy, target){
     let finalDamage = baseDamage;
     let isDevastating = false;
+    let isOneShot = false;
+    const partySize = getPartySize();
 
     if(enemy.isBoss){
-        // BOSS DEVASTATING BLOW: 12% chance for 1.8x damage (can one-shot)
-        if(Math.random() < 0.12){
-            finalDamage = Math.floor(baseDamage * 1.8);
+        // ONE-SHOT MECHANIC: Only for large parties (7+)
+        // Creates dramatic tension and punishes poor coordination
+        const oneShotChance = getBossOneShootChance();
+        if(oneShotChance > 0 && Math.random() < oneShotChance){
+            // One-shot: Deal 999% of target's current HP
+            finalDamage = Math.floor(target.curHp * 10);
+            isDevastating = true;
+            isOneShot = true;
+            addLog(`💀 FATAL BLOW! ${enemy.name} strikes with lethal force!`, 'crit');
+        }
+        // DEVASTATING BLOW: Chance and multiplier scale with party size
+        else if(Math.random() < 0.12){
+            const devMult = getBossDevastatingMult();
+            finalDamage = Math.floor(baseDamage * devMult);
             isDevastating = true;
         }
         // No damage cap for bosses - they're meant to be deadly
     } else {
-        // WILD ENEMIES: Never deal more than 75% of target's max HP
-        const maxDamage = Math.floor(target.maxHp * 0.75);
+        // WILD ENEMIES: Damage cap scales with party size
+        // Small parties: 60% cap (forgiving)
+        // Large parties: 85% cap (dangerous)
+        let capPercent = 0.6;
+        if(partySize >= 3) capPercent = 0.65;
+        if(partySize >= 5) capPercent = 0.70;
+        if(partySize >= 7) capPercent = 0.75;
+        if(partySize >= 9) capPercent = 0.85;
+
+        const maxDamage = Math.floor(target.maxHp * capPercent);
         finalDamage = Math.min(baseDamage, maxDamage);
     }
 
-    return { damage: finalDamage, isDevastating };
+    return { damage: finalDamage, isDevastating, isOneShot };
 }
 
 // ============================================
@@ -7473,19 +7629,19 @@ function checkBossMinionSummon(){
         return;
     }
 
-    // Generate minions - MORE minions for bigger parties
-    // v54.1: Wave 2 spawns fewer but stronger minions
+    // v54.3: Party-aware minion spawning
     const avgLv = getAvgLevel();
-    const partySize = b.team.filter(t => t.curHp > 0).length;
-    
-    // v54.1: Wave-based minion count and strength
-    // Wave 1: Normal count, normal strength
-    // Wave 2: Fewer minions but 30% stronger (elite reinforcements)
+    const partySize = getPartySize();
+    const partyTier = getPartyTier();
+
+    // Wave 1: Full minion count based on party size
+    // Wave 2: Fewer but elite (30% stronger)
     const isWave2 = waveNumber === 2;
     const baseMinions = isWave2 ? 1 : 2;
-    const bonusMinions = Math.floor(Math.max(0, partySize - 2) / 2);
-    const numMinions = Math.min(baseMinions + bonusMinions, isWave2 ? 3 : 4);
-    const wave2Multiplier = isWave2 ? 1.3 : 1.0; // 30% stronger in wave 2
+    const numMinions = getBossMinionCount(baseMinions);
+    const wave2Multiplier = isWave2 ? 1.3 : 1.0;
+
+    console.log(`Boss Summon: Wave ${waveNumber}, Party ${partySize} (${partyTier}), spawning ${numMinions} minions`);
 
     const newMinions = [];
     for(let i = 0; i < numMinions; i++){
@@ -7698,29 +7854,12 @@ function startWildEncounter(avgLv,chapter){
     const regionCreatures = WILD_ENCOUNTERS[region] || WILD_ENCOUNTERS.forest;
     if(!regionCreatures.length){treasureEvent(chapter,avgLv);return}
     
-    // Get party info for balanced enemy count
-    const partySize = getActiveStudents().filter(s=>s.cid).length;
-    
-    // BALANCED enemy count formula
-    // Base enemies by chapter, modified by party size
-    let baseEnemies = 1;
-    if(chapter >= 2) baseEnemies = 1;
-    if(chapter >= 3) baseEnemies = 2;
-    if(chapter >= 4) baseEnemies = 2;
-    if(chapter >= 5) baseEnemies = 3;
-    
-    // Party size bonus: +1 enemy per 2 extra players
-    const partySizeBonus = Math.floor((partySize - 1) / 2);
-    
-    // Level bonus: every 15 levels = potential +1 enemy
-    const levelBonus = Math.floor(avgLv / 20);
-    
-    // Calculate max enemies (HARD CAP at 5)
-    const maxEnemies = Math.min(5, baseEnemies + partySizeBonus + levelBonus);
-    const minEnemies = Math.max(1, maxEnemies - 2);
-    
-    // Randomize within range
-    let numEnemies = minEnemies + Math.floor(Math.random() * (maxEnemies - minEnemies + 1));
+    // v54.3: Party-aware enemy count using new scaling system
+    const partySize = getPartySize();
+    const numEnemies = getWildEnemyCount(chapter);
+
+    // Log party tier for debugging
+    console.log(`Wild Encounter: Party size ${partySize} (${getPartyTier()}), ${numEnemies} enemies`);
     
     // ============================================
     // BUILD CREATURE POOL - BALANCED MIX
@@ -7816,20 +7955,116 @@ function startWildEncounter(avgLv,chapter){
     });
     
     // ============================================
-    // ADD DEFEATED BOSSES FROM PREVIOUS TIERS
+    // v54.3: MULTI-BOSS ENCOUNTER SYSTEM
+    // ============================================
+    // Chapter 3: 10% chance for 2 Tier 1 bosses
+    // Chapter 4: 12% chance for 2 Tier 1/2 bosses
+    // Chapter 5: 15% chance for 2-3 bosses of any tier
+
+    let multiBossEncounter = false;
+    let bossesToFight = [];
+
+    // Check for multi-boss encounter first (higher priority)
+    if(chapter >= 3){
+        let multiBossChance = 0;
+        let maxBosses = 2;
+        let eligibleTiers = [];
+
+        if(chapter === 3){
+            multiBossChance = 0.10;
+            maxBosses = 2;
+            eligibleTiers = [TIER1_BOSSES];
+        } else if(chapter === 4){
+            multiBossChance = 0.12;
+            maxBosses = 2;
+            eligibleTiers = [TIER1_BOSSES, TIER2_BOSSES];
+        } else if(chapter >= 5){
+            multiBossChance = 0.15;
+            maxBosses = Math.random() < 0.3 ? 3 : 2; // 30% chance for 3 bosses
+            eligibleTiers = [TIER1_BOSSES, TIER2_BOSSES, TIER3_BOSSES];
+        }
+
+        if(Math.random() < multiBossChance){
+            // Collect all eligible defeated bosses
+            let eligibleBosses = [];
+            eligibleTiers.forEach(tierList => {
+                tierList.forEach(bid => {
+                    if(state.defeated.includes(bid) && BOSSES[bid]){
+                        const tier = TIER1_BOSSES.includes(bid) ? 1 : TIER2_BOSSES.includes(bid) ? 2 : 3;
+                        eligibleBosses.push({id: bid, ...BOSSES[bid], tier: tier});
+                    }
+                });
+            });
+
+            // Need at least 2 defeated bosses for multi-boss
+            if(eligibleBosses.length >= 2){
+                multiBossEncounter = true;
+                // Shuffle and pick
+                eligibleBosses.sort(() => Math.random() - 0.5);
+                bossesToFight = eligibleBosses.slice(0, Math.min(maxBosses, eligibleBosses.length));
+            }
+        }
+    }
+
+    // If multi-boss encounter triggered
+    if(multiBossEncounter && bossesToFight.length >= 2){
+        const lvScale = 1 + (avgLv - bossesToFight[0].lv) * 0.03;
+        const partyScale = 1 + (partySize - 1) * 0.1;
+        // Multi-boss = each boss is weaker (60% stats)
+        const multiBossNerf = 0.6;
+
+        const scaledBosses = bossesToFight.map((boss, idx) => ({
+            ...boss,
+            id: boss.id + '_multi' + idx,
+            name: `${boss.name}`,
+            lv: Math.max(boss.lv, avgLv - 5),
+            hp: Math.floor(boss.hp * lvScale * partyScale * multiBossNerf),
+            maxHp: Math.floor(boss.hp * lvScale * partyScale * multiBossNerf),
+            atk: Math.floor(boss.atk * lvScale * partyScale * multiBossNerf),
+            def: Math.floor(boss.def * lvScale * multiBossNerf),
+            spd: boss.spd,
+            xp: Math.floor(boss.xp * 0.6),
+            coins: Math.floor(boss.coins * 0.6),
+            img: boss.img,
+            isBoss: true,
+            isMultiBoss: true,
+            attacks: boss.atks,
+            minionPool: [] // No minions in multi-boss fights
+        }));
+
+        const bossNames = scaledBosses.map(b => b.name).join(' & ');
+        const narratives = [
+            `The ground trembles as not one, but ${scaledBosses.length} monstrous forms emerge! ${bossNames} have formed an unholy alliance!`,
+            `Your worst nightmare comes true - ${bossNames} attack TOGETHER! This will be your greatest challenge yet!`,
+            `"Alone we fell. Together, we shall CRUSH you!" ${bossNames} roar in unison as they charge!`,
+            `The defeated bosses have learned from their failures. ${bossNames} combine their powers against you!`
+        ];
+        const narrative = narratives[Math.floor(Math.random() * narratives.length)];
+
+        addStoryLog(`💀💀 MULTI-BOSS ENCOUNTER: ${bossNames}!`, 'battle');
+
+        showEventOverlay(`💀💀 ${scaledBosses.length} BOSSES ATTACK!`, narrative, 'red', ()=>{
+            // First boss is main, rest are additional enemies
+            startBattleWith(scaledBosses[0], 'tier' + bossesToFight[0].tier, scaledBosses.slice(1));
+        });
+        return;
+    }
+
+    // ============================================
+    // SINGLE REVENGE BOSS ENCOUNTER
     // ============================================
     // Chapter 2+ can encounter defeated Tier 1 bosses
     // Chapter 3+ can encounter defeated Tier 1 & 2 bosses
     // Chapter 4+ can encounter all defeated bosses
     // 15% chance to encounter a previous boss instead of regular enemies
-    
+
     const previousBossEncounter = Math.random() < 0.15;
     let bossToFight = null;
-    
+
     if(previousBossEncounter && chapter >= 2){
         // Get defeated bosses from previous tiers
         let eligibleBosses = [];
-        
+
         if(chapter >= 2){
             // Add defeated Tier 1 bosses
             TIER1_BOSSES.forEach(bid => {
@@ -7854,7 +8089,7 @@ function startWildEncounter(avgLv,chapter){
                 }
             });
         }
-        
+
         if(eligibleBosses.length > 0){
             bossToFight = eligibleBosses[Math.floor(Math.random() * eligibleBosses.length)];
         }
@@ -7897,10 +8132,11 @@ function startWildEncounter(avgLv,chapter){
         let sizeClass = 'tier1';
         if(bossToFight.tier === 2) sizeClass = 'tier2';
         else if(bossToFight.tier === 3) sizeClass = 'tier3';
-        
-        showEventOverlay('💀 REVENGE ENCOUNTER!', narrative, 'red', bossToFight.img, ()=>{
+
+        // v54.3: Fixed parameter order - callback before image
+        showEventOverlay('💀 REVENGE ENCOUNTER!', narrative, 'red', ()=>{
             startBattleWith(scaledBoss, sizeClass);
-        });
+        }, bossToFight.img);
         return;
     }
     
@@ -8700,9 +8936,9 @@ function renderBattle(m){
     // V46: NEW COMBAT UI ONLY - Old UI completely removed
     // ============================================
     
-    // Battle Log (bottom-left corner)
-    html+=`<div class="battle-log" id="battleLog" style="position:absolute;bottom:20px;left:20px;max-width:400px;z-index:50;background:rgba(0,0,0,.85);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15)">
-        ${state.log.slice(-5).map(e=>`<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
+    // Battle Log (bottom-left corner) - v54.2: Fixed to show newest entries, scrollable history
+    html+=`<div class="battle-log" id="battleLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+        ${state.log.slice(0, 20).reverse().map(e=>`<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
     </div>`;
     
     
@@ -9736,67 +9972,106 @@ function enemyAction(){
     const arena = document.getElementById('battleArena');
     
     // ============================================
-    // SMART AI DECISION MAKING
+    // v54.3: INTELLIGENT AI DECISION MAKING
     // ============================================
+    // Enemies now make tactical decisions based on:
+    // - Their HP status, focus levels, and available abilities
+    // - Ally status (heal wounded allies)
+    // - Target priorities (finish low HP enemies)
+    // - Resource management (defend to charge focus)
+
     const hpPercent = enemy.hp / enemy.maxHp;
     const allEnemies = b.enemies.filter(e => e.hp > 0);
     const woundedAllies = allEnemies.filter(e => e.hp / e.maxHp < 0.5);
-    
-    let actionType = 'basic'; // basic, special, heal, aoe
-    let healTarget = null;
-    
-    // Decision priority:
-    // 1. Heal if we can AND (self low HP OR ally very low)
-    // 2. Use special if ready AND (enemy low HP for kill OR random 30%)
-    // 3. AOE if boss with AOE ability AND multiple targets AND random
-    // 4. Basic attack
-    
-    // Check if should heal (requires focus like specials)
-    if(enemy.canHeal && enemy.healAttack){
-        const healCost = enemy.healAttack.focusCost || 30; // Heals cost 30 focus by default
-        const hasHealFocus = !enemy.focus || enemy.focus >= healCost;
+    const currentFocus = enemy.focus || 0;
+    const maxFocus = enemy.focusMax || MAX_FOCUS;
 
-        if(hasHealFocus){
-            // Heal self if below 40%
-            if(hpPercent < 0.4 && Math.random() < 0.6){
-                actionType = 'heal';
-                healTarget = enemy;
-            }
-            // Heal wounded ally if any below 30%
-            else if(woundedAllies.length > 0){
-                const criticalAlly = woundedAllies.find(e => e.hp / e.maxHp < 0.3);
-                if(criticalAlly && Math.random() < 0.4){
-                    actionType = 'heal';
-                    healTarget = criticalAlly;
-                }
-            }
+    let actionType = 'basic'; // basic, special, heal, aoe, defend
+    let healTarget = null;
+
+    // Calculate costs for abilities
+    const healCost = enemy.healAttack?.focusCost || 30;
+    const spec = enemy.specialAttack;
+    const specialCost = spec ? calculateSpecialCost(enemy.evoStage || 0, (spec.power || 1.5) * 100, spec.n || spec.name, false) : 100;
+    const hasHealFocus = currentFocus >= healCost;
+    const hasSpecialFocus = currentFocus >= specialCost;
+    const focusNeededForSpecial = specialCost - currentFocus;
+    const turnsToSpecial = Math.ceil(focusNeededForSpecial / (FOCUS_REGEN_PER_TURN + 5)); // +5 for defend bonus
+
+    // ============================================
+    // DECISION PRIORITY (smartest first)
+    // ============================================
+
+    // 1. EMERGENCY HEAL - Self at critical HP
+    if(enemy.canHeal && enemy.healAttack && hasHealFocus && hpPercent < 0.25){
+        if(Math.random() < 0.8){
+            actionType = 'heal';
+            healTarget = enemy;
         }
     }
-    
-    // Check if should use special
-    if(actionType === 'basic' && enemy.hasSpecial && enemy.specialAttack && enemy.specialCooldown === 0){
-        // v54.1: Dynamic focus cost calculation for enemies
-        const spec = enemy.specialAttack;
-        const specialCost = calculateSpecialCost(enemy.evoStage || 0, (spec.power || 1.5) * 100, spec.n || spec.name, false);
-        const hasFocus = !enemy.focus || enemy.focus >= specialCost;
-        
-        if(hasFocus){
-            const lowestTarget = alive.reduce((a,b) => a.curHp < b.curHp ? a : b);
-            const canKill = lowestTarget.curHp < enemy.atk * enemy.specialAttack.power * 0.8;
-            
-            // Use special for kill shot OR 35% random chance
-            if(canKill || Math.random() < 0.35){
-                actionType = 'special';
-            }
+
+    // 2. HEAL CRITICAL ALLY - Ally about to die
+    if(actionType === 'basic' && enemy.canHeal && enemy.healAttack && hasHealFocus){
+        const dyingAlly = woundedAllies.find(e => e !== enemy && e.hp / e.maxHp < 0.2);
+        if(dyingAlly && Math.random() < 0.7){
+            actionType = 'heal';
+            healTarget = dyingAlly;
         }
     }
-    
-    // Check for AOE (bosses only)
+
+    // 3. FINISH LOW HP TARGET - Use special for kill shot
+    if(actionType === 'basic' && enemy.hasSpecial && spec && enemy.specialCooldown === 0 && hasSpecialFocus){
+        const lowestTarget = alive.reduce((a,b) => a.curHp < b.curHp ? a : b);
+        const estimatedDmg = enemy.atk * (spec.power || 1.5) * 0.7;
+        const canKill = lowestTarget.curHp < estimatedDmg;
+        if(canKill){
+            actionType = 'special';
+        }
+    }
+
+    // 4. DEFEND TO CHARGE FOCUS - Strategic resource building
+    // Defend if: has special but not enough focus, AND can reach it in 1-2 turns
+    if(actionType === 'basic' && enemy.hasSpecial && spec && !hasSpecialFocus){
+        if(turnsToSpecial <= 2 && Math.random() < 0.5){
+            actionType = 'defend';
+        }
+    }
+
+    // 5. DEFEND WHEN WOUNDED - Reduce incoming damage
+    if(actionType === 'basic' && hpPercent < 0.35 && hpPercent > 0.15){
+        // Lower HP = more likely to defend
+        const defendChance = (1 - hpPercent) * 0.4;
+        if(Math.random() < defendChance){
+            actionType = 'defend';
+        }
+    }
+
+    // 6. USE SPECIAL ATTACK - Ready and able
+    if(actionType === 'basic' && enemy.hasSpecial && spec && enemy.specialCooldown === 0 && hasSpecialFocus){
+        // Use special 40% of the time when available
+        if(Math.random() < 0.4){
+            actionType = 'special';
+        }
+    }
+
+    // 7. AOE ATTACK - Boss ability when multiple targets
     if(actionType === 'basic' && enemy.isBoss && enemy.attacks?.a?.length && alive.length >= 2){
-        if(Math.random() < 0.3){
+        // More likely with more targets
+        const aoeChance = 0.2 + (alive.length * 0.08);
+        if(Math.random() < aoeChance){
             actionType = 'aoe';
         }
     }
+
+    // 8. HEAL SELF - Moderate HP
+    if(actionType === 'basic' && enemy.canHeal && enemy.healAttack && hasHealFocus && hpPercent < 0.5){
+        if(Math.random() < 0.4){
+            actionType = 'heal';
+            healTarget = enemy;
+        }
+    }
+
+    // 9. BASIC ATTACK - Default fallback (already set)
     
     // Choose target for attacks
     const targetMember = alive[Math.floor(Math.random()*alive.length)];
@@ -9805,13 +10080,44 @@ function enemyAction(){
     // ============================================
     // EXECUTE ACTION
     // ============================================
-    
+
     if(actionType === 'heal'){
         // HEAL ACTION
         executeEnemyHeal(enemy, enemyIdx, healTarget, enemyEl);
         return;
     }
-    
+
+    if(actionType === 'defend'){
+        // DEFEND ACTION - Enemy takes defensive stance, gains focus
+        enemy.def = true; // Mark as defending (halves incoming damage)
+        const focusGain = 5; // Bonus focus for defending
+        enemy.focus = Math.min(maxFocus, currentFocus + focusGain);
+
+        // Visual feedback
+        if(enemyEl){
+            enemyEl.classList.add('defending');
+            setTimeout(()=> enemyEl.classList.remove('defending'), 500);
+        }
+
+        // Get defend move name if available
+        const defName = enemy.moves?.def?.n || 'Guard';
+        addLog(`🛡️ ${enemy.name} uses ${defName}! (+${focusGain} Focus)`, 'def');
+
+        // Show floating text
+        const floatEl = document.createElement('div');
+        floatEl.className = 'floating-text defend';
+        floatEl.textContent = 'DEFEND';
+        floatEl.style.cssText = 'position:absolute;top:30%;left:50%;transform:translateX(-50%);color:#60a5fa;font-weight:bold;font-size:1.2rem;animation:floatUp 1s forwards;pointer-events:none;z-index:100';
+        if(enemyEl?.parentElement) enemyEl.parentElement.appendChild(floatEl);
+        setTimeout(()=> floatEl.remove(), 1000);
+
+        turnIdx++;
+        processing = false;
+        renderMain();
+        setTimeout(nextTurn, 600);
+        return;
+    }
+
     // TELEGRAPH PHASE (0.4s) for attacks
     if(actionType !== 'aoe'){
         const arenaTarget = document.getElementById('arenaC'+targetMemberIdx);
@@ -9847,8 +10153,9 @@ function enemyAction(){
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
-                    let baseDmg = Math.max(5, enemy.atk * 0.5 - (t.st.def * 0.15));
-                    baseDmg = Math.floor(baseDmg * (0.7 + Math.random() * 0.3));
+                    // v54.2: AOE damage buffed from 0.5x to 0.75x ATK, reduced def scaling
+                    let baseDmg = Math.max(10, enemy.atk * 0.75 - (t.st.def * 0.1));
+                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.25));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
@@ -9947,8 +10254,9 @@ function enemyAction(){
                 const element = enemy.attackElement || 'physical';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let baseDmg = Math.max(10, enemy.atk - (t.st.def * 0.2));
-                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.4));
+                    // v54.2: Basic attack damage buffed, reduced def scaling
+                    let baseDmg = Math.max(15, enemy.atk * 1.1 - (t.st.def * 0.15));
+                    baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.3));
                     if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
@@ -10267,7 +10575,7 @@ function showNextLevelUp(){
     playSound('levelup');
 }
 function closeDefeat(){closeOverlay('defeat');currentScreen='adventure';renderNav();renderMain()}
-function addLog(m,t=''){state.log.unshift({m,t});if(state.log.length>20)state.log.pop()}
+function addLog(m,t=''){state.log.unshift({m,t});if(state.log.length>50)state.log.pop()}
 
 // ============================================
 // ANIMATION SYSTEM - Helper Functions
