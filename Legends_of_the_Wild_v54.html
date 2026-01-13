@@ -2008,24 +2008,25 @@ body{
 
 /* Battle Log - Chat style vertical stacking */
 .battle-log{
-    background:rgba(0,0,0,.5);
+    background:rgba(0,0,0,.85);
     padding:10px 14px;
     margin:0 15px 15px;
     border-radius:10px;
-    max-height:120px;
+    max-height:200px;
     overflow-y:auto;
     display:flex;
     flex-direction:column;
-    gap:4px
+    gap:4px;
+    border:1px solid rgba(255,255,255,.15)
 }
 .battle-log::-webkit-scrollbar{width:6px}
-.battle-log::-webkit-scrollbar-track{background:rgba(0,0,0,.2);border-radius:3px}
-.battle-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+.battle-log::-webkit-scrollbar-track{background:rgba(0,0,0,.3);border-radius:3px}
+.battle-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
 .log-entry{
     font-size:.8rem;
     padding:6px 10px;
     border-radius:6px;
-    background:rgba(0,0,0,.3);
+    background:rgba(0,0,0,.4);
     border-left:3px solid #666
 }
 .log-entry.log-dmg{border-left-color:#f87171;color:#fca5a5}
@@ -2034,6 +2035,7 @@ body{
 .log-entry.log-spec{border-left-color:#fbbf24;color:#fde047}
 .log-entry.log-info{border-left-color:#94a3b8;color:#cbd5e1}
 .log-entry.log-enemy{border-left-color:#f87171;color:#fca5a5;background:rgba(127,29,29,.2)}
+.log-entry.log-crit{border-left-color:#ff0000;color:#ff6666;background:rgba(200,0,0,.3);font-weight:bold}
 
 /* Heal Target Overlay */
 .heal-target-overlay{text-align:center}
@@ -3928,26 +3930,26 @@ function getPartyScaleFactor(){
 function scaleWildEnemy(baseHP, baseATK, baseDEF, baseSPD){
     const psf = getPartyScaleFactor();
 
-    // v54.1: ENHANCED SCALING - Wild enemies are now a real threat
-    // Larger parties face significantly tougher wild encounters
+    // v54.2: SIGNIFICANTLY BUFFED - Wild enemies are dangerous threats
+    // ~1.4x stronger than v54.1 across the board
     return {
-        hp: Math.floor(baseHP * (0.8 + (psf * 0.6))),     // 80% solo → 140% at 4p → 200% at 8p (BUFFED)
-        atk: Math.floor(baseATK * (0.85 + (psf * 0.425))), // 85% solo → 128% at 4p → 170% at 8p (BUFFED)
-        def: Math.floor(baseDEF * (0.85 + (psf * 0.325))), // 85% solo → 118% at 4p → 150% at 8p (BUFFED)
-        spd: Math.floor(baseSPD * (0.9 + (psf * 0.25)))    // 90% solo → 115% at 4p → 140% at 8p (BUFFED)
+        hp: Math.floor(baseHP * (1.0 + (psf * 0.75))),     // 100% solo → 175% at 4p → 250% at 8p
+        atk: Math.floor(baseATK * (1.1 + (psf * 0.55))),   // 110% solo → 165% at 4p → 220% at 8p
+        def: Math.floor(baseDEF * (1.0 + (psf * 0.4))),    // 100% solo → 140% at 4p → 180% at 8p
+        spd: Math.floor(baseSPD * (1.0 + (psf * 0.3)))     // 100% solo → 130% at 4p → 160% at 8p
     };
 }
 
 function scaleBoss(baseHP, baseATK, baseDEF, baseSPD){
     const psf = getPartyScaleFactor();
 
-    // v54.1: ENHANCED BOSS SCALING - Bosses are epic encounters
-    // Large parties need coordinated effort to take down bosses
+    // v54.2: BOSSES ARE NOW TERRIFYING - ~1.5x stronger than v54.1
+    // Large parties face truly epic boss battles
     return {
-        hp: Math.floor(baseHP * (0.8 + (psf * 0.6))),     // 80% solo → 140% at 4p → 200% at 8p (TANKIER)
-        atk: Math.floor(baseATK * (0.9 + (psf * 0.3))),   // 90% solo → 120% at 4p → 150% at 8p (BUFFED)
-        def: Math.floor(baseDEF * (0.9 + (psf * 0.25))),  // 90% solo → 115% at 4p → 140% at 8p (BUFFED)
-        spd: Math.floor(baseSPD * (0.95 + (psf * 0.15)))  // 95% solo → 110% at 4p → 125% at 8p (FASTER)
+        hp: Math.floor(baseHP * (1.0 + (psf * 0.8))),     // 100% solo → 180% at 4p → 260% at 8p
+        atk: Math.floor(baseATK * (1.2 + (psf * 0.5))),   // 120% solo → 170% at 4p → 220% at 8p (MAJOR BUFF)
+        def: Math.floor(baseDEF * (1.0 + (psf * 0.35))),  // 100% solo → 135% at 4p → 170% at 8p
+        spd: Math.floor(baseSPD * (1.0 + (psf * 0.2)))    // 100% solo → 120% at 4p → 140% at 8p
     };
 }
 
@@ -8700,9 +8702,9 @@ function renderBattle(m){
     // V46: NEW COMBAT UI ONLY - Old UI completely removed
     // ============================================
     
-    // Battle Log (bottom-left corner)
-    html+=`<div class="battle-log" id="battleLog" style="position:absolute;bottom:20px;left:20px;max-width:400px;z-index:50;background:rgba(0,0,0,.85);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15)">
-        ${state.log.slice(-5).map(e=>`<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
+    // Battle Log (bottom-left corner) - v54.2: Fixed to show newest entries, scrollable history
+    html+=`<div class="battle-log" id="battleLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+        ${state.log.slice(0, 20).reverse().map(e=>`<div class="log-entry log-${e.t}">${e.m}</div>`).join('')}
     </div>`;
     
     
@@ -9847,8 +9849,9 @@ function enemyAction(){
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
-                    let baseDmg = Math.max(5, enemy.atk * 0.5 - (t.st.def * 0.15));
-                    baseDmg = Math.floor(baseDmg * (0.7 + Math.random() * 0.3));
+                    // v54.2: AOE damage buffed from 0.5x to 0.75x ATK, reduced def scaling
+                    let baseDmg = Math.max(10, enemy.atk * 0.75 - (t.st.def * 0.1));
+                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.25));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
@@ -9947,8 +9950,9 @@ function enemyAction(){
                 const element = enemy.attackElement || 'physical';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
-                    let baseDmg = Math.max(10, enemy.atk - (t.st.def * 0.2));
-                    baseDmg = Math.floor(baseDmg * (0.8 + Math.random() * 0.4));
+                    // v54.2: Basic attack damage buffed, reduced def scaling
+                    let baseDmg = Math.max(15, enemy.atk * 1.1 - (t.st.def * 0.15));
+                    baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.3));
                     if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
@@ -10267,7 +10271,7 @@ function showNextLevelUp(){
     playSound('levelup');
 }
 function closeDefeat(){closeOverlay('defeat');currentScreen='adventure';renderNav();renderMain()}
-function addLog(m,t=''){state.log.unshift({m,t});if(state.log.length>20)state.log.pop()}
+function addLog(m,t=''){state.log.unshift({m,t});if(state.log.length>50)state.log.pop()}
 
 // ============================================
 // ANIMATION SYSTEM - Helper Functions
