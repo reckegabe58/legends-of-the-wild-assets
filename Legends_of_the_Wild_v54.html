@@ -1272,18 +1272,8 @@ body{
 }
 
 /* ============================================
-   ACTIVE CREATURE PANEL - HIDDEN IN V43
-   Replaced by party HUD at bottom
+   ACTIVE CREATURE PANEL
    ============================================ */
-.active-creature-panel{
-    display:none; /* V43: Replaced by party-hud */
-}
-.inactive-party{
-    display:none; /* V43: Replaced by party-hud */
-}
-.combat-ui .move-buttons{
-    display:none; /* V43: Replaced by move-buttons-container */
-}
 .active-creature-panel{
     display:flex;
     align-items:center;
@@ -5793,7 +5783,7 @@ function getPartyTier(){
 // ============================================
 // DEBUG MODE - Toggle for combat logging
 // ============================================
-let DEBUG_MODE = true; // Set to true for detailed combat logs
+let DEBUG_MODE = false; // v54.6: Disabled for production (set to true for detailed combat logs)
 
 function debugLog(category, ...args) {
     if (!DEBUG_MODE) return;
@@ -7442,9 +7432,23 @@ function getAvailableBosses(){
 
 function addStoryLog(text,type='normal'){state.storyLog.unshift({text,type,time:new Date().toLocaleTimeString()});if(state.storyLog.length>50)state.storyLog.pop()}
 
-// SAVE/LOAD
-function save(){try{localStorage.setItem('legendsWildV6',JSON.stringify({...state,nextId}))}catch(e){}}
-function load(){try{const s=localStorage.getItem('legendsWildV6');if(s){const d=JSON.parse(s);Object.assign(state,d);nextId=d.nextId||1;migrateShopSystem()}}catch(e){}}
+// SAVE/LOAD - v54.6: Added error notification
+function save(){
+    try{
+        localStorage.setItem('legendsWildV6',JSON.stringify({...state,nextId}));
+    }catch(e){
+        console.error('Save failed:', e);
+        if(typeof showToast === 'function') showToast('⚠️ Save failed! Storage may be full.', 'error');
+    }
+}
+function load(){
+    try{
+        const s=localStorage.getItem('legendsWildV6');
+        if(s){const d=JSON.parse(s);Object.assign(state,d);nextId=d.nextId||1;migrateShopSystem()}
+    }catch(e){
+        console.error('Load failed:', e);
+    }
+}
 
 // SHOP SYSTEM MIGRATION - Initialize shop properties for old saves
 function migrateShopSystem(){
@@ -14736,8 +14740,9 @@ function executeHeal(healerIdx, targetIdx, healAmount){
     }
     playSound('heal');
 
+    // v54.6: Fix - use actualHeal to prevent exceeding maxHp
     const actualHeal = Math.min(finalHealAmount, target.maxHp - target.curHp);
-    target.curHp = Math.min(target.maxHp, target.curHp + finalHealAmount);
+    target.curHp = target.curHp + actualHeal;
 
     // TARGET HEAL ANIMATION
     const targetFrameEl = document.getElementById('c' + targetIdx);
@@ -15211,9 +15216,10 @@ function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
 
     target.hp = Math.min(target.maxHp, target.hp + healAmount);
     
-    // Show floating heal number on healed target
-    const targetEl = document.getElementById('enemyImg' + state.battle.enemies.indexOf(target));
-    if(targetEl) showFloatingDamage(targetEl, actualHeal, 'heal');
+    // v54.6: Show floating heal number on healed target (optimized - use enemyIdx if self-heal)
+    const targetIdx = (target === enemy) ? enemyIdx : state.battle.enemies.indexOf(target);
+    const healTargetEl = document.getElementById('enemyImg' + targetIdx);
+    if(healTargetEl) showFloatingDamage(healTargetEl, actualHeal, 'heal');
     
     const selfHeal = target === enemy;
     addLog(`💚 ${enemy.name} used ${heal.name}!${selfHeal ? '' : ' Healed ' + target.name}`, 'heal');
