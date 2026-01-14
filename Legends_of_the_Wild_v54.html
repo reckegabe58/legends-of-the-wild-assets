@@ -5982,7 +5982,7 @@ function getPartyScaleFactor(){
 const STARTING_FOCUS = 25;      // Reduced from 50 - prevents turn 1 special spam
 const FOCUS_REGEN_PER_TURN = 10; // Increased from 5 - rewards survival, enables more specials over time
 const MAX_FOCUS = 100;          // Maximum focus cap
-const BASE_SPECIAL_COST = 50;   // Base cost for special attacks (modified by evolution/power)
+const BASE_SPECIAL_COST = 35;   // v54.6: Reduced from 50 - makes specials usable earlier in battle
 
 // ============================================
 // NATURE SYSTEM (v54.3) - Creature Personalities
@@ -6093,8 +6093,8 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
         cost += 10;
     }
 
-    // Clamp to valid range (50-100)
-    return Math.max(50, Math.min(100, cost));
+    // v54.6: Clamp to valid range (35-85) - reduced from 50-100 for faster gameplay
+    return Math.max(35, Math.min(85, cost));
 }
 
 // ============================================
@@ -12936,9 +12936,9 @@ function doAction(a){
             showDefendAnimation(arenaCreature, moveName, creatureType);
         }
 
-        // DEFEND gives +5 Focus bonus
-        m.focus = Math.min(m.focusMax, m.focus + 5);
-        addLog(`${m.name||'Hero'} braces and gains +5 Focus!`, 'def');
+        // v54.6: DEFEND gives +10 Focus bonus (increased from +5 to make defending worthwhile)
+        m.focus = Math.min(m.focusMax, m.focus + 10);
+        addLog(`${m.name||'Hero'} braces and gains +10 Focus!`, 'def');
 
         turnIdx++;
         renderMain();
