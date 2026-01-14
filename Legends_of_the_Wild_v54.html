@@ -13603,6 +13603,10 @@ function doAction(a){
     if(actionLocked) return;
     if(!state.battle) return;
 
+    // v54.8: Increment action ID to prevent double-damage from stale callbacks
+    currentActionId++;
+    const thisActionId = currentActionId;
+
     // Lock buttons immediately to prevent spam
     lockMoveButtons();
 
@@ -13747,36 +13751,55 @@ function doAction(a){
         const attackAnimType = getAttackAnimationType(moveName, element);
 
         setTimeout(()=>{
+            // v54.8: CRITICAL - Check if this action is still current (prevents double-damage)
+            if(thisActionId !== currentActionId){
+                console.warn('Player attack callback skipped - action ID mismatch', thisActionId, currentActionId);
+                return;
+            }
+
+            // v54.8: Get FRESH element references (prevents stale element issues)
+            const freshArenaCreature = document.getElementById('arenaC'+activeIdx);
+            const freshEnemyEl = document.getElementById('enemyImg'+targetIdx);
+
             // Show element trail particles along projectile path
-            showElementTrail(arenaCreature, enemyEl, element);
+            showElementTrail(freshArenaCreature, freshEnemyEl, element);
 
             // For beam-type attacks, show beam instead of projectile
             if(attackAnimType === 'beam'){
-                showBeamAttack(arenaCreature, enemyEl, element);
+                showBeamAttack(freshArenaCreature, freshEnemyEl, element);
             }
 
-            fireProjectile(arenaCreature, enemyEl, element, ()=>{
+            fireProjectile(freshArenaCreature, freshEnemyEl, element, ()=>{
+                // v54.8: Double-check action ID in callback (critical for preventing double-damage)
+                if(thisActionId !== currentActionId){
+                    console.warn('Player attack impact skipped - action ID mismatch');
+                    return;
+                }
+
                 playSound(isCrit ? 'crit' : 'hit');
 
                 // Store chip HP for delayed drain effect
                 targetEnemy.chipHp = targetEnemy.hp;
                 targetEnemy.hp = Math.max(0, targetEnemy.hp - d);
 
+                // v54.8: Get fresh enemy element for animations
+                const impactEnemyEl = document.getElementById('enemyImg'+targetIdx);
+
                 // Show impact effect
-                showImpactEffect(enemyEl, isCrit, element);
+                showImpactEffect(impactEnemyEl, isCrit, element);
 
                 // v54.6: Type-based attack animation matched to move name
-                showAttackAnimationByType(enemyEl, moveName, element, isCrit);
-                
+                showAttackAnimationByType(impactEnemyEl, moveName, element, isCrit);
+
                 // TARGET SHAKE ANIMATION
-                if(enemyEl){
-                    enemyEl.classList.add(isCrit ? 'anim-crit-shake' : 'anim-hit-shake');
-                    enemyEl.classList.add('anim-hit-flash');
+                if(impactEnemyEl){
+                    impactEnemyEl.classList.add(isCrit ? 'anim-crit-shake' : 'anim-hit-shake');
+                    impactEnemyEl.classList.add('anim-hit-flash');
                     setTimeout(()=>{
-                        enemyEl.classList.remove('anim-hit-shake','anim-crit-shake','anim-hit-flash');
-                    },300);
+                        impactEnemyEl.classList.remove('anim-hit-shake','anim-crit-shake','anim-hit-flash');
+                    },400);
                 }
-                
+
                 // HP BAR DAMAGE FLASH + UPDATE
                 const hpBar = document.getElementById('enemyHpBar'+targetIdx);
                 if(hpBar){
@@ -13793,59 +13816,59 @@ function doAction(a){
                     }
                     // Add damage flash animation
                     hpBar.classList.add('anim-damage');
-                    setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
+                    setTimeout(()=>hpBar.classList.remove('anim-damage'),400);
                 }
-                
+
                 // CRIT FLASH - white screen flash on any crit
                 if(isCrit){
                     const flashDiv = document.createElement('div');
                     flashDiv.className = 'crit-flash';
                     document.body.appendChild(flashDiv);
-                    setTimeout(()=>flashDiv.remove(), 300);
+                    setTimeout(()=>flashDiv.remove(), 400);
                 }
-                
+
                 // SCREEN SHAKE only on VERY big hits
                 if(isCrit && d > 100){
                     const arena = document.getElementById('battleArena');
                     if(arena){
                         arena.classList.add('screen-shake');
-                        setTimeout(()=>arena.classList.remove('screen-shake'),300);
+                        setTimeout(()=>arena.classList.remove('screen-shake'),350);
                     }
                 }
-                
+
                 // FLOATING DAMAGE NUMBER
-                showFloatingDamage(enemyEl, d, isCrit ? 'crit' : 'damage');
-                
+                showFloatingDamage(impactEnemyEl, d, isCrit ? 'crit' : 'damage');
+
                 // Add to battle log
                 addLog(`${m.name||'Hero'} used ${moveName}! ${d} damage${isCrit?' (CRIT!)':''}`, 'dmg');
-                
+
                 // CRITICAL: Clear processing flag BEFORE checking for summon
                 processing = false;
-                
+
                 // Check if boss should summon minions (at 40% HP)
                 // This may set processing = true if summon happens
                 checkBossMinionSummon();
-                
+
                 // CRITICAL: Only advance turn if NOT processing (e.g., summon animation started)
                 // If processing is true, the summon callback will call nextTurn()
                 if(!processing){
                     turnIdx++;
                     renderMain();
-                    setTimeout(nextTurn, 500);
+                    setTimeout(nextTurn, 600);
                 }
             });
 
-            // v54.6: BACKUP PROCESSING CLEARER - prevents stuck flag if animation callback fails
+            // v54.8: BACKUP PROCESSING CLEARER with action ID check
             setTimeout(() => {
-                if(processing && state.battle) {
+                if(processing && state.battle && thisActionId === currentActionId) {
                     console.warn('Backup: clearing processing flag after attack animation');
                     processing = false;
                     if(state.battle && !document.querySelector('.action-banner')){
                         nextTurn();
                     }
                 }
-            }, 2500);
-        }, 200);
+            }, 3000);
+        }, 250);
 
     }else if(a==='def'){
         const mv=getMove(m.cid,m.lv,'def');
@@ -13942,10 +13965,19 @@ function doAction(a){
             }
 
             setTimeout(()=>{
+                // v54.8: Check if this action is still current
+                if(thisActionId !== currentActionId){
+                    console.warn('Player special callback skipped - action ID mismatch');
+                    return;
+                }
+
+                // v54.8: Get fresh element reference
+                const freshArenaCreature = document.getElementById('arenaC'+activeIdx);
+
                 // SPECIAL DASH after charge
-                if(arenaCreature){
-                    arenaCreature.classList.add('anim-special-dash');
-                    setTimeout(()=>arenaCreature.classList.remove('anim-special-dash'),350);
+                if(freshArenaCreature){
+                    freshArenaCreature.classList.add('anim-special-dash');
+                    setTimeout(()=>freshArenaCreature.classList.remove('anim-special-dash'),400);
                 }
 
                 if(isAOE){
@@ -14032,6 +14064,12 @@ function doAction(a){
 
                     // After all hits complete
                     setTimeout(() => {
+                        // v54.8: Check action ID before completing turn
+                        if(thisActionId !== currentActionId){
+                            console.warn('AOE special completion skipped - action ID mismatch');
+                            return;
+                        }
+
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! Hit ${aliveEnemies.length} enemies for ${totalDamage} total damage!`, 'spec');
 
                         processing = false;
@@ -14040,22 +14078,22 @@ function doAction(a){
                         if(!processing){
                             turnIdx++;
                             renderMain();
-                            setTimeout(nextTurn, 500);
+                            setTimeout(nextTurn, 700);
                         }
-                    }, aliveEnemies.length * 150 + 200);
+                    }, aliveEnemies.length * 180 + 300);
 
-                    // v54.6: BACKUP PROCESSING CLEARER for AOE special
+                    // v54.8: BACKUP PROCESSING CLEARER with action ID check
                     setTimeout(() => {
-                        if(processing && state.battle) {
+                        if(processing && state.battle && thisActionId === currentActionId) {
                             console.warn('Backup: clearing processing flag after AOE special');
                             processing = false;
                             if(state.battle) nextTurn();
                         }
-                    }, aliveEnemies.length * 150 + 2500);
+                    }, aliveEnemies.length * 180 + 3000);
 
                 }else{
                     // ============================================
-                    // v54.6: ENHANCED SINGLE TARGET SPECIAL
+                    // v54.8: ENHANCED SINGLE TARGET SPECIAL with action ID protection
                     // ============================================
                     // Calculate damage
                     let baseDmg = m.st.atk * 1.2;
@@ -14067,36 +14105,46 @@ function doAction(a){
                     // Show action banner
                     showActionBanner(m.name||'Hero', moveName, d, 'special', true);
 
-                    const enemyEl = document.getElementById('enemyImg'+targetIdx);
+                    // v54.8: Get fresh element reference
+                    const freshEnemyEl = document.getElementById('enemyImg'+targetIdx);
 
                     // v54.6: Type-based special animation matched to move name
                     const specialAnimType = getAttackAnimationType(moveName, element);
                     const isHighPower = mv.p >= 1.5 || specialAnimType === 'beam';
 
                     // Show element trail for all specials
-                    showElementTrail(arenaCreature, enemyEl, element);
+                    showElementTrail(freshArenaCreature, freshEnemyEl, element);
 
                     // Fire beam or projectile based on move name analysis
                     if(isHighPower || specialAnimType === 'beam'){
-                        showBeamAttack(arenaCreature, enemyEl, element);
+                        showBeamAttack(freshArenaCreature, freshEnemyEl, element);
                     }
 
                     // Callback function for impact
                     const onSpecialImpact = () => {
+                        // v54.8: Check action ID in callback
+                        if(thisActionId !== currentActionId){
+                            console.warn('Special impact skipped - action ID mismatch');
+                            return;
+                        }
+
                         playSound('crit');
 
                         targetEnemy.chipHp = targetEnemy.hp;
                         targetEnemy.hp = Math.max(0, targetEnemy.hp - d);
 
-                        showImpactEffect(enemyEl, true, element);
-                        showElementEffect(enemyEl, element);
+                        // v54.8: Get fresh element for impact animations
+                        const impactEnemyEl = document.getElementById('enemyImg'+targetIdx);
+
+                        showImpactEffect(impactEnemyEl, true, element);
+                        showElementEffect(impactEnemyEl, element);
 
                         // v54.6: Type-based special animation matched to move name
-                        showAttackAnimationByType(enemyEl, moveName, element, true);
+                        showAttackAnimationByType(impactEnemyEl, moveName, element, true);
 
-                        if(enemyEl){
-                            enemyEl.classList.add('anim-crit-shake','anim-hit-flash');
-                            setTimeout(()=>enemyEl.classList.remove('anim-crit-shake','anim-hit-flash'),350);
+                        if(impactEnemyEl){
+                            impactEnemyEl.classList.add('anim-crit-shake','anim-hit-flash');
+                            setTimeout(()=>impactEnemyEl.classList.remove('anim-crit-shake','anim-hit-flash'),450);
                         }
 
                         // HP BAR UPDATE
@@ -14107,7 +14155,7 @@ function doAction(a){
                             if(hpFill) hpFill.style.width = (targetEnemy.hp / targetEnemy.maxHp) * 100 + '%';
                             if(chipFill) chipFill.style.width = (targetEnemy.chipHp / targetEnemy.maxHp) * 100 + '%';
                             hpBar.classList.add('anim-damage');
-                            setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
+                            setTimeout(()=>hpBar.classList.remove('anim-damage'),400);
                         }
 
                         // Screen shake for big specials
@@ -14115,11 +14163,11 @@ function doAction(a){
                             const arena = document.getElementById('battleArena');
                             if(arena){
                                 arena.classList.add('screen-shake');
-                                setTimeout(()=>arena.classList.remove('screen-shake'),250);
+                                setTimeout(()=>arena.classList.remove('screen-shake'),350);
                             }
                         }
 
-                        showFloatingDamage(enemyEl, d, 'crit');
+                        showFloatingDamage(impactEnemyEl, d, 'crit');
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! ${d} damage!`, 'spec');
 
                         processing = false;
@@ -14128,27 +14176,27 @@ function doAction(a){
                         if(!processing){
                             turnIdx++;
                             renderMain();
-                            setTimeout(nextTurn, 500);
+                            setTimeout(nextTurn, 700);
                         }
                     };
 
                     // High power uses beam (delayed impact), low power uses projectile
                     if(isHighPower){
-                        setTimeout(onSpecialImpact, 400); // Beam animation duration
+                        setTimeout(onSpecialImpact, 500); // Beam animation duration - increased
                     } else {
-                        fireProjectile(arenaCreature, enemyEl, element, onSpecialImpact);
+                        fireProjectile(freshArenaCreature, freshEnemyEl, element, onSpecialImpact);
                     }
 
-                    // v54.6: BACKUP PROCESSING CLEARER for single-target special
+                    // v54.8: BACKUP PROCESSING CLEARER with action ID check
                     setTimeout(() => {
-                        if(processing && state.battle) {
+                        if(processing && state.battle && thisActionId === currentActionId) {
                             console.warn('Backup: clearing processing flag after special');
                             processing = false;
                             if(state.battle) nextTurn();
                         }
-                    }, 2500);
+                    }, 3000);
                 }
-            }, 500); // After charge animation
+            }, 600); // After charge animation - increased
         }else{
             doAction('atk');
         }
@@ -14170,9 +14218,9 @@ function showFloatingDamage(targetEl, amount, type='damage'){
     float.style.position = 'fixed';
     
     document.body.appendChild(float);
-    
-    // Clean up after animation - LONGER DURATION
-    setTimeout(() => float.remove(), 1500);
+
+    // v54.8: Clean up after animation - Extended duration for better visibility
+    setTimeout(() => float.remove(), 1800);
 }
 
 // Show elemental effect on target
@@ -14187,8 +14235,9 @@ function showElementEffect(targetEl, element){
     effect.style.top = rect.top + rect.height/2 - 50 + 'px';
     
     document.body.appendChild(effect);
-    
-    setTimeout(() => effect.remove(), 900);
+
+    // v54.8: Increased duration for better visibility
+    setTimeout(() => effect.remove(), 1100);
 }
 
 // ============================================
@@ -14351,29 +14400,47 @@ function showImpactFlash(targetEl){
 }
 
 // Fire projectile from attacker to target
+// v54.8: Fixed element size validation with fallback positions
 function fireProjectile(fromEl, toEl, element, onImpact){
     if(!fromEl || !toEl) {
         console.warn('fireProjectile: missing element', {fromEl, toEl});
-        if(onImpact) onImpact();
+        // DELAYED callback to prevent synchronous double-damage
+        if(onImpact) setTimeout(onImpact, 350);
         return;
     }
-    
+
     const proj = document.createElement('div');
     proj.className = `projectile ${element || 'fire'}`;
-    
-    const fromRect = fromEl.getBoundingClientRect();
-    const toRect = toEl.getBoundingClientRect();
-    
-    // VALIDATE positions - if invalid, use fallback
+
+    let fromRect = fromEl.getBoundingClientRect();
+    let toRect = toEl.getBoundingClientRect();
+
+    // v54.8: Try to get fresh element if stale (no size)
     if(fromRect.width === 0 || fromRect.height === 0){
-        console.error('fireProjectile: fromEl has no size', fromEl);
-        if(onImpact) onImpact();
-        return;
+        // Try to find element by ID pattern
+        const fromId = fromEl.id;
+        if(fromId){
+            const freshFrom = document.getElementById(fromId);
+            if(freshFrom) fromRect = freshFrom.getBoundingClientRect();
+        }
     }
     if(toRect.width === 0 || toRect.height === 0){
-        console.error('fireProjectile: toEl has no size', toEl);
-        if(onImpact) onImpact();
-        return;
+        const toId = toEl.id;
+        if(toId){
+            const freshTo = document.getElementById(toId);
+            if(freshTo) toRect = freshTo.getBoundingClientRect();
+        }
+    }
+
+    // v54.8: Use fallback screen positions if still no size
+    // Enemy side (right) to player side (left)
+    if(fromRect.width === 0 || fromRect.height === 0){
+        console.warn('fireProjectile: using fallback fromEl position');
+        fromRect = { left: window.innerWidth * 0.7, top: window.innerHeight * 0.4, width: 100, height: 100 };
+    }
+    if(toRect.width === 0 || toRect.height === 0){
+        console.warn('fireProjectile: using fallback toEl position');
+        toRect = { left: window.innerWidth * 0.3, top: window.innerHeight * 0.4, width: 100, height: 100 };
     }
 
     const startX = fromRect.left + fromRect.width/2;
@@ -14386,8 +14453,8 @@ function fireProjectile(fromEl, toEl, element, onImpact){
     
     document.body.appendChild(proj);
     
-    // Animate position
-    const duration = 350;
+    // Animate position - v54.8: Increased duration for better visibility
+    const duration = 500;
     const startTime = performance.now();
     
     function animate(currentTime){
@@ -14455,7 +14522,8 @@ function showSlashEffect(targetEl, isCrit = false){
 
     document.body.appendChild(slash);
 
-    setTimeout(() => slash.remove(), 300);
+    // v54.8: Increased duration for better visibility
+    setTimeout(() => slash.remove(), 450);
 }
 
 // Show impact burst effect
@@ -14493,7 +14561,8 @@ function showImpactEffect(targetEl, isCrit = false, element = null){
 
     document.body.appendChild(impact);
 
-    setTimeout(() => impact.remove(), isCrit ? 600 : 450);
+    // v54.8: Increased duration for better visibility
+    setTimeout(() => impact.remove(), isCrit ? 750 : 550);
 }
 
 // Show heal burst effect
@@ -14509,7 +14578,8 @@ function showHealEffect(targetEl){
     heal.style.top = bounds.centerY - 50 + 'px';
 
     document.body.appendChild(heal);
-    setTimeout(() => heal.remove(), 900);
+    // v54.8: Increased duration for better visibility
+    setTimeout(() => heal.remove(), 1100);
 }
 
 // ============================================
@@ -16006,7 +16076,8 @@ function showActionBanner(userName, actionName, result, type='attack', isCrit=fa
     banner.classList.add('show');
     
     // Hide after delay
-    setTimeout(() => banner.classList.remove('show'), 2500);
+    // v54.8: Increased duration for better visibility
+    setTimeout(() => banner.classList.remove('show'), 3000);
 }
 
 // SELECT TARGET - Called when clicking enemy during targeting mode
@@ -16399,14 +16470,29 @@ function enemyAction(){
     
     // Wait for telegraph, then attack
     setTimeout(()=>{
+        // v54.8: Check action ID before proceeding
+        if(thisActionId !== currentActionId){
+            console.warn('Enemy attack skipped - action ID mismatch');
+            return;
+        }
+
+        // v54.8: Get fresh element references (prevents stale element issues after render)
+        const freshEnemyEl = document.getElementById('enemyImg'+enemyIdx);
+
         // ENEMY DASH ANIMATION
-        if(enemyEl){
-            enemyEl.classList.add('anim-dash-left');
-            setTimeout(()=>enemyEl.classList.remove('anim-dash-left'),250);
+        if(freshEnemyEl){
+            freshEnemyEl.classList.add('anim-dash-left');
+            setTimeout(()=>freshEnemyEl.classList.remove('anim-dash-left'),300);
         }
         playSound('hit');
-        
+
         setTimeout(()=>{
+            // v54.8: Double-check action ID in nested callback
+            if(thisActionId !== currentActionId){
+                console.warn('Enemy attack impact skipped - action ID mismatch');
+                return;
+            }
+
             if(actionType === 'aoe'){
                 // AOE attack
                 const atkName = enemy.attacks.a[Math.floor(Math.random()*enemy.attacks.a.length)];
@@ -16491,17 +16577,24 @@ function enemyAction(){
                 }
 
                 const idx = targetMemberIdx;
-                const arenaCreature = document.getElementById('arenaC'+idx);
-                const targetEl = document.getElementById('c'+idx);
+                // v54.8: Use fresh element references
+                const freshArenaCreature = document.getElementById('arenaC'+idx);
+                const freshTargetEl = document.getElementById('c'+idx);
 
                 // v54.7: EPIC BOSS SPECIAL ANIMATIONS
                 if(enemy.isBoss && enemy.id){
-                    showBossAttackAnimation(enemy.id, spec.name, false, [arenaCreature || targetEl]);
+                    showBossAttackAnimation(enemy.id, spec.name, false, [freshArenaCreature || freshTargetEl]);
                 }
 
-                // FIRE SPECIAL PROJECTILE FROM ENEMY TO PLAYER
+                // FIRE SPECIAL PROJECTILE FROM ENEMY TO PLAYER - v54.8: Use fresh enemyEl
                 const element = spec.element || enemy.attackElement || 'energy';
-                fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
+                fireProjectile(freshEnemyEl, freshArenaCreature || freshTargetEl, element, ()=>{
+                    // v54.8: Check action ID in callback
+                    if(thisActionId !== currentActionId){
+                        console.warn('Enemy special impact skipped - action ID mismatch');
+                        return;
+                    }
+
                     t.chipHp = t.curHp;
                     // v54.4: Special attack - full power, minimal defense reduction
                     let baseDmg = Math.max(20, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
@@ -16515,26 +16608,31 @@ function enemyAction(){
 
                     enemy.specialCooldown = spec.cooldown || 3;
 
-                    // Strong visual feedback (enhanced for devastating blows)
-                    if(arenaCreature) arenaCreature.classList.add('hit-recoil');
-                    if(targetEl) targetEl.classList.add('anim-crit-shake');
-                    setTimeout(()=>{
-                        if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
-                        if(targetEl) targetEl.classList.remove('anim-crit-shake');
-                    },300);
+                    // v54.8: Get fresh elements for visual feedback
+                    const impactArena = document.getElementById('arenaC'+idx);
+                    const impactTarget = document.getElementById('c'+idx);
 
-                    if(arena){
-                        arena.classList.add('screen-shake');
-                        setTimeout(()=>arena.classList.remove('screen-shake'),200);
+                    // Strong visual feedback (enhanced for devastating blows)
+                    if(impactArena) impactArena.classList.add('hit-recoil');
+                    if(impactTarget) impactTarget.classList.add('anim-crit-shake');
+                    setTimeout(()=>{
+                        if(impactArena) impactArena.classList.remove('hit-recoil');
+                        if(impactTarget) impactTarget.classList.remove('anim-crit-shake');
+                    },400);
+
+                    const arenaEl = document.getElementById('battleArena');
+                    if(arenaEl){
+                        arenaEl.classList.add('screen-shake');
+                        setTimeout(()=>arenaEl.classList.remove('screen-shake'),300);
                     }
 
-                    showFloatingDamage(arenaCreature || targetEl, d, dmgResult.isDevastating ? 'crit' : 'damage');
-                    
+                    showFloatingDamage(impactArena || impactTarget, d, dmgResult.isDevastating ? 'crit' : 'damage');
+
                     // Show element effect for special
                     if(spec.element){
-                        showElementEffect(arenaCreature || targetEl, spec.element);
+                        showElementEffect(impactArena || impactTarget, spec.element);
                     }
-                    
+
                     addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
                     if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
@@ -16542,17 +16640,17 @@ function enemyAction(){
                     turnIdx++;
                     processing = false; // CRITICAL: Clear before nextTurn
                     renderMain();
-                    setTimeout(nextTurn, 800);
+                    setTimeout(nextTurn, 900);
                 });
 
-                // v54.7: BACKUP PROCESSING CLEARER with action ID check
+                // v54.8: BACKUP PROCESSING CLEARER with action ID check - increased timeout
                 setTimeout(() => {
                     if(processing && state.battle && currentActionId === thisActionId) {
                         console.warn('Backup: clearing processing flag after enemy special');
                         processing = false;
                         if(state.battle) nextTurn();
                     }
-                }, 2500);
+                }, 3000);
 
             } else {
                 // BASIC ATTACK
@@ -16561,17 +16659,24 @@ function enemyAction(){
                 const atkName = atkList ? atkList[Math.floor(Math.random()*atkList.length)] : 'Attack';
 
                 const idx = targetMemberIdx;
-                const arenaCreature = document.getElementById('arenaC'+idx);
-                const targetEl = document.getElementById('c'+idx);
+                // v54.8: Use fresh element references
+                const freshArenaCreature = document.getElementById('arenaC'+idx);
+                const freshTargetEl = document.getElementById('c'+idx);
 
                 // v54.7: EPIC BOSS BASIC ATTACK ANIMATIONS
                 if(enemy.isBoss && enemy.id){
-                    showBossAttackAnimation(enemy.id, atkName, false, [arenaCreature || targetEl]);
+                    showBossAttackAnimation(enemy.id, atkName, false, [freshArenaCreature || freshTargetEl]);
                 }
 
-                // FIRE PROJECTILE FROM ENEMY TO PLAYER
+                // FIRE PROJECTILE FROM ENEMY TO PLAYER - v54.8: Use fresh enemyEl
                 const element = enemy.attackElement || 'physical';
-                fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
+                fireProjectile(freshEnemyEl, freshArenaCreature || freshTargetEl, element, ()=>{
+                    // v54.8: Check action ID in callback
+                    if(thisActionId !== currentActionId){
+                        console.warn('Enemy attack impact skipped - action ID mismatch');
+                        return;
+                    }
+
                     t.chipHp = t.curHp;
                     // v54.4: Basic attack - full ATK value, minimal defense reduction
                     let baseDmg = Math.max(20, enemy.atk * 1.2 - (t.st.def * 0.15));
@@ -16583,30 +16688,34 @@ function enemyAction(){
                     debugLog('DAMAGE', `BASIC ATK | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Base: ${baseDmg} | Final: ${d} | HP: ${t.curHp}/${t.maxHp}`);
                     t.curHp = Math.max(0, t.curHp - d);
 
-                    // VISUAL EFFECTS - Impact + Slash (enhanced for devastating)
-                    showImpactFlash(arenaCreature || targetEl);
-                    showSlashEffect(arenaCreature || targetEl, dmgResult.isDevastating);
+                    // v54.8: Get fresh elements for visual feedback
+                    const impactArena = document.getElementById('arenaC'+idx);
+                    const impactTarget = document.getElementById('c'+idx);
 
-                    if(arenaCreature) arenaCreature.classList.add('hit-recoil');
-                    if(targetEl) targetEl.classList.add(dmgResult.isDevastating ? 'anim-crit-shake' : 'anim-hit-shake');
+                    // VISUAL EFFECTS - Impact + Slash (enhanced for devastating)
+                    showImpactFlash(impactArena || impactTarget);
+                    showSlashEffect(impactArena || impactTarget, dmgResult.isDevastating);
+
+                    if(impactArena) impactArena.classList.add('hit-recoil');
+                    if(impactTarget) impactTarget.classList.add(dmgResult.isDevastating ? 'anim-crit-shake' : 'anim-hit-shake');
                     setTimeout(()=>{
-                        if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
-                        if(targetEl) targetEl.classList.remove('anim-hit-shake', 'anim-crit-shake');
-                    },250);
+                        if(impactArena) impactArena.classList.remove('hit-recoil');
+                        if(impactTarget) impactTarget.classList.remove('anim-hit-shake', 'anim-crit-shake');
+                    },350);
 
                     const hpBar = document.getElementById('pmHpBar'+idx);
                     if(hpBar){
                         hpBar.classList.add('anim-damage');
-                        setTimeout(()=>hpBar.classList.remove('anim-damage'),300);
+                        setTimeout(()=>hpBar.classList.remove('anim-damage'),400);
                     }
 
-                    showFloatingDamage(arenaCreature || targetEl, d, dmgResult.isDevastating ? 'crit' : 'damage');
-                    
+                    showFloatingDamage(impactArena || impactTarget, d, dmgResult.isDevastating ? 'crit' : 'damage');
+
                     // Show element effect
                     if(enemy.attackElement){
-                        setTimeout(() => showElementEffect(arenaCreature || targetEl, enemy.attackElement), 80);
+                        setTimeout(() => showElementEffect(impactArena || impactTarget, enemy.attackElement), 100);
                     }
-                    
+
                     addLog(`${enemy.name} used ${atkName}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
                     if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
@@ -16614,17 +16723,17 @@ function enemyAction(){
                     turnIdx++;
                     processing = false; // CRITICAL: Clear before nextTurn
                     renderMain();
-                    setTimeout(nextTurn, 800);
+                    setTimeout(nextTurn, 900);
                 });
 
-                // v54.7: BACKUP PROCESSING CLEARER with action ID check
+                // v54.8: BACKUP PROCESSING CLEARER with action ID check - increased timeout
                 setTimeout(() => {
                     if(processing && state.battle && currentActionId === thisActionId) {
                         console.warn('Backup: clearing processing flag after enemy attack');
                         processing = false;
                         if(state.battle) nextTurn();
                     }
-                }, 2500);
+                }, 3000);
             }
         }, 350); // SLOWER - was 200
     }, 500); // SLOWER - was 400
