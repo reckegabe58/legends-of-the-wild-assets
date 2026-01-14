@@ -3,11 +3,11 @@
 ## Quick Overview
 This is a classroom RPG game where students collect and battle creatures. The entire game is a single HTML file with embedded CSS and JavaScript.
 
-**Current Version:** v54.7 | **Total Lines:** ~17,207
+**Current Version:** v54.8 | **Total Lines:** ~17,320
 
 ## File Structure
 ```
-Legends_of_the_Wild_v54.html  - Main game file (~17,207 lines)
+Legends_of_the_Wild_v54.html  - Main game file (~17,320 lines)
 Player_Creatures/             - Player creature sprite images
 Bosses/                       - Boss sprite images (organized by tier)
 Minions/                      - Minion sprite images

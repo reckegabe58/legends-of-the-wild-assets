@@ -1,6 +1,6 @@
 # Legends of the Wild - Complete Claude Code Reference
 
-**Version:** v54.7 | **Lines:** ~17,207 | **Last Updated:** January 2026
+**Version:** v54.8 | **Lines:** ~17,320 | **Last Updated:** January 2026
 
 Copy and paste this entire document at the start of each new Claude Code session to provide full context without reading the massive HTML file.
 
@@ -395,6 +395,7 @@ Post-Game: Defeat APOCALYPSE → Unlock THE CREATOR
 
 ## VERSION HISTORY NOTES
 
+- **v54.8**: Fixed fireProjectile element size error, fixed double-damage bug with action ID tracking, extended all animation timings
 - **v54.7**: Fixed double-damage bug, added epic boss attack animations
 - **v54.6**: Reduced boss ATK scaling, reduced special costs, added heal cooldown
 - **v54.3**: Added Nature system, Arena PvP mode
