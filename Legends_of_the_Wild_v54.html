@@ -619,32 +619,6 @@ body{
     color:#3498db;
 }
 
-/* v54.6: Arena Team Glow System - Team-colored creature outlines */
-.arena-creature.arena-team-red .arena-frame,
-.arena-creature.arena-team-red .ground-circle{
-    box-shadow:0 0 15px 3px rgba(231,76,60,.4), inset 0 0 10px rgba(231,76,60,.1);
-    border-color:rgba(231,76,60,.6);
-}
-.arena-creature.arena-team-blue .arena-frame,
-.arena-creature.arena-team-blue .ground-circle{
-    box-shadow:0 0 15px 3px rgba(52,152,219,.4), inset 0 0 10px rgba(52,152,219,.1);
-    border-color:rgba(52,152,219,.6);
-}
-/* Active turn enhances the team glow */
-.arena-creature.arena-team-red.active-turn .arena-frame{
-    box-shadow:0 0 25px 8px rgba(231,76,60,.6), 0 0 40px 15px rgba(231,76,60,.3);
-}
-.arena-creature.arena-team-blue.active-turn .arena-frame{
-    box-shadow:0 0 25px 8px rgba(52,152,219,.6), 0 0 40px 15px rgba(52,152,219,.3);
-}
-/* Enemy unit team colors (right side) */
-.enemy-unit.arena-team-red .enemy-frame{
-    box-shadow:0 0 15px 3px rgba(231,76,60,.4);
-}
-.enemy-unit.arena-team-blue .enemy-frame{
-    box-shadow:0 0 15px 3px rgba(52,152,219,.4);
-}
-
 /* Party HUD CSS Removed - now using stats overlay on creatures */
 
 /* Move Buttons - Absolute bottom now (no party HUD) */
@@ -7476,6 +7450,9 @@ function migrateShopSystem(){
 
     // Run V54.1 migration
     migrateToV54_1();
+
+    // v54.6: Always run natures migration (in case V54.1 was done before V54.3 existed)
+    migrateToV54_3_Natures();
 }
 
 // V54.1 MIGRATION - Add new state properties for enhanced features
@@ -7578,8 +7555,8 @@ const ARENA_MODES = {
     '1v1': { name: '1v1 Duel', teamSize: 1, teams: 2, icon: '⚔️', desc: 'One champion vs one challenger!' },
     '2v2': { name: '2v2 Tag Team', teamSize: 2, teams: 2, icon: '🤝', desc: 'Two partners fight together!' },
     '3v3': { name: '3v3 Squad Battle', teamSize: 3, teams: 2, icon: '👥', desc: 'Squad up and dominate!' },
-    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' },
-    'ffa': { name: 'Free For All', teamSize: 1, teams: 'all', icon: '🌪️', desc: 'Everyone for themselves!' }
+    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' }
+    // FFA mode removed - was broken
 };
 
 // Arena state (persists during setup)
@@ -8676,9 +8653,8 @@ function renderArenaBattle(m){
                 const isKO = combatant.curHp <= 0;
                 const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
                 const evoIdx = getEvo(combatant.cid, combatant.lv);
-                const teamClass = combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue';
 
-                let classes = 'arena-creature ' + teamClass;
+                let classes = 'arena-creature';
                 if(isKO) classes += ' ko';
                 if(isActive && !isKO) classes += ' active active-turn';
                 if(isValidTarget) classes += ' targetable';
@@ -8717,9 +8693,8 @@ function renderArenaBattle(m){
             const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
             const evoIdx = getEvo(combatant.cid, combatant.lv);
             const hpPct = (combatant.curHp/combatant.maxHp)*100;
-            const teamClass = combatant.team === 0 ? 'arena-team-red' : 'arena-team-blue';
 
-            let classes = 'enemy-unit ' + teamClass;
+            let classes = 'enemy-unit';
             if(isValidTarget) classes += ' targetable';
             if(isKO) classes += ' ko';
 
@@ -8743,7 +8718,7 @@ function renderArenaBattle(m){
     html += `</div>`; // End battle-arena
 
     // Combat Log - v54.6: Collapsible, default expanded
-    html += `<div class="battle-log${arenaBattle.logCollapsed?' collapsed':''}" id="arenaLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+    html += `<div class="battle-log${arenaBattle.logCollapsed?' collapsed':''}" id="arenaLog" style="position:absolute;top:60px;right:20px;width:320px;z-index:50">
         <div class="battle-log-header" onclick="toggleArenaLog()">
             <span class="battle-log-title">📜 Combat Log</span>
             <span class="battle-log-toggle">▼</span>
@@ -10203,13 +10178,16 @@ function useBattleItem(itemId, targetIdx){
     if(student.inventory[itemId] <= 0){
         delete student.inventory[itemId];
     }
-    
+
     save();
-    
-    // End turn after item use
-    turnIdx++;
+
+    // v54.6: Items are now FREE ACTIONS - don't end turn, just refresh UI
+    // Player can still attack/defend/heal/special after using an item
+    // Mark that an item was used this turn (optional: to prevent multiple items)
+    if(!b.itemUsedThisTurn) b.itemUsedThisTurn = {};
+    b.itemUsedThisTurn[cur.idx] = true;
+
     renderMain();
-    setTimeout(nextTurn, 600);
 }
 
 function renderHomeBase(m){
@@ -12203,17 +12181,20 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
 function buildTurnOrder(){
     const b=state.battle;
     battleQueue=[];
-    
+
+    // v54.6: Reset item used tracking for new round
+    b.itemUsedThisTurn = {};
+
     // Add all player team members
     b.team.forEach((m,i)=>{
         if(m.curHp>0) battleQueue.push({type:'player',idx:i,spd:m.st.spd});
     });
-    
+
     // Add all enemies
     b.enemies.forEach((e,i)=>{
         if(e.hp>0) battleQueue.push({type:'enemy',idx:i,spd:e.spd});
     });
-    
+
     battleQueue.sort((a,b)=>b.spd-a.spd);
     turnIdx=0;
 }
@@ -12566,7 +12547,7 @@ function renderBattle(m){
     // ============================================
     
     // Battle Log (bottom-left corner) - v54.6: Collapsible, default expanded
-    html+=`<div class="battle-log${state.battleLogCollapsed?' collapsed':''}" id="battleLog" style="position:absolute;bottom:20px;left:20px;width:380px;z-index:50">
+    html+=`<div class="battle-log${state.battleLogCollapsed?' collapsed':''}" id="battleLog" style="position:absolute;top:60px;right:20px;width:320px;z-index:50">
         <div class="battle-log-header" onclick="toggleBattleLog()">
             <span class="battle-log-title">📜 Combat Log</span>
             <span class="battle-log-toggle">▼</span>
@@ -12627,11 +12608,14 @@ function renderBattle(m){
         }
         
         // ITEMS BUTTON - Show usable items count
+        // v54.6: Items are free actions but limited to 1 per turn
         const usableItems = getUsableBattleItems(activeMember);
         const itemCount = usableItems.length;
-        html+=`<button class="move-btn items ${itemCount === 0 ? 'disabled' : ''}" ${buttonsDisabled || itemCount === 0 ? 'disabled' : ''} onclick="openBattleItems()">
+        const itemUsedThisTurn = b.itemUsedThisTurn && b.itemUsedThisTurn[activeIdx];
+        const itemsDisabled = buttonsDisabled || itemCount === 0 || itemUsedThisTurn;
+        html+=`<button class="move-btn items ${itemsDisabled ? 'disabled' : ''}" ${itemsDisabled ? 'disabled' : ''} onclick="openBattleItems()">
             <span class="move-name">🎒 Items</span>
-            <span class="move-cost">${itemCount} available</span>
+            <span class="move-cost">${itemUsedThisTurn ? 'Used' : itemCount + ' available'}</span>
         </button>`;
         
         html+=`</div>`; // End move-buttons-container
@@ -13850,11 +13834,29 @@ function showStatusApplyEffect(targetEl, status){
 function getAttackAnimationType(moveName, element){
     const name = (moveName || '').toLowerCase();
 
-    // ICE/FROST attacks - use ice shard or beam, never slash
+    // v54.6: COMPOUND WORDS FIRST - Handle specific combinations before generic checks
+    // Sandstorm, duststorm = earth, NOT lightning
+    if(name.includes('sandstorm') || name.includes('duststorm') || name.includes('dust storm')){
+        return 'slam';
+    }
+    // Firestorm, inferno storm = fire, NOT lightning
+    if(name.includes('firestorm') || name.includes('fire storm') || name.includes('inferno')){
+        return 'fire-burst';
+    }
+    // Snowstorm, blizzard = ice, NOT lightning
+    if(name.includes('snowstorm') || name.includes('snow storm') || name.includes('blizzard')){
+        return 'ice-shard';
+    }
+    // Hurricane, cyclone, gust = air/wind, use slash
+    if(name.includes('hurricane') || name.includes('cyclone') || name.includes('gust') || name.includes('wind')){
+        return 'slash';
+    }
+
+    // ICE/FROST attacks - use ice shard or beam
     if(name.includes('frost') || name.includes('ice') || name.includes('freeze') ||
-       name.includes('blizzard') || name.includes('arctic') || name.includes('glacial') ||
-       name.includes('snow') || name.includes('frozen') || name.includes('icicle') ||
-       name.includes('cold') || element === 'ice'){
+       name.includes('arctic') || name.includes('glacial') || name.includes('snow') ||
+       name.includes('frozen') || name.includes('icicle') || name.includes('cold') ||
+       element === 'ice'){
         if(name.includes('beam') || name.includes('ray') || name.includes('blast') || name.includes('zero')){
             return 'beam';
         }
@@ -13863,28 +13865,37 @@ function getAttackAnimationType(moveName, element){
 
     // FIRE attacks - use fire burst
     if(name.includes('flame') || name.includes('fire') || name.includes('blaze') ||
-       name.includes('ember') || name.includes('inferno') || name.includes('lava') ||
-       name.includes('molten') || name.includes('scorch') || name.includes('burn') ||
-       name.includes('heat') || name.includes('cinder') || name.includes('magma') ||
+       name.includes('ember') || name.includes('lava') || name.includes('molten') ||
+       name.includes('scorch') || name.includes('burn') || name.includes('heat') ||
+       name.includes('cinder') || name.includes('magma') || name.includes('meteor') ||
        element === 'fire'){
         return 'fire-burst';
     }
 
-    // LIGHTNING attacks - use lightning strike
+    // EARTH/SAND attacks - use ground slam (check BEFORE lightning to catch "sand" properly)
+    if(name.includes('earth') || name.includes('rock') || name.includes('stone') ||
+       name.includes('sand') || name.includes('ground') || name.includes('quake') ||
+       name.includes('boulder') || name.includes('crystal') || name.includes('shard') ||
+       name.includes('slam') || name.includes('stomp') || name.includes('crush') ||
+       name.includes('smash') || name.includes('dune') || name.includes('desert') ||
+       element === 'earth'){
+        return 'slam';
+    }
+
+    // LIGHTNING attacks - use lightning strike (after earth check)
     if(name.includes('thunder') || name.includes('spark') || name.includes('volt') ||
-       name.includes('lightning') || name.includes('storm') || name.includes('static') ||
-       name.includes('tempest') || name.includes('electric') || name.includes('jolt') ||
+       name.includes('lightning') || name.includes('static') || name.includes('electric') ||
+       name.includes('jolt') || name.includes('shock') ||
        element === 'lightning'){
         return 'lightning';
     }
 
-    // EARTH attacks - use ground slam
-    if(name.includes('earth') || name.includes('rock') || name.includes('stone') ||
-       name.includes('sand') || name.includes('ground') || name.includes('quake') ||
-       name.includes('boulder') || name.includes('crystal') || name.includes('slam') ||
-       name.includes('stomp') || name.includes('crush') || name.includes('smash') ||
-       element === 'earth'){
-        return 'slam';
+    // WATER attacks - use projectile
+    if(name.includes('water') || name.includes('aqua') || name.includes('hydro') ||
+       name.includes('wave') || name.includes('tide') || name.includes('splash') ||
+       name.includes('whirlpool') || name.includes('tsunami') || name.includes('ocean') ||
+       element === 'water'){
+        return 'projectile';
     }
 
     // BITE/FANG attacks - use bite animation
@@ -13902,27 +13913,70 @@ function getAttackAnimationType(moveName, element){
     // SLASH/CLAW attacks - use multi-slash
     if(name.includes('claw') || name.includes('slash') || name.includes('strike') ||
        name.includes('cut') || name.includes('rend') || name.includes('tear') ||
-       name.includes('swipe') || name.includes('rip')){
+       name.includes('swipe') || name.includes('rip') || name.includes('whip') ||
+       name.includes('lash') || name.includes('antler')){
         return 'slash';
     }
 
     // PROJECTILE attacks - use element trail
     if(name.includes('shot') || name.includes('bolt') || name.includes('ball') ||
-       name.includes('missile') || name.includes('arrow') || name.includes('needle')){
+       name.includes('missile') || name.includes('arrow') || name.includes('needle') ||
+       name.includes('barrage') || name.includes('spray')){
         return 'projectile';
     }
 
     // Physical attacks - use impact
     if(name.includes('punch') || name.includes('tackle') || name.includes('charge') ||
-       name.includes('ram') || name.includes('bash') || name.includes('hit')){
+       name.includes('ram') || name.includes('bash') || name.includes('hit') ||
+       name.includes('rush') || name.includes('rampage') || name.includes('stampede')){
         return 'impact';
     }
 
-    // Default based on element
-    if(element === 'water') return 'projectile';
-    if(element === 'nature') return 'slash';
-    if(element === 'shadow' || element === 'void') return 'beam';
-    if(element === 'poison') return 'projectile';
+    // NATURE attacks - use slash
+    if(name.includes('vine') || name.includes('leaf') || name.includes('thorn') ||
+       name.includes('root') || name.includes('petal') || name.includes('spore') ||
+       name.includes('branch') || name.includes('moss') || name.includes('photo') ||
+       element === 'nature'){
+        return 'slash';
+    }
+
+    // POISON attacks - use projectile
+    if(name.includes('toxic') || name.includes('poison') || name.includes('venom') ||
+       name.includes('plague') || name.includes('acid') || name.includes('fungal') ||
+       element === 'poison'){
+        return 'projectile';
+    }
+
+    // SHADOW/VOID attacks - use beam
+    if(name.includes('shadow') || name.includes('dark') || name.includes('void') ||
+       name.includes('nightmare') || name.includes('null') || name.includes('dimension') ||
+       name.includes('mind') || name.includes('psychic') || name.includes('reality') ||
+       element === 'shadow' || element === 'void'){
+        return 'beam';
+    }
+
+    // LIGHT attacks - use beam
+    if(name.includes('light') || name.includes('rainbow') || name.includes('spectrum') ||
+       name.includes('prism') || name.includes('radiant') || name.includes('holy') ||
+       element === 'light'){
+        return 'beam';
+    }
+
+    // METAL attacks - use impact
+    if(name.includes('steel') || name.includes('iron') || name.includes('metal') ||
+       name.includes('gear') || name.includes('mecha') || name.includes('overclock') ||
+       element === 'metal'){
+        return 'impact';
+    }
+
+    // AIR attacks - use slash
+    if(element === 'air') return 'slash';
+
+    // BUG attacks - use slash
+    if(name.includes('pincer') || name.includes('hive') || name.includes('beetle') ||
+       name.includes('carapace') || element === 'bug'){
+        return 'slash';
+    }
 
     return 'slash'; // Default to slash
 }
