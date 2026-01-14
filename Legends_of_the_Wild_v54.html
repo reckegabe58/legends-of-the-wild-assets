@@ -538,8 +538,17 @@ body{
     background-position:center;
     border-radius:12px;
     position:relative;
-    overflow:visible;
-    /* Changed to visible so bottom UI elements show */
+    overflow:hidden; /* v54.9: Changed to hidden to contain boss animations within game window */
+}
+
+/* v54.9: Boss animation overlay - contains all epic effects within the battle arena */
+.boss-anim-overlay{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:3000;
+    overflow:hidden;
+    border-radius:12px;
 }
 .battle-container::before{
     content:'';position:absolute;inset:0;
@@ -2287,14 +2296,15 @@ body{
     100%{transform:translate(-50%,-50%) scale(1);opacity:0}
 }
 
-/* Critical hit flash - dramatic white screen flash */
+/* Critical hit flash - dramatic white screen flash - v54.9: contained within arena */
 .crit-flash{
-    position:fixed;
+    position:absolute;
     inset:0;
     background:rgba(255,255,255,.25);
     pointer-events:none;
-    z-index:3000;
+    z-index:3100;
     animation:critFlash 300ms ease-out forwards;
+    border-radius:12px;
 }
 @keyframes critFlash{
     0%{opacity:0}
@@ -2303,202 +2313,317 @@ body{
 }
 
 /* ============================================
-   v54.7: EPIC BOSS ATTACK ANIMATIONS
+   v54.7/v54.9: EPIC BOSS ATTACK ANIMATIONS
    Unique devastating effects for each boss type
+   v54.9: All animations contained within battle arena
    ============================================ */
 
-/* Boss Attack Screen Flash - More intense than normal */
+/* Boss Attack Screen Flash - Multi-layered with pulse effect */
 .boss-attack-flash{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3500;
-    animation:bossFlash 400ms ease-out forwards;
+    animation:bossFlash 500ms ease-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
-.boss-attack-flash.shadow{background:radial-gradient(circle,rgba(100,50,150,.6),rgba(50,0,80,.3),transparent)}
-.boss-attack-flash.fire{background:radial-gradient(circle,rgba(255,150,50,.6),rgba(200,50,0,.3),transparent)}
-.boss-attack-flash.ice{background:radial-gradient(circle,rgba(150,220,255,.6),rgba(50,150,255,.3),transparent)}
-.boss-attack-flash.void{background:radial-gradient(circle,rgba(150,50,200,.7),rgba(80,0,120,.4),transparent)}
-.boss-attack-flash.chaos{background:radial-gradient(circle,rgba(255,100,100,.6),rgba(150,50,150,.4),transparent)}
-.boss-attack-flash.holy{background:radial-gradient(circle,rgba(255,255,200,.7),rgba(200,180,100,.4),transparent)}
-.boss-attack-flash.water{background:radial-gradient(circle,rgba(50,150,255,.6),rgba(0,80,200,.3),transparent)}
-.boss-attack-flash.poison{background:radial-gradient(circle,rgba(180,100,220,.6),rgba(100,50,150,.3),transparent)}
+.boss-attack-flash::before{
+    content:'';
+    position:absolute;
+    inset:-50%;
+    background:inherit;
+    filter:blur(60px);
+    animation:bossFlashPulse 500ms ease-out;
+}
+.boss-attack-flash::after{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:200%;height:200%;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,255,255,.3) 0%,transparent 50%);
+    animation:bossFlashRing 500ms ease-out forwards;
+}
+.boss-attack-flash.shadow{background:radial-gradient(ellipse at 70% 40%,rgba(100,50,150,.7),rgba(50,0,80,.5) 40%,rgba(20,0,40,.3) 70%,transparent)}
+.boss-attack-flash.fire{background:radial-gradient(ellipse at 70% 40%,rgba(255,200,50,.7),rgba(255,100,0,.5) 40%,rgba(150,30,0,.3) 70%,transparent)}
+.boss-attack-flash.ice{background:radial-gradient(ellipse at 70% 40%,rgba(200,240,255,.7),rgba(100,180,255,.5) 40%,rgba(50,100,200,.3) 70%,transparent)}
+.boss-attack-flash.void{background:radial-gradient(ellipse at 70% 40%,rgba(180,50,255,.8),rgba(100,0,150,.5) 40%,rgba(40,0,80,.3) 70%,transparent)}
+.boss-attack-flash.chaos{background:radial-gradient(ellipse at 70% 40%,rgba(255,100,100,.7),rgba(200,50,100,.5) 40%,rgba(100,0,50,.3) 70%,transparent)}
+.boss-attack-flash.holy{background:radial-gradient(ellipse at 70% 40%,rgba(255,255,200,.8),rgba(255,220,100,.5) 40%,rgba(200,150,50,.3) 70%,transparent)}
+.boss-attack-flash.water{background:radial-gradient(ellipse at 70% 40%,rgba(100,200,255,.7),rgba(50,120,200,.5) 40%,rgba(20,60,150,.3) 70%,transparent)}
+.boss-attack-flash.poison{background:radial-gradient(ellipse at 70% 40%,rgba(200,100,255,.7),rgba(150,50,180,.5) 40%,rgba(80,20,100,.3) 70%,transparent)}
 @keyframes bossFlash{
-    0%{opacity:0}
-    20%{opacity:1}
-    100%{opacity:0}
+    0%{opacity:0;filter:brightness(1)}
+    15%{opacity:1;filter:brightness(1.3)}
+    40%{opacity:1;filter:brightness(1.1)}
+    100%{opacity:0;filter:brightness(1)}
+}
+@keyframes bossFlashPulse{
+    0%{transform:scale(0.8)}
+    30%{transform:scale(1.1)}
+    100%{transform:scale(1.3)}
+}
+@keyframes bossFlashRing{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(1);opacity:0}
 }
 
-/* Shadow Colossus - Darkness Engulf */
+/* Shadow Colossus - Darkness Engulf - v54.9: Multi-layered shadow tendrils */
 .boss-shadow-engulf{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3400;
-    background:radial-gradient(circle at 70% 50%,transparent 0%,rgba(50,0,80,.4) 30%,rgba(20,0,40,.8) 60%,rgba(0,0,0,.9) 100%);
+    background:radial-gradient(circle at 70% 50%,transparent 0%,rgba(50,0,80,.4) 30%,rgba(20,0,40,.8) 60%,rgba(0,0,0,.95) 100%);
     animation:shadowEngulf 1.2s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
+}
+.boss-shadow-engulf::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:repeating-radial-gradient(circle at 70% 50%,transparent 0%,transparent 20px,rgba(80,0,120,.3) 22px,transparent 24px);
+    animation:shadowRipple 1.2s ease-out;
+}
+.boss-shadow-engulf::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:conic-gradient(from 0deg at 70% 50%,transparent,rgba(100,0,150,.4),transparent,rgba(80,0,100,.3),transparent);
+    animation:shadowSwirl 1.2s linear;
 }
 @keyframes shadowEngulf{
     0%{opacity:0;transform:scale(0.5)}
     30%{opacity:1;transform:scale(1)}
-    70%{opacity:1;transform:scale(1.1)}
-    100%{opacity:0;transform:scale(1.5)}
+    70%{opacity:1;transform:scale(1.05)}
+    100%{opacity:0;transform:scale(1.1)}
+}
+@keyframes shadowRipple{
+    0%{transform:scale(0.3);opacity:0}
+    30%{transform:scale(1);opacity:1}
+    100%{transform:scale(1.5);opacity:0}
+}
+@keyframes shadowSwirl{
+    0%{transform:rotate(0deg);opacity:0}
+    30%{opacity:1}
+    100%{transform:rotate(90deg);opacity:0}
 }
 
-/* Corrupted Guardian - Unholy Nova */
+/* Corrupted Guardian - Unholy Nova - v54.9: Divine corruption burst */
 .boss-unholy-nova{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3400;
     overflow:hidden;
+    border-radius:12px;
 }
 .boss-unholy-nova::before{
     content:'';
     position:absolute;
-    top:50%;left:50%;
-    width:400px;height:400px;
+    top:50%;left:60%;
+    width:300px;height:300px;
     transform:translate(-50%,-50%);
-    background:radial-gradient(circle,rgba(255,200,50,.8) 0%,rgba(200,100,200,.6) 30%,rgba(100,0,150,.4) 60%,transparent 80%);
+    background:radial-gradient(circle,rgba(255,220,100,.9) 0%,rgba(255,150,50,.7) 20%,rgba(200,50,150,.5) 40%,rgba(100,0,150,.3) 60%,transparent 80%);
     border-radius:50%;
     animation:novaExpand 1s ease-out forwards;
+    box-shadow:0 0 60px rgba(255,200,50,.6);
 }
 .boss-unholy-nova::after{
     content:'';
     position:absolute;
     inset:0;
-    background:repeating-conic-gradient(from 0deg,transparent 0deg 10deg,rgba(255,200,50,.2) 10deg 20deg);
-    animation:novaRays 0.8s linear;
+    background:repeating-conic-gradient(from 0deg at 60% 50%,transparent 0deg 8deg,rgba(255,200,50,.25) 8deg 16deg);
+    animation:novaRays 1s ease-out;
 }
 @keyframes novaExpand{
-    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
-    60%{transform:translate(-50%,-50%) scale(2);opacity:1}
-    100%{transform:translate(-50%,-50%) scale(4);opacity:0}
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1;filter:brightness(2)}
+    40%{transform:translate(-50%,-50%) scale(1.5);opacity:1;filter:brightness(1.5)}
+    100%{transform:translate(-50%,-50%) scale(3);opacity:0;filter:brightness(1)}
 }
 @keyframes novaRays{
-    0%{transform:rotate(0deg);opacity:1}
-    100%{transform:rotate(180deg);opacity:0}
+    0%{transform:rotate(0deg);opacity:0}
+    20%{opacity:1}
+    100%{transform:rotate(120deg);opacity:0}
 }
 
-/* Void Dragon - Event Horizon */
+/* Void Dragon - Event Horizon - v54.9: Cosmic black hole with accretion disk */
 .boss-event-horizon{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3600;
-    background:radial-gradient(circle at center,rgba(0,0,0,1) 0%,rgba(100,0,150,.8) 20%,rgba(50,0,100,.5) 40%,transparent 70%);
+    background:radial-gradient(circle at 60% 50%,rgba(0,0,0,1) 0%,rgba(30,0,60,.9) 15%,rgba(80,0,150,.6) 30%,rgba(50,0,100,.3) 50%,transparent 70%);
     animation:eventHorizon 1.5s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .boss-event-horizon::before{
     content:'';
     position:absolute;
-    top:50%;left:50%;
-    width:200px;height:200px;
+    top:50%;left:60%;
+    width:150px;height:150px;
     transform:translate(-50%,-50%);
     border-radius:50%;
-    background:radial-gradient(circle,#000 0%,rgba(150,0,255,.8) 50%,transparent 70%);
-    box-shadow:0 0 100px 50px rgba(150,0,255,.5),inset 0 0 50px rgba(0,0,0,1);
+    background:radial-gradient(circle,#000 0%,#000 40%,rgba(150,0,255,.9) 60%,transparent 70%);
+    box-shadow:0 0 80px 30px rgba(150,0,255,.6),0 0 150px 60px rgba(100,0,200,.3),inset 0 0 40px rgba(0,0,0,1);
     animation:blackHolePulse 1.5s ease-in-out;
 }
+.boss-event-horizon::after{
+    content:'';
+    position:absolute;
+    top:50%;left:60%;
+    width:250px;height:80px;
+    transform:translate(-50%,-50%) rotateX(75deg);
+    border-radius:50%;
+    background:conic-gradient(from 0deg,rgba(255,100,200,.6),rgba(150,50,255,.4),rgba(100,200,255,.5),rgba(255,150,100,.4),rgba(255,100,200,.6));
+    filter:blur(3px);
+    animation:accretionDisk 1.5s linear;
+}
 @keyframes eventHorizon{
-    0%{opacity:0;filter:blur(20px)}
-    20%{opacity:1;filter:blur(0)}
-    80%{opacity:1;filter:blur(0)}
-    100%{opacity:0;filter:blur(30px)}
+    0%{opacity:0;filter:blur(20px) brightness(0.5)}
+    20%{opacity:1;filter:blur(0) brightness(1)}
+    80%{opacity:1;filter:blur(0) brightness(1.1)}
+    100%{opacity:0;filter:blur(30px) brightness(0.5)}
 }
 @keyframes blackHolePulse{
-    0%{transform:translate(-50%,-50%) scale(0.2)}
-    30%{transform:translate(-50%,-50%) scale(1.5)}
-    70%{transform:translate(-50%,-50%) scale(1.3)}
+    0%{transform:translate(-50%,-50%) scale(0.1)}
+    30%{transform:translate(-50%,-50%) scale(1.3)}
+    70%{transform:translate(-50%,-50%) scale(1.1)}
     100%{transform:translate(-50%,-50%) scale(0)}
 }
+@keyframes accretionDisk{
+    0%{transform:translate(-50%,-50%) rotateX(75deg) rotate(0deg);opacity:0}
+    20%{opacity:1}
+    80%{opacity:1}
+    100%{transform:translate(-50%,-50%) rotateX(75deg) rotate(180deg);opacity:0}
+}
 
-/* Chaos Demon King - Armageddon */
+/* Chaos Demon King - Armageddon - v54.9: Meteor storm with explosions */
 .boss-armageddon{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3500;
     overflow:hidden;
+    border-radius:12px;
 }
 .boss-armageddon::before{
     content:'';
     position:absolute;
-    top:-100%;left:-50%;
-    width:200%;height:200%;
-    background:linear-gradient(180deg,rgba(255,100,0,.8) 0%,rgba(200,50,0,.6) 30%,rgba(100,0,0,.4) 60%,transparent 100%);
-    animation:armageddonFall 1.2s ease-in forwards;
+    top:-100%;left:-25%;
+    width:150%;height:150%;
+    background:linear-gradient(160deg,rgba(255,150,0,.9) 0%,rgba(255,80,0,.7) 20%,rgba(200,30,0,.5) 40%,rgba(100,0,0,.3) 60%,transparent 80%);
+    animation:armageddonFall 1.4s ease-in forwards;
 }
 .boss-armageddon::after{
     content:'';
     position:absolute;
     inset:0;
-    background:radial-gradient(circle at 30% 60%,rgba(255,200,0,.4),transparent 50%),
-               radial-gradient(circle at 70% 40%,rgba(255,100,0,.4),transparent 50%),
-               radial-gradient(circle at 50% 80%,rgba(255,50,0,.4),transparent 40%);
-    animation:meteorImpacts 1s ease-out;
+    background:radial-gradient(circle at 25% 70%,rgba(255,220,100,.6),transparent 40%),
+               radial-gradient(circle at 65% 50%,rgba(255,150,0,.5),transparent 35%),
+               radial-gradient(circle at 45% 85%,rgba(255,80,0,.5),transparent 30%),
+               radial-gradient(circle at 80% 75%,rgba(255,200,50,.4),transparent 25%);
+    animation:meteorImpacts 1.2s ease-out 0.3s;
 }
 @keyframes armageddonFall{
-    0%{transform:translateY(-100%);opacity:1}
-    70%{transform:translateY(0);opacity:1}
-    100%{transform:translateY(20%);opacity:0}
+    0%{transform:translateY(-100%) translateX(20%);opacity:0.8}
+    60%{transform:translateY(-10%) translateX(-5%);opacity:1}
+    100%{transform:translateY(10%) translateX(-10%);opacity:0}
 }
 @keyframes meteorImpacts{
-    0%{opacity:0;transform:scale(0.5)}
-    30%{opacity:1;transform:scale(1)}
+    0%{opacity:0;transform:scale(0.3)}
+    20%{opacity:1;transform:scale(1)}
+    50%{opacity:1;transform:scale(1.3)}
     100%{opacity:0;transform:scale(2)}
 }
 
-/* Nightmare Phases - Reality Tear */
+/* Nightmare Phases - Reality Tear - v54.9: Dimensional rift with void particles */
 .boss-reality-tear{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3700;
-    background:#000;
+    background:rgba(0,0,0,.95);
     animation:realityTear 1.8s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .boss-reality-tear::before{
     content:'';
     position:absolute;
-    top:50%;left:50%;
-    width:10px;height:100%;
-    transform:translate(-50%,-50%);
-    background:linear-gradient(90deg,transparent,rgba(150,0,255,1),rgba(255,255,255,1),rgba(150,0,255,1),transparent);
-    box-shadow:0 0 50px 20px rgba(150,0,255,.8);
+    top:0;left:50%;
+    width:6px;height:100%;
+    transform:translateX(-50%);
+    background:linear-gradient(180deg,transparent 5%,rgba(150,0,255,.8) 20%,rgba(255,255,255,1) 50%,rgba(150,0,255,.8) 80%,transparent 95%);
+    box-shadow:0 0 60px 25px rgba(150,0,255,.8),0 0 120px 50px rgba(100,0,200,.4);
     animation:tearOpen 1.8s ease-in-out;
 }
+.boss-reality-tear::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 45% 30%,rgba(150,0,255,.3),transparent 20%),
+               radial-gradient(circle at 55% 70%,rgba(200,50,255,.3),transparent 20%),
+               radial-gradient(circle at 40% 60%,rgba(100,0,200,.2),transparent 15%),
+               radial-gradient(circle at 60% 40%,rgba(180,0,255,.2),transparent 15%);
+    animation:voidParticles 1.8s ease-in-out;
+}
 @keyframes realityTear{
-    0%{opacity:0;filter:saturate(1)}
-    20%{opacity:1;filter:saturate(0)}
-    50%{opacity:1;filter:saturate(0.3)}
-    80%{opacity:1;filter:saturate(0.5)}
-    100%{opacity:0;filter:saturate(1)}
+    0%{opacity:0;filter:saturate(1) brightness(1)}
+    15%{opacity:1;filter:saturate(0) brightness(0.8)}
+    50%{opacity:1;filter:saturate(0.2) brightness(1.2)}
+    85%{opacity:1;filter:saturate(0.4) brightness(1)}
+    100%{opacity:0;filter:saturate(1) brightness(1)}
 }
 @keyframes tearOpen{
-    0%{width:0;opacity:0}
-    30%{width:300px;opacity:1}
-    70%{width:500px;opacity:1}
-    100%{width:0;opacity:0}
+    0%{width:0;opacity:0;filter:blur(10px)}
+    25%{width:80px;opacity:1;filter:blur(0)}
+    75%{width:120px;opacity:1;filter:blur(0)}
+    100%{width:0;opacity:0;filter:blur(10px)}
+}
+@keyframes voidParticles{
+    0%{transform:translateX(20px);opacity:0}
+    30%{transform:translateX(0);opacity:1}
+    70%{transform:translateX(0);opacity:1}
+    100%{transform:translateX(-20px);opacity:0}
 }
 
-/* Nightmare - Terror Wave (Screen-wide) */
+/* Nightmare - Terror Wave - v54.9: Psychic fear sweep with distortion */
 .boss-terror-wave{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3400;
-    background:linear-gradient(to left,transparent 0%,rgba(100,0,150,.5) 30%,rgba(50,0,80,.8) 50%,rgba(100,0,150,.5) 70%,transparent 100%);
+    background:linear-gradient(to left,transparent 0%,rgba(100,0,150,.4) 20%,rgba(50,0,80,.7) 40%,rgba(80,0,120,.7) 60%,rgba(100,0,150,.4) 80%,transparent 100%);
     animation:terrorWave 1s ease-out forwards;
+    border-radius:12px;
+    overflow:hidden;
+}
+.boss-terror-wave::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(90deg,transparent,rgba(200,100,255,.2) 30px,transparent 60px);
+    animation:terrorDistort 1s ease-out;
 }
 @keyframes terrorWave{
-    0%{transform:translateX(100%);opacity:1}
-    100%{transform:translateX(-100%);opacity:0}
+    0%{transform:translateX(100%);opacity:0.8;filter:blur(5px)}
+    20%{opacity:1;filter:blur(0)}
+    80%{opacity:1;filter:blur(0)}
+    100%{transform:translateX(-100%);opacity:0;filter:blur(5px)}
+}
+@keyframes terrorDistort{
+    0%{transform:translateX(100%) scaleY(0.9)}
+    50%{transform:translateX(0%) scaleY(1.1)}
+    100%{transform:translateX(-100%) scaleY(0.9)}
 }
 
-/* Nightmare - Thousand Eyes */
+/* Nightmare - Thousand Eyes - v54.9: Eldritch gaze with pulsing eyes */
 .boss-thousand-eyes{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3500;
@@ -2506,205 +2631,319 @@ body{
     flex-wrap:wrap;
     justify-content:center;
     align-items:center;
-    gap:30px;
-    padding:50px;
-    background:rgba(0,0,0,.9);
+    gap:20px;
+    padding:30px;
+    background:radial-gradient(ellipse at center,rgba(20,0,30,.95),rgba(0,0,0,.98));
     animation:eyesAppear 2s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .nightmare-eye{
-    width:40px;height:40px;
+    width:35px;height:35px;
     border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#fff 10%,#a855f7 20%,#000 60%);
-    box-shadow:0 0 20px rgba(168,85,247,.8);
-    animation:eyeBlink 0.5s ease-in-out infinite alternate;
+    background:radial-gradient(circle at 35% 35%,#fff 8%,#e879f9 15%,#a855f7 30%,#1a0020 70%);
+    box-shadow:0 0 15px rgba(168,85,247,.9),0 0 30px rgba(168,85,247,.4);
+    animation:eyeBlink 0.4s ease-in-out infinite alternate;
 }
+.nightmare-eye:nth-child(odd){animation-delay:0.2s}
+.nightmare-eye:nth-child(3n){width:45px;height:45px}
 @keyframes eyesAppear{
-    0%{opacity:0}
-    20%{opacity:1}
-    80%{opacity:1}
-    100%{opacity:0}
+    0%{opacity:0;filter:blur(10px)}
+    15%{opacity:1;filter:blur(0)}
+    85%{opacity:1;filter:blur(0)}
+    100%{opacity:0;filter:blur(10px)}
 }
 @keyframes eyeBlink{
-    0%{transform:scale(1)}
-    100%{transform:scale(1.2)}
+    0%{transform:scale(1);filter:brightness(1)}
+    100%{transform:scale(1.15);filter:brightness(1.3)}
 }
 
-/* The Creator - Big Bang */
+/* The Creator - Big Bang - v54.9: Cosmic creation burst with particle rings */
 .boss-big-bang{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:4000;
     background:#fff;
     animation:bigBangFlash 2.5s ease-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .boss-big-bang::before{
     content:'';
     position:absolute;
     top:50%;left:50%;
-    width:100px;height:100px;
+    width:80px;height:80px;
     transform:translate(-50%,-50%);
     border-radius:50%;
-    background:radial-gradient(circle,#fff 0%,#ffd700 30%,#ff6b00 60%,transparent 80%);
-    animation:bigBangExpand 2s ease-out forwards;
+    background:radial-gradient(circle,#fff 0%,#fffbe8 20%,#ffd700 40%,#ff8c00 60%,#ff4500 80%,transparent 100%);
+    box-shadow:0 0 100px 50px rgba(255,200,50,.8),0 0 200px 100px rgba(255,150,0,.4);
+    animation:bigBangExpand 2.2s ease-out forwards;
+}
+.boss-big-bang::after{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:200px;height:200px;
+    transform:translate(-50%,-50%);
+    border:3px solid rgba(255,200,100,.6);
+    border-radius:50%;
+    animation:bigBangRing 2s ease-out 0.2s forwards;
+    opacity:0;
 }
 @keyframes bigBangFlash{
-    0%{opacity:0}
-    10%{opacity:1}
-    30%{opacity:1}
-    100%{opacity:0}
+    0%{opacity:0;filter:brightness(1)}
+    8%{opacity:1;filter:brightness(3)}
+    20%{opacity:1;filter:brightness(2)}
+    40%{opacity:0.9;filter:brightness(1.5)}
+    100%{opacity:0;filter:brightness(1)}
 }
 @keyframes bigBangExpand{
-    0%{transform:translate(-50%,-50%) scale(0.1)}
-    30%{transform:translate(-50%,-50%) scale(1)}
-    100%{transform:translate(-50%,-50%) scale(30)}
+    0%{transform:translate(-50%,-50%) scale(0.05);filter:brightness(3)}
+    20%{transform:translate(-50%,-50%) scale(0.8);filter:brightness(2)}
+    50%{transform:translate(-50%,-50%) scale(2);filter:brightness(1.5)}
+    100%{transform:translate(-50%,-50%) scale(8);filter:brightness(1);opacity:0}
+}
+@keyframes bigBangRing{
+    0%{transform:translate(-50%,-50%) scale(0.5);opacity:0}
+    20%{opacity:1}
+    100%{transform:translate(-50%,-50%) scale(6);opacity:0}
 }
 
-/* Frost Titan - Blizzard */
+/* Frost Titan - Blizzard - v54.9: Arctic storm with ice crystals */
 .boss-blizzard{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3400;
-    background:linear-gradient(45deg,transparent,rgba(200,230,255,.4),transparent);
-    animation:blizzardSweep 1.5s linear forwards;
+    background:linear-gradient(135deg,rgba(180,220,255,.2) 0%,rgba(200,235,255,.5) 30%,rgba(150,200,255,.3) 60%,transparent 100%);
+    animation:blizzardSweep 1.5s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .boss-blizzard::before{
     content:'';
     position:absolute;
     inset:0;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='10' cy='10' r='2' fill='white'/%3E%3Ccircle cx='30' cy='40' r='3' fill='white'/%3E%3Ccircle cx='60' cy='20' r='2' fill='white'/%3E%3Ccircle cx='80' cy='60' r='3' fill='white'/%3E%3Ccircle cx='45' cy='80' r='2' fill='white'/%3E%3C/svg%3E");
-    background-size:100px 100px;
-    animation:snowfall 0.5s linear infinite;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='10' cy='10' r='2' fill='white'/%3E%3Ccircle cx='30' cy='40' r='3' fill='%23e0f0ff'/%3E%3Ccircle cx='60' cy='20' r='2' fill='white'/%3E%3Ccircle cx='80' cy='60' r='3' fill='%23e0f0ff'/%3E%3Ccircle cx='45' cy='80' r='2' fill='white'/%3E%3Ccircle cx='15' cy='55' r='2' fill='%23c0e0ff'/%3E%3Ccircle cx='70' cy='85' r='3' fill='white'/%3E%3Ccircle cx='90' cy='30' r='2' fill='%23d0e8ff'/%3E%3C/svg%3E");
+    background-size:80px 80px;
+    animation:snowfall 0.4s linear infinite;
+    filter:blur(1px);
+}
+.boss-blizzard::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,.3) 50%,transparent 60%);
+    animation:iceGlint 1.5s ease-in-out;
 }
 @keyframes blizzardSweep{
-    0%{opacity:0;transform:translateX(-50%)}
-    20%{opacity:1}
-    80%{opacity:1}
-    100%{opacity:0;transform:translateX(50%)}
+    0%{opacity:0;transform:translateX(-30%)}
+    15%{opacity:1}
+    85%{opacity:1}
+    100%{opacity:0;transform:translateX(30%)}
 }
 @keyframes snowfall{
     0%{background-position:0 0}
-    100%{background-position:100px 100px}
+    100%{background-position:80px 80px}
+}
+@keyframes iceGlint{
+    0%{transform:translateX(-100%)}
+    100%{transform:translateX(100%)}
 }
 
-/* Wildfire Hydra - Tri-Head Inferno */
+/* Wildfire Hydra - Tri-Head Inferno - v54.9: Triple flame eruption */
 .boss-tri-inferno{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3400;
+    border-radius:12px;
+    overflow:hidden;
+    background:radial-gradient(ellipse at 50% 100%,rgba(255,100,0,.3),transparent 60%);
 }
 .boss-tri-inferno .flame-head{
     position:absolute;
-    width:150px;height:200px;
-    background:linear-gradient(to top,rgba(255,100,0,.9),rgba(255,200,0,.6),transparent);
-    filter:blur(5px);
-    animation:flameRise 0.8s ease-out forwards;
+    width:120px;height:180px;
+    background:linear-gradient(to top,rgba(255,80,0,.95) 0%,rgba(255,150,0,.8) 30%,rgba(255,220,50,.6) 60%,transparent 100%);
+    filter:blur(4px);
+    animation:flameRise 0.9s ease-out forwards;
+    border-radius:50% 50% 40% 40%;
 }
-.boss-tri-inferno .flame-head:nth-child(1){left:20%;top:60%}
-.boss-tri-inferno .flame-head:nth-child(2){left:50%;top:50%;transform:translateX(-50%)}
-.boss-tri-inferno .flame-head:nth-child(3){right:20%;top:60%}
+.boss-tri-inferno .flame-head::before{
+    content:'';
+    position:absolute;
+    inset:10%;
+    background:linear-gradient(to top,rgba(255,200,100,.8),rgba(255,255,200,.6),transparent);
+    border-radius:inherit;
+    filter:blur(2px);
+}
+.boss-tri-inferno .flame-head:nth-child(1){left:15%;bottom:10%;animation-delay:0s}
+.boss-tri-inferno .flame-head:nth-child(2){left:50%;bottom:5%;transform:translateX(-50%);animation-delay:0.1s;width:140px;height:220px}
+.boss-tri-inferno .flame-head:nth-child(3){right:15%;bottom:10%;animation-delay:0.05s}
 @keyframes flameRise{
-    0%{height:0;opacity:0}
-    30%{height:250px;opacity:1}
-    100%{height:0;opacity:0;transform:translateY(-200px)}
+    0%{height:0;opacity:0;transform:translateY(50px) scaleX(0.5)}
+    25%{opacity:1;transform:translateY(0) scaleX(1)}
+    50%{height:220px;opacity:1}
+    100%{height:0;opacity:0;transform:translateY(-150px) scaleX(0.3)}
 }
 
-/* Storm Leviathan - Tempest Fury */
+/* Storm Leviathan - Tempest Fury - v54.9: Ocean storm with lightning */
 .boss-tempest-fury{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3400;
-    background:linear-gradient(180deg,rgba(50,100,150,.5) 0%,rgba(100,150,200,.3) 50%,transparent 100%);
+    background:linear-gradient(180deg,rgba(30,60,100,.7) 0%,rgba(60,100,140,.5) 40%,rgba(80,130,180,.3) 70%,transparent 100%);
     animation:tempestScreen 1.5s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .boss-tempest-fury::before{
     content:'';
     position:absolute;
     inset:0;
-    background:repeating-linear-gradient(90deg,transparent,rgba(255,255,255,.3) 50%,transparent);
-    background-size:200px 100%;
-    animation:rainSweep 0.3s linear infinite;
+    background:repeating-linear-gradient(100deg,transparent,rgba(200,220,255,.4) 2px,transparent 4px);
+    background-size:30px 100%;
+    animation:rainSweep 0.15s linear infinite;
+}
+.boss-tempest-fury::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0) 100%);
+    animation:lightningFlash 1.5s ease-out;
 }
 @keyframes tempestScreen{
     0%{opacity:0}
-    20%{opacity:1}
-    80%{opacity:1}
+    15%{opacity:1}
+    85%{opacity:1}
     100%{opacity:0}
 }
 @keyframes rainSweep{
-    0%{transform:translateX(-200px) skewX(-20deg)}
-    100%{transform:translateX(200px) skewX(-20deg)}
+    0%{transform:translateX(-30px) skewX(-15deg)}
+    100%{transform:translateX(0px) skewX(-15deg)}
+}
+@keyframes lightningFlash{
+    0%{background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0) 100%)}
+    20%{background:linear-gradient(180deg,rgba(200,220,255,.6) 0%,rgba(255,255,255,.3) 100%)}
+    22%{background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0) 100%)}
+    50%{background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0) 100%)}
+    52%{background:linear-gradient(180deg,rgba(200,220,255,.8) 0%,rgba(255,255,255,.4) 100%)}
+    55%{background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0) 100%)}
 }
 
-/* Ancient Behemoth - Extinction */
+/* Ancient Behemoth - Extinction - v54.9: Cataclysmic earth destruction */
 .boss-extinction{
-    position:fixed;
+    position:absolute;
     inset:0;
     pointer-events:none;
     z-index:3600;
-    background:rgba(0,0,0,.9);
+    background:rgba(0,0,0,.95);
     animation:extinctionDark 2s ease-in-out forwards;
+    border-radius:12px;
+    overflow:hidden;
 }
 .boss-extinction::before{
     content:'';
     position:absolute;
-    bottom:0;left:0;right:0;
-    height:60%;
-    background:linear-gradient(to top,rgba(180,100,50,.8),rgba(100,50,0,.4),transparent);
-    animation:dustCloud 1.5s ease-out;
+    bottom:-10%;left:-10%;right:-10%;
+    height:70%;
+    background:linear-gradient(to top,rgba(200,120,50,.9) 0%,rgba(180,100,40,.7) 20%,rgba(120,60,20,.4) 50%,transparent 100%);
+    animation:dustCloud 1.8s ease-out;
+    border-radius:50% 50% 0 0;
+}
+.boss-extinction::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 30% 80%,rgba(255,150,50,.4),transparent 40%),
+               radial-gradient(circle at 70% 85%,rgba(255,100,0,.3),transparent 35%),
+               radial-gradient(circle at 50% 75%,rgba(255,200,100,.3),transparent 30%);
+    animation:extinctionGlow 2s ease-out 0.3s;
 }
 @keyframes extinctionDark{
+    0%{opacity:0;filter:brightness(1)}
+    25%{opacity:1;filter:brightness(0.6)}
+    50%{opacity:1;filter:brightness(0.8)}
+    75%{opacity:1;filter:brightness(0.7)}
+    100%{opacity:0;filter:brightness(1)}
+}
+@keyframes dustCloud{
+    0%{transform:translateY(100%) scaleX(0.5);opacity:0}
+    30%{transform:translateY(20%) scaleX(1);opacity:1}
+    70%{transform:translateY(0%) scaleX(1.1);opacity:1}
+    100%{transform:translateY(-30%) scaleX(1.2);opacity:0}
+}
+@keyframes extinctionGlow{
     0%{opacity:0}
     30%{opacity:1}
     70%{opacity:1}
     100%{opacity:0}
 }
-@keyframes dustCloud{
-    0%{transform:translateY(100%);opacity:0}
-    40%{transform:translateY(0);opacity:1}
-    100%{transform:translateY(-20%);opacity:0}
-}
 
-/* Boss charging beam - Single target epic attack */
+/* Boss charging beam - Single target epic attack - v54.9: Enhanced with core glow */
 .boss-charge-beam{
-    position:fixed;
+    position:absolute;
     pointer-events:none;
     z-index:3300;
     width:30px;
-    height:8px;
-    background:linear-gradient(90deg,transparent,currentColor,transparent);
-    box-shadow:0 0 30px currentColor,0 0 60px currentColor;
+    height:10px;
+    background:linear-gradient(90deg,transparent 0%,currentColor 20%,rgba(255,255,255,.8) 50%,currentColor 80%,transparent 100%);
+    box-shadow:0 0 20px currentColor,0 0 40px currentColor,0 0 60px currentColor;
     transform-origin:left center;
-    animation:chargeBeamFire 0.6s ease-out forwards;
+    animation:chargeBeamFire 0.7s ease-out forwards;
+    border-radius:2px;
+}
+.boss-charge-beam::before{
+    content:'';
+    position:absolute;
+    left:0;top:50%;
+    width:100%;height:4px;
+    transform:translateY(-50%);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
+    filter:blur(1px);
 }
 .boss-charge-beam.shadow{color:rgba(150,50,200,1)}
 .boss-charge-beam.fire{color:rgba(255,150,50,1)}
 .boss-charge-beam.ice{color:rgba(100,200,255,1)}
 .boss-charge-beam.void{color:rgba(150,0,255,1)}
 .boss-charge-beam.holy{color:rgba(255,230,100,1)}
+.boss-charge-beam.chaos{color:rgba(255,80,100,1)}
+.boss-charge-beam.water{color:rgba(50,150,255,1)}
+.boss-charge-beam.poison{color:rgba(180,80,220,1)}
 @keyframes chargeBeamFire{
-    0%{width:30px;opacity:0}
-    20%{opacity:1}
-    100%{width:600px;opacity:0}
+    0%{width:30px;opacity:0;filter:brightness(2)}
+    15%{opacity:1;filter:brightness(1.5)}
+    50%{filter:brightness(1.2)}
+    100%{width:500px;opacity:0;filter:brightness(1)}
 }
 
-/* Boss impact ring - For devastating hits */
+/* Boss impact ring - For devastating hits - v54.9: Multi-ring effect */
 .boss-impact-ring{
-    position:fixed;
+    position:absolute;
     pointer-events:none;
     z-index:3200;
-    width:100px;height:100px;
-    border:4px solid currentColor;
+    width:80px;height:80px;
+    border:3px solid currentColor;
     border-radius:50%;
     transform:translate(-50%,-50%);
-    animation:impactRingExpand 0.6s ease-out forwards;
+    animation:impactRingExpand 0.7s ease-out forwards;
+    box-shadow:0 0 20px currentColor,inset 0 0 20px currentColor;
+}
+.boss-impact-ring::before{
+    content:'';
+    position:absolute;
+    inset:-10px;
+    border:2px solid currentColor;
+    border-radius:50%;
+    opacity:0.5;
+    animation:impactRingExpand 0.7s ease-out 0.1s forwards;
 }
 @keyframes impactRingExpand{
     0%{transform:translate(-50%,-50%) scale(0.2);opacity:1}
-    100%{transform:translate(-50%,-50%) scale(4);opacity:0}
+    60%{opacity:0.8}
+    100%{transform:translate(-50%,-50%) scale(3);opacity:0}
 }
 
 /* HP bar damage flash */
@@ -2895,9 +3134,9 @@ body{
     100%{opacity:0;transform:scale(1) translateY(-40px)}
 }
 
-/* Lightning strike effect */
+/* Lightning strike effect - v54.9: Contained within battle arena */
 .lightning-strike{
-    position:fixed;
+    position:absolute;
     pointer-events:none;
     z-index:2550;
     width:60px;
@@ -9026,20 +9265,13 @@ function doArenaAction(action){
     const move = getMove(attacker.cid, attacker.lv, action);
     const targetIdx = arenaBattle.combatants.indexOf(target);
 
-    // v54.5: Get correct element IDs based on team
+    // v54.10: Fixed element IDs - both teams use same ID structure in arena battles
+    // renderArenaBattle() renders ALL combatants with arenaC${idx} and c${idx}
     const getArenaEl = (idx, combatant) => {
-        if(combatant.team === 0){
-            return document.getElementById(`arenaC${idx}`);
-        } else {
-            return document.getElementById(`enemy${idx}`);
-        }
+        return document.getElementById(`arenaC${idx}`);
     };
     const getArenaFrame = (idx, combatant) => {
-        if(combatant.team === 0){
-            return document.getElementById(`c${idx}`);
-        } else {
-            return document.getElementById(`enemyImg${idx}`);
-        }
+        return document.getElementById(`c${idx}`);
     };
 
     const attackerEl = getArenaEl(cur.idx, attacker);
@@ -13819,11 +14051,12 @@ function doAction(a){
                     setTimeout(()=>hpBar.classList.remove('anim-damage'),400);
                 }
 
-                // CRIT FLASH - white screen flash on any crit
+                // CRIT FLASH - white screen flash on any crit - v54.9: contained in arena
                 if(isCrit){
                     const flashDiv = document.createElement('div');
                     flashDiv.className = 'crit-flash';
-                    document.body.appendChild(flashDiv);
+                    const arenaEl = document.getElementById('battleArena');
+                    (arenaEl || document.body).appendChild(flashDiv);
                     setTimeout(()=>flashDiv.remove(), 400);
                 }
 
@@ -14683,15 +14916,18 @@ function showLightningStrike(targetEl){
     if(!bounds) return;
     const bolt = document.createElement('div');
     bolt.className = 'lightning-strike';
-    bolt.style.left = bounds.centerX - 30 + 'px';
-    bolt.style.top = bounds.top - 150 + 'px';
+    // v54.9: Calculate position relative to arena for contained effect
+    const arena = document.getElementById('battleArena');
+    const arenaRect = arena ? arena.getBoundingClientRect() : {left:0,top:0};
+    bolt.style.left = (bounds.centerX - arenaRect.left - 30) + 'px';
+    bolt.style.top = (bounds.top - arenaRect.top - 150) + 'px';
 
-    document.body.appendChild(bolt);
+    (arena || document.body).appendChild(bolt);
 
-    // Screen flash for dramatic effect
+    // Screen flash for dramatic effect - v54.9: contained in arena
     const flash = document.createElement('div');
-    flash.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,200,0.3);pointer-events:none;z-index:3000;animation:critFlash 200ms ease-out forwards';
-    document.body.appendChild(flash);
+    flash.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,200,0.3);pointer-events:none;z-index:3000;animation:critFlash 200ms ease-out forwards;border-radius:12px';
+    (arena || document.body).appendChild(flash);
 
     setTimeout(() => {
         bolt.remove();
@@ -15773,16 +16009,24 @@ function showBossAttackAnimation(bossId, attackName, isAOE, targets = []){
     }
 }
 
-// Generic boss flash
-function showBossFlash(element){
-    const flash = document.createElement('div');
-    flash.className = `boss-attack-flash ${element || 'fire'}`;
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 400);
+// v54.9: Helper function to get the battle arena container for animations
+function getBossAnimContainer(){
+    const arena = document.getElementById('battleArena');
+    return arena || document.body; // Fallback to body if arena not found
 }
 
-// Boss animation by CSS class
+// Generic boss flash - v54.9: Contained within battle arena
+function showBossFlash(element){
+    const arena = getBossAnimContainer();
+    const flash = document.createElement('div');
+    flash.className = `boss-attack-flash ${element || 'fire'}`;
+    arena.appendChild(flash);
+    setTimeout(() => flash.remove(), 500);
+}
+
+// Boss animation by CSS class - v54.9: Contained within battle arena
 function showBossAnimationByClass(className){
+    const arena = getBossAnimContainer();
     const container = document.createElement('div');
     container.className = className;
 
@@ -15793,7 +16037,7 @@ function showBossAnimationByClass(className){
             flame.className = 'flame-head';
             container.appendChild(flame);
         }
-        document.body.appendChild(container);
+        arena.appendChild(container);
         setTimeout(() => container.remove(), 1000);
         return;
     }
@@ -15806,12 +16050,12 @@ function showBossAnimationByClass(className){
             eye.style.animationDelay = (Math.random() * 0.5) + 's';
             container.appendChild(eye);
         }
-        document.body.appendChild(container);
+        arena.appendChild(container);
         setTimeout(() => container.remove(), 2000);
         return;
     }
 
-    document.body.appendChild(container);
+    arena.appendChild(container);
 
     // Duration varies by animation type
     let duration = 1500;
@@ -15823,22 +16067,21 @@ function showBossAnimationByClass(className){
     setTimeout(() => container.remove(), duration);
 }
 
-// Boss Blizzard - Ice storm
+// Boss Blizzard - Ice storm - v54.9: Contained within battle arena
 function showBossBlizzard(){
+    const arena = getBossAnimContainer();
     const blizzard = document.createElement('div');
     blizzard.className = 'boss-blizzard';
-    document.body.appendChild(blizzard);
+    arena.appendChild(blizzard);
     // Screen shake
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 400);
-    }
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 400);
     setTimeout(() => blizzard.remove(), 1500);
 }
 
-// Boss Tri-Head Inferno - Wildfire Hydra special
+// Boss Tri-Head Inferno - Wildfire Hydra special - v54.9: Contained within battle arena
 function showBossTriInferno(){
+    const arena = getBossAnimContainer();
     const container = document.createElement('div');
     container.className = 'boss-tri-inferno';
     for(let i = 0; i < 3; i++){
@@ -15846,98 +16089,95 @@ function showBossTriInferno(){
         flame.className = 'flame-head';
         container.appendChild(flame);
     }
-    document.body.appendChild(container);
+    arena.appendChild(container);
     // Screen shake
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 500);
-    }
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 500);
     setTimeout(() => container.remove(), 1000);
 }
 
-// Boss Unholy Nova - Corrupted Guardian AOE
+// Boss Unholy Nova - Corrupted Guardian AOE - v54.9: Contained within battle arena
 function showBossUnholyNova(){
+    const arena = getBossAnimContainer();
     const nova = document.createElement('div');
     nova.className = 'boss-unholy-nova';
-    document.body.appendChild(nova);
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 400);
-    }
+    arena.appendChild(nova);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 400);
     setTimeout(() => nova.remove(), 1200);
 }
 
-// Boss Shadow Engulf - Shadow Colossus AOE
+// Boss Shadow Engulf - Shadow Colossus AOE - v54.9: Contained within battle arena
 function showBossShadowEngulf(){
+    const arena = getBossAnimContainer();
     const engulf = document.createElement('div');
     engulf.className = 'boss-shadow-engulf';
-    document.body.appendChild(engulf);
+    arena.appendChild(engulf);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 400);
     setTimeout(() => engulf.remove(), 1200);
 }
 
-// Boss Event Horizon - Void Dragon special
+// Boss Event Horizon - Void Dragon special - v54.9: Contained within battle arena
 function showBossEventHorizon(){
+    const arena = getBossAnimContainer();
     const horizon = document.createElement('div');
     horizon.className = 'boss-event-horizon';
-    document.body.appendChild(horizon);
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 600);
-    }
+    arena.appendChild(horizon);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 600);
     setTimeout(() => horizon.remove(), 1500);
 }
 
-// Boss Armageddon - Chaos Demon King AOE
+// Boss Armageddon - Chaos Demon King AOE - v54.9: Contained within battle arena
 function showBossArmageddon(){
+    const arena = getBossAnimContainer();
     const armageddon = document.createElement('div');
     armageddon.className = 'boss-armageddon';
-    document.body.appendChild(armageddon);
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 800);
-    }
+    arena.appendChild(armageddon);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 800);
     setTimeout(() => armageddon.remove(), 1500);
 }
 
-// Boss Extinction - Ancient Behemoth AOE
+// Boss Extinction - Ancient Behemoth AOE - v54.9: Contained within battle arena
 function showBossExtinction(){
+    const arena = getBossAnimContainer();
     const extinction = document.createElement('div');
     extinction.className = 'boss-extinction';
-    document.body.appendChild(extinction);
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 1000);
-    }
+    arena.appendChild(extinction);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 1000);
     setTimeout(() => extinction.remove(), 2000);
 }
 
-// Boss Tempest Fury - Storm Leviathan AOE
+// Boss Tempest Fury - Storm Leviathan AOE - v54.9: Contained within battle arena
 function showBossTempestFury(){
+    const arena = getBossAnimContainer();
     const tempest = document.createElement('div');
     tempest.className = 'boss-tempest-fury';
-    document.body.appendChild(tempest);
+    arena.appendChild(tempest);
     // Multiple lightning strikes
     setTimeout(() => showLightningStrike(null), 200);
     setTimeout(() => showLightningStrike(null), 500);
     setTimeout(() => showLightningStrike(null), 800);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 600);
     setTimeout(() => tempest.remove(), 1500);
 }
 
-// Boss Terror Wave - Nightmare screen sweep
+// Boss Terror Wave - Nightmare screen sweep - v54.9: Contained within battle arena
 function showBossTerrorWave(){
+    const arena = getBossAnimContainer();
     const wave = document.createElement('div');
     wave.className = 'boss-terror-wave';
-    document.body.appendChild(wave);
+    arena.appendChild(wave);
     setTimeout(() => wave.remove(), 1000);
 }
 
-// Boss Thousand Eyes - Nightmare Phase 2 special
+// Boss Thousand Eyes - Nightmare Phase 2 special - v54.9: Contained within battle arena
 function showBossThousandEyes(){
+    const arena = getBossAnimContainer();
     const container = document.createElement('div');
     container.className = 'boss-thousand-eyes';
     for(let i = 0; i < 30; i++){
@@ -15946,40 +16186,38 @@ function showBossThousandEyes(){
         eye.style.animationDelay = (Math.random() * 0.5) + 's';
         container.appendChild(eye);
     }
-    document.body.appendChild(container);
+    arena.appendChild(container);
     setTimeout(() => container.remove(), 2000);
 }
 
-// Boss Reality Tear - Nightmare Phase 3+ special
+// Boss Reality Tear - Nightmare Phase 3+ special - v54.9: Contained within battle arena
 function showBossRealityTear(){
+    const arena = getBossAnimContainer();
     const tear = document.createElement('div');
     tear.className = 'boss-reality-tear';
-    document.body.appendChild(tear);
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 1200);
-    }
+    arena.appendChild(tear);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 1200);
     setTimeout(() => tear.remove(), 1800);
 }
 
-// Boss Big Bang - The Creator ultimate
+// Boss Big Bang - The Creator ultimate - v54.9: Contained within battle arena
 function showBossBigBang(){
+    const arena = getBossAnimContainer();
     const bang = document.createElement('div');
     bang.className = 'boss-big-bang';
-    document.body.appendChild(bang);
-    const arena = document.getElementById('battleArena');
-    if(arena){
-        arena.classList.add('screen-shake');
-        setTimeout(() => arena.classList.remove('screen-shake'), 2000);
-    }
+    arena.appendChild(bang);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 2000);
     setTimeout(() => bang.remove(), 2500);
 }
 
-// Boss charge beam effect - epic single target
+// Boss charge beam effect - epic single target - v54.9: Positions relative to arena
 function showBossChargeBeam(targetEl, element){
     if(!targetEl) return;
 
+    const arena = getBossAnimContainer();
+    const arenaRect = arena.getBoundingClientRect();
     const enemyContainer = document.querySelector('.enemy-arena');
     if(!enemyContainer) return;
     const fromRect = enemyContainer.getBoundingClientRect();
@@ -15988,11 +16226,11 @@ function showBossChargeBeam(targetEl, element){
     const beam = document.createElement('div');
     beam.className = `boss-charge-beam ${element || 'fire'}`;
 
-    // Calculate position and angle
-    const startX = fromRect.left + fromRect.width * 0.3;
-    const startY = fromRect.top + fromRect.height / 2;
-    const endX = toRect.left + toRect.width / 2;
-    const endY = toRect.top + toRect.height / 2;
+    // Calculate position relative to arena container
+    const startX = fromRect.left - arenaRect.left + fromRect.width * 0.3;
+    const startY = fromRect.top - arenaRect.top + fromRect.height / 2;
+    const endX = toRect.left - arenaRect.left + toRect.width / 2;
+    const endY = toRect.top - arenaRect.top + toRect.height / 2;
 
     const dx = endX - startX;
     const dy = endY - startY;
@@ -16002,23 +16240,27 @@ function showBossChargeBeam(targetEl, element){
     beam.style.top = startY + 'px';
     beam.style.transform = `rotate(${angle}deg)`;
 
-    document.body.appendChild(beam);
-    setTimeout(() => beam.remove(), 600);
+    arena.appendChild(beam);
+    setTimeout(() => beam.remove(), 700);
 }
 
-// Boss impact ring - for devastating single target hits
+// Boss impact ring - for devastating single target hits - v54.9: Positions relative to arena
 function showBossImpactRing(targetEl, element){
     if(!targetEl) return;
 
+    const arena = getBossAnimContainer();
+    const arenaRect = arena.getBoundingClientRect();
     const rect = targetEl.getBoundingClientRect();
     const ring = document.createElement('div');
     ring.className = 'boss-impact-ring';
     ring.style.color = getElementColor(element);
-    ring.style.left = rect.left + rect.width / 2 + 'px';
-    ring.style.top = rect.top + rect.height / 2 + 'px';
 
-    document.body.appendChild(ring);
-    setTimeout(() => ring.remove(), 600);
+    // Calculate position relative to arena container
+    ring.style.left = (rect.left - arenaRect.left + rect.width / 2) + 'px';
+    ring.style.top = (rect.top - arenaRect.top + rect.height / 2) + 'px';
+
+    arena.appendChild(ring);
+    setTimeout(() => ring.remove(), 700);
 }
 
 // Get element color for dynamic styling
