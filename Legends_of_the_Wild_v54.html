@@ -7876,6 +7876,28 @@ function migrateShopSystem(){
 
     // v54.6: Always run natures migration (in case V54.1 was done before V54.3 existed)
     migrateToV54_3_Natures();
+
+    // v54.7: Always correct forced natures (for Mythical creatures like Rúnvíg)
+    correctForcedNatures();
+}
+
+// v54.7: Ensure creatures with forcedNature always have the correct nature
+function correctForcedNatures(){
+    let correctedCount = 0;
+    state.students.forEach(s => {
+        if(s.cid){
+            const creatureData = CREATURES[s.cid];
+            if(creatureData && creatureData.forcedNature && s.nature !== creatureData.forcedNature){
+                console.log(`🔧 Correcting ${s.name || 'student'}'s nature from ${s.nature} to ${creatureData.forcedNature}`);
+                s.nature = creatureData.forcedNature;
+                correctedCount++;
+            }
+        }
+    });
+    if(correctedCount > 0){
+        console.log(`✅ Corrected ${correctedCount} creature(s) with forced natures`);
+        save();
+    }
 }
 
 // V54.1 MIGRATION - Add new state properties for enhanced features
@@ -7952,11 +7974,17 @@ function migrateToV54_3_Natures(){
 
     console.log('🔄 Running V54.3 Natures migration...');
 
-    // Assign random nature to all students with creatures
+    // Assign nature to all students with creatures
     let assignedCount = 0;
     state.students.forEach(s => {
         if(s.cid && !s.nature){
-            s.nature = getRandomNature();
+            // Check if creature has a forced nature (e.g., Mythical creatures)
+            const creatureData = CREATURES[s.cid];
+            if(creatureData && creatureData.forcedNature){
+                s.nature = creatureData.forcedNature;
+            } else {
+                s.nature = getRandomNature();
+            }
             assignedCount++;
             console.log(`  Assigned ${s.nature} nature to ${s.name || 'student'}`);
         }
@@ -11224,9 +11252,15 @@ function setCre(id,cid){
     const s=state.students.find(x=>x.id===id);
     if(s){
         s.cid=cid||null;
-        // v54.3: Assign random nature when creature is assigned
+        // v54.3: Assign nature when creature is assigned
         if(cid){
-            s.nature = getRandomNature();
+            // Check if creature has a forced nature (e.g., Mythical creatures)
+            const creatureData = CREATURES[cid];
+            if(creatureData && creatureData.forcedNature){
+                s.nature = creatureData.forcedNature;
+            } else {
+                s.nature = getRandomNature();
+            }
             const lv = getLv(s.xp);
             const evo = getEvo(cid, lv);
             discoverCreature(cid, evo);
