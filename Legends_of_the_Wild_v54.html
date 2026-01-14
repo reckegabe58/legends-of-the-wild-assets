@@ -2302,6 +2302,411 @@ body{
     100%{opacity:0}
 }
 
+/* ============================================
+   v54.7: EPIC BOSS ATTACK ANIMATIONS
+   Unique devastating effects for each boss type
+   ============================================ */
+
+/* Boss Attack Screen Flash - More intense than normal */
+.boss-attack-flash{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3500;
+    animation:bossFlash 400ms ease-out forwards;
+}
+.boss-attack-flash.shadow{background:radial-gradient(circle,rgba(100,50,150,.6),rgba(50,0,80,.3),transparent)}
+.boss-attack-flash.fire{background:radial-gradient(circle,rgba(255,150,50,.6),rgba(200,50,0,.3),transparent)}
+.boss-attack-flash.ice{background:radial-gradient(circle,rgba(150,220,255,.6),rgba(50,150,255,.3),transparent)}
+.boss-attack-flash.void{background:radial-gradient(circle,rgba(150,50,200,.7),rgba(80,0,120,.4),transparent)}
+.boss-attack-flash.chaos{background:radial-gradient(circle,rgba(255,100,100,.6),rgba(150,50,150,.4),transparent)}
+.boss-attack-flash.holy{background:radial-gradient(circle,rgba(255,255,200,.7),rgba(200,180,100,.4),transparent)}
+.boss-attack-flash.water{background:radial-gradient(circle,rgba(50,150,255,.6),rgba(0,80,200,.3),transparent)}
+.boss-attack-flash.poison{background:radial-gradient(circle,rgba(180,100,220,.6),rgba(100,50,150,.3),transparent)}
+@keyframes bossFlash{
+    0%{opacity:0}
+    20%{opacity:1}
+    100%{opacity:0}
+}
+
+/* Shadow Colossus - Darkness Engulf */
+.boss-shadow-engulf{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+    background:radial-gradient(circle at 70% 50%,transparent 0%,rgba(50,0,80,.4) 30%,rgba(20,0,40,.8) 60%,rgba(0,0,0,.9) 100%);
+    animation:shadowEngulf 1.2s ease-in-out forwards;
+}
+@keyframes shadowEngulf{
+    0%{opacity:0;transform:scale(0.5)}
+    30%{opacity:1;transform:scale(1)}
+    70%{opacity:1;transform:scale(1.1)}
+    100%{opacity:0;transform:scale(1.5)}
+}
+
+/* Corrupted Guardian - Unholy Nova */
+.boss-unholy-nova{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+    overflow:hidden;
+}
+.boss-unholy-nova::before{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:400px;height:400px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,200,50,.8) 0%,rgba(200,100,200,.6) 30%,rgba(100,0,150,.4) 60%,transparent 80%);
+    border-radius:50%;
+    animation:novaExpand 1s ease-out forwards;
+}
+.boss-unholy-nova::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:repeating-conic-gradient(from 0deg,transparent 0deg 10deg,rgba(255,200,50,.2) 10deg 20deg);
+    animation:novaRays 0.8s linear;
+}
+@keyframes novaExpand{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+    60%{transform:translate(-50%,-50%) scale(2);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(4);opacity:0}
+}
+@keyframes novaRays{
+    0%{transform:rotate(0deg);opacity:1}
+    100%{transform:rotate(180deg);opacity:0}
+}
+
+/* Void Dragon - Event Horizon */
+.boss-event-horizon{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3600;
+    background:radial-gradient(circle at center,rgba(0,0,0,1) 0%,rgba(100,0,150,.8) 20%,rgba(50,0,100,.5) 40%,transparent 70%);
+    animation:eventHorizon 1.5s ease-in-out forwards;
+}
+.boss-event-horizon::before{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:200px;height:200px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle,#000 0%,rgba(150,0,255,.8) 50%,transparent 70%);
+    box-shadow:0 0 100px 50px rgba(150,0,255,.5),inset 0 0 50px rgba(0,0,0,1);
+    animation:blackHolePulse 1.5s ease-in-out;
+}
+@keyframes eventHorizon{
+    0%{opacity:0;filter:blur(20px)}
+    20%{opacity:1;filter:blur(0)}
+    80%{opacity:1;filter:blur(0)}
+    100%{opacity:0;filter:blur(30px)}
+}
+@keyframes blackHolePulse{
+    0%{transform:translate(-50%,-50%) scale(0.2)}
+    30%{transform:translate(-50%,-50%) scale(1.5)}
+    70%{transform:translate(-50%,-50%) scale(1.3)}
+    100%{transform:translate(-50%,-50%) scale(0)}
+}
+
+/* Chaos Demon King - Armageddon */
+.boss-armageddon{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3500;
+    overflow:hidden;
+}
+.boss-armageddon::before{
+    content:'';
+    position:absolute;
+    top:-100%;left:-50%;
+    width:200%;height:200%;
+    background:linear-gradient(180deg,rgba(255,100,0,.8) 0%,rgba(200,50,0,.6) 30%,rgba(100,0,0,.4) 60%,transparent 100%);
+    animation:armageddonFall 1.2s ease-in forwards;
+}
+.boss-armageddon::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 30% 60%,rgba(255,200,0,.4),transparent 50%),
+               radial-gradient(circle at 70% 40%,rgba(255,100,0,.4),transparent 50%),
+               radial-gradient(circle at 50% 80%,rgba(255,50,0,.4),transparent 40%);
+    animation:meteorImpacts 1s ease-out;
+}
+@keyframes armageddonFall{
+    0%{transform:translateY(-100%);opacity:1}
+    70%{transform:translateY(0);opacity:1}
+    100%{transform:translateY(20%);opacity:0}
+}
+@keyframes meteorImpacts{
+    0%{opacity:0;transform:scale(0.5)}
+    30%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(2)}
+}
+
+/* Nightmare Phases - Reality Tear */
+.boss-reality-tear{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3700;
+    background:#000;
+    animation:realityTear 1.8s ease-in-out forwards;
+}
+.boss-reality-tear::before{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:10px;height:100%;
+    transform:translate(-50%,-50%);
+    background:linear-gradient(90deg,transparent,rgba(150,0,255,1),rgba(255,255,255,1),rgba(150,0,255,1),transparent);
+    box-shadow:0 0 50px 20px rgba(150,0,255,.8);
+    animation:tearOpen 1.8s ease-in-out;
+}
+@keyframes realityTear{
+    0%{opacity:0;filter:saturate(1)}
+    20%{opacity:1;filter:saturate(0)}
+    50%{opacity:1;filter:saturate(0.3)}
+    80%{opacity:1;filter:saturate(0.5)}
+    100%{opacity:0;filter:saturate(1)}
+}
+@keyframes tearOpen{
+    0%{width:0;opacity:0}
+    30%{width:300px;opacity:1}
+    70%{width:500px;opacity:1}
+    100%{width:0;opacity:0}
+}
+
+/* Nightmare - Terror Wave (Screen-wide) */
+.boss-terror-wave{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+    background:linear-gradient(to left,transparent 0%,rgba(100,0,150,.5) 30%,rgba(50,0,80,.8) 50%,rgba(100,0,150,.5) 70%,transparent 100%);
+    animation:terrorWave 1s ease-out forwards;
+}
+@keyframes terrorWave{
+    0%{transform:translateX(100%);opacity:1}
+    100%{transform:translateX(-100%);opacity:0}
+}
+
+/* Nightmare - Thousand Eyes */
+.boss-thousand-eyes{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3500;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:30px;
+    padding:50px;
+    background:rgba(0,0,0,.9);
+    animation:eyesAppear 2s ease-in-out forwards;
+}
+.nightmare-eye{
+    width:40px;height:40px;
+    border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#fff 10%,#a855f7 20%,#000 60%);
+    box-shadow:0 0 20px rgba(168,85,247,.8);
+    animation:eyeBlink 0.5s ease-in-out infinite alternate;
+}
+@keyframes eyesAppear{
+    0%{opacity:0}
+    20%{opacity:1}
+    80%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes eyeBlink{
+    0%{transform:scale(1)}
+    100%{transform:scale(1.2)}
+}
+
+/* The Creator - Big Bang */
+.boss-big-bang{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:4000;
+    background:#fff;
+    animation:bigBangFlash 2.5s ease-out forwards;
+}
+.boss-big-bang::before{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:100px;height:100px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle,#fff 0%,#ffd700 30%,#ff6b00 60%,transparent 80%);
+    animation:bigBangExpand 2s ease-out forwards;
+}
+@keyframes bigBangFlash{
+    0%{opacity:0}
+    10%{opacity:1}
+    30%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes bigBangExpand{
+    0%{transform:translate(-50%,-50%) scale(0.1)}
+    30%{transform:translate(-50%,-50%) scale(1)}
+    100%{transform:translate(-50%,-50%) scale(30)}
+}
+
+/* Frost Titan - Blizzard */
+.boss-blizzard{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+    background:linear-gradient(45deg,transparent,rgba(200,230,255,.4),transparent);
+    animation:blizzardSweep 1.5s linear forwards;
+}
+.boss-blizzard::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='10' cy='10' r='2' fill='white'/%3E%3Ccircle cx='30' cy='40' r='3' fill='white'/%3E%3Ccircle cx='60' cy='20' r='2' fill='white'/%3E%3Ccircle cx='80' cy='60' r='3' fill='white'/%3E%3Ccircle cx='45' cy='80' r='2' fill='white'/%3E%3C/svg%3E");
+    background-size:100px 100px;
+    animation:snowfall 0.5s linear infinite;
+}
+@keyframes blizzardSweep{
+    0%{opacity:0;transform:translateX(-50%)}
+    20%{opacity:1}
+    80%{opacity:1}
+    100%{opacity:0;transform:translateX(50%)}
+}
+@keyframes snowfall{
+    0%{background-position:0 0}
+    100%{background-position:100px 100px}
+}
+
+/* Wildfire Hydra - Tri-Head Inferno */
+.boss-tri-inferno{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+}
+.boss-tri-inferno .flame-head{
+    position:absolute;
+    width:150px;height:200px;
+    background:linear-gradient(to top,rgba(255,100,0,.9),rgba(255,200,0,.6),transparent);
+    filter:blur(5px);
+    animation:flameRise 0.8s ease-out forwards;
+}
+.boss-tri-inferno .flame-head:nth-child(1){left:20%;top:60%}
+.boss-tri-inferno .flame-head:nth-child(2){left:50%;top:50%;transform:translateX(-50%)}
+.boss-tri-inferno .flame-head:nth-child(3){right:20%;top:60%}
+@keyframes flameRise{
+    0%{height:0;opacity:0}
+    30%{height:250px;opacity:1}
+    100%{height:0;opacity:0;transform:translateY(-200px)}
+}
+
+/* Storm Leviathan - Tempest Fury */
+.boss-tempest-fury{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+    background:linear-gradient(180deg,rgba(50,100,150,.5) 0%,rgba(100,150,200,.3) 50%,transparent 100%);
+    animation:tempestScreen 1.5s ease-in-out forwards;
+}
+.boss-tempest-fury::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(90deg,transparent,rgba(255,255,255,.3) 50%,transparent);
+    background-size:200px 100%;
+    animation:rainSweep 0.3s linear infinite;
+}
+@keyframes tempestScreen{
+    0%{opacity:0}
+    20%{opacity:1}
+    80%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes rainSweep{
+    0%{transform:translateX(-200px) skewX(-20deg)}
+    100%{transform:translateX(200px) skewX(-20deg)}
+}
+
+/* Ancient Behemoth - Extinction */
+.boss-extinction{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3600;
+    background:rgba(0,0,0,.9);
+    animation:extinctionDark 2s ease-in-out forwards;
+}
+.boss-extinction::before{
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:60%;
+    background:linear-gradient(to top,rgba(180,100,50,.8),rgba(100,50,0,.4),transparent);
+    animation:dustCloud 1.5s ease-out;
+}
+@keyframes extinctionDark{
+    0%{opacity:0}
+    30%{opacity:1}
+    70%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes dustCloud{
+    0%{transform:translateY(100%);opacity:0}
+    40%{transform:translateY(0);opacity:1}
+    100%{transform:translateY(-20%);opacity:0}
+}
+
+/* Boss charging beam - Single target epic attack */
+.boss-charge-beam{
+    position:fixed;
+    pointer-events:none;
+    z-index:3300;
+    width:30px;
+    height:8px;
+    background:linear-gradient(90deg,transparent,currentColor,transparent);
+    box-shadow:0 0 30px currentColor,0 0 60px currentColor;
+    transform-origin:left center;
+    animation:chargeBeamFire 0.6s ease-out forwards;
+}
+.boss-charge-beam.shadow{color:rgba(150,50,200,1)}
+.boss-charge-beam.fire{color:rgba(255,150,50,1)}
+.boss-charge-beam.ice{color:rgba(100,200,255,1)}
+.boss-charge-beam.void{color:rgba(150,0,255,1)}
+.boss-charge-beam.holy{color:rgba(255,230,100,1)}
+@keyframes chargeBeamFire{
+    0%{width:30px;opacity:0}
+    20%{opacity:1}
+    100%{width:600px;opacity:0}
+}
+
+/* Boss impact ring - For devastating hits */
+.boss-impact-ring{
+    position:fixed;
+    pointer-events:none;
+    z-index:3200;
+    width:100px;height:100px;
+    border:4px solid currentColor;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    animation:impactRingExpand 0.6s ease-out forwards;
+}
+@keyframes impactRingExpand{
+    0%{transform:translate(-50%,-50%) scale(0.2);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(4);opacity:0}
+}
+
 /* HP bar damage flash */
 .pm-hp-bar.anim-damage{animation:barDamageFlash 250ms ease-out}
 @keyframes barDamageFlash{
@@ -7581,6 +7986,8 @@ let battleQueue=[];
 let turnIdx=0;
 let processing=false;
 let currentScreen='team';
+// v54.7: Action ID tracking to prevent double-damage bug
+let currentActionId = 0;
 
 // UTILITY FUNCTIONS
 function getLv(xp){for(let i=XP_TABLE.length-1;i>=0;i--)if(xp>=XP_TABLE[i])return i+1;return 1}
@@ -15119,6 +15526,448 @@ function showSlamAttack(x, y){
     setTimeout(() => container.remove(), 600);
 }
 
+// ============================================
+// v54.7: EPIC BOSS ATTACK ANIMATION SYSTEM
+// ============================================
+
+// Boss animation lookup table - maps boss IDs to their unique animations
+const BOSS_ATTACK_ANIMATIONS = {
+    // TIER 1 BOSSES
+    'sludge_king': {
+        single: ['boss-attack-flash poison', 'toxic-slam'],
+        aoe: ['boss-terror-wave', 'toxic-flood'],
+        element: 'poison'
+    },
+    'wildfire_hydra': {
+        single: ['boss-attack-flash fire', 'fire-fang'],
+        aoe: ['boss-tri-inferno'],
+        element: 'fire'
+    },
+    'frost_titan': {
+        single: ['boss-attack-flash ice', 'frost-slam'],
+        aoe: ['boss-blizzard'],
+        element: 'ice'
+    },
+    'donut_man': {
+        single: ['boss-attack-flash chaos', 'sugar-slam'],
+        aoe: ['boss-terror-wave'],
+        element: 'chaos'
+    },
+    'speakerman': {
+        single: ['boss-attack-flash fire', 'sonic-blast'],
+        aoe: ['boss-terror-wave'],
+        element: 'fire'
+    },
+    // TIER 2 BOSSES
+    'corrupted_guardian': {
+        single: ['boss-attack-flash holy', 'corrupted-blade'],
+        aoe: ['boss-unholy-nova'],
+        element: 'holy'
+    },
+    'shadow_colossus': {
+        single: ['boss-attack-flash shadow', 'shadow-slam'],
+        aoe: ['boss-shadow-engulf'],
+        element: 'shadow'
+    },
+    'storm_leviathan': {
+        single: ['boss-attack-flash water', 'storm-bite'],
+        aoe: ['boss-tempest-fury'],
+        element: 'water'
+    },
+    // TIER 3 BOSSES
+    'void_dragon': {
+        single: ['boss-attack-flash void', 'void-claw'],
+        aoe: ['boss-event-horizon'],
+        element: 'void'
+    },
+    'chaos_demon_king': {
+        single: ['boss-attack-flash fire', 'hellfire-slash'],
+        aoe: ['boss-armageddon'],
+        element: 'fire'
+    },
+    'ancient_behemoth': {
+        single: ['boss-attack-flash fire', 'titan-slam'],
+        aoe: ['boss-extinction'],
+        element: 'earth'
+    },
+    'shadow_matriarch': {
+        single: ['boss-attack-flash shadow', 'mind-shatter'],
+        aoe: ['boss-shadow-engulf'],
+        element: 'shadow'
+    },
+    // NIGHTMARE PHASES
+    'nightmare_p0': {
+        single: ['boss-attack-flash void', 'dream-slash'],
+        aoe: ['boss-terror-wave'],
+        element: 'void'
+    },
+    'nightmare_p1': {
+        single: ['boss-attack-flash void', 'tentacle-lash'],
+        aoe: ['boss-terror-wave'],
+        element: 'void'
+    },
+    'nightmare_p2': {
+        single: ['boss-attack-flash void', 'eye-beam'],
+        aoe: ['boss-thousand-eyes'],
+        element: 'void'
+    },
+    'nightmare_p3': {
+        single: ['boss-attack-flash void', 'rift-slash'],
+        aoe: ['boss-reality-tear'],
+        element: 'void'
+    },
+    'nightmare_p4': {
+        single: ['boss-reality-tear'],
+        aoe: ['boss-reality-tear'],
+        element: 'void'
+    },
+    // THE CREATOR
+    'the_creator': {
+        single: ['boss-attack-flash holy', 'divine-judgment'],
+        aoe: ['boss-big-bang'],
+        element: 'holy'
+    }
+};
+
+// Show boss-specific attack animation based on boss ID and attack name
+function showBossAttackAnimation(bossId, attackName, isAOE, targets = []){
+    const bossAnims = BOSS_ATTACK_ANIMATIONS[bossId];
+    if(!bossAnims){
+        // Fallback to generic boss flash
+        showBossFlash('fire');
+        return;
+    }
+
+    const attackLower = (attackName || '').toLowerCase();
+
+    // Special attack name matching for unique animations
+    if(attackLower.includes('blizzard')){
+        showBossBlizzard();
+        return;
+    }
+    if(attackLower.includes('tri-head') || attackLower.includes('inferno') && bossId === 'wildfire_hydra'){
+        showBossTriInferno();
+        return;
+    }
+    if(attackLower.includes('unholy') || attackLower.includes('nova')){
+        showBossUnholyNova();
+        return;
+    }
+    if(attackLower.includes('darkness') || attackLower.includes('engulf') || attackLower.includes('shadow realm')){
+        showBossShadowEngulf();
+        return;
+    }
+    if(attackLower.includes('event horizon') || attackLower.includes('horizon')){
+        showBossEventHorizon();
+        return;
+    }
+    if(attackLower.includes('armageddon')){
+        showBossArmageddon();
+        return;
+    }
+    if(attackLower.includes('extinction')){
+        showBossExtinction();
+        return;
+    }
+    if(attackLower.includes('tempest') || attackLower.includes('fury') && bossId === 'storm_leviathan'){
+        showBossTempestFury();
+        return;
+    }
+    if(attackLower.includes('terror wave') || attackLower.includes('terror')){
+        showBossTerrorWave();
+        return;
+    }
+    if(attackLower.includes('thousand eyes') || attackLower.includes('eyes')){
+        showBossThousandEyes();
+        return;
+    }
+    if(attackLower.includes('reality') || attackLower.includes('tear') || attackLower.includes('collapse') || attackLower.includes('erase')){
+        showBossRealityTear();
+        return;
+    }
+    if(attackLower.includes('big bang') || attackLower.includes('universe')){
+        showBossBigBang();
+        return;
+    }
+
+    // Use AOE or single animations from lookup table
+    if(isAOE && bossAnims.aoe && bossAnims.aoe.length > 0){
+        const animClass = bossAnims.aoe[0];
+        showBossAnimationByClass(animClass);
+    } else if(bossAnims.single && bossAnims.single.length > 0){
+        // For single target, show flash + charging beam effect
+        showBossFlash(bossAnims.element);
+        if(targets.length > 0){
+            showBossChargeBeam(targets[0], bossAnims.element);
+        }
+    }
+}
+
+// Generic boss flash
+function showBossFlash(element){
+    const flash = document.createElement('div');
+    flash.className = `boss-attack-flash ${element || 'fire'}`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 400);
+}
+
+// Boss animation by CSS class
+function showBossAnimationByClass(className){
+    const container = document.createElement('div');
+    container.className = className;
+
+    // Special handling for Tri-Inferno (needs child elements)
+    if(className === 'boss-tri-inferno'){
+        for(let i = 0; i < 3; i++){
+            const flame = document.createElement('div');
+            flame.className = 'flame-head';
+            container.appendChild(flame);
+        }
+        document.body.appendChild(container);
+        setTimeout(() => container.remove(), 1000);
+        return;
+    }
+
+    // Special handling for Thousand Eyes
+    if(className === 'boss-thousand-eyes'){
+        for(let i = 0; i < 30; i++){
+            const eye = document.createElement('div');
+            eye.className = 'nightmare-eye';
+            eye.style.animationDelay = (Math.random() * 0.5) + 's';
+            container.appendChild(eye);
+        }
+        document.body.appendChild(container);
+        setTimeout(() => container.remove(), 2000);
+        return;
+    }
+
+    document.body.appendChild(container);
+
+    // Duration varies by animation type
+    let duration = 1500;
+    if(className.includes('big-bang')) duration = 2500;
+    if(className.includes('reality-tear')) duration = 1800;
+    if(className.includes('event-horizon')) duration = 1500;
+    if(className.includes('extinction')) duration = 2000;
+
+    setTimeout(() => container.remove(), duration);
+}
+
+// Boss Blizzard - Ice storm
+function showBossBlizzard(){
+    const blizzard = document.createElement('div');
+    blizzard.className = 'boss-blizzard';
+    document.body.appendChild(blizzard);
+    // Screen shake
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 400);
+    }
+    setTimeout(() => blizzard.remove(), 1500);
+}
+
+// Boss Tri-Head Inferno - Wildfire Hydra special
+function showBossTriInferno(){
+    const container = document.createElement('div');
+    container.className = 'boss-tri-inferno';
+    for(let i = 0; i < 3; i++){
+        const flame = document.createElement('div');
+        flame.className = 'flame-head';
+        container.appendChild(flame);
+    }
+    document.body.appendChild(container);
+    // Screen shake
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 500);
+    }
+    setTimeout(() => container.remove(), 1000);
+}
+
+// Boss Unholy Nova - Corrupted Guardian AOE
+function showBossUnholyNova(){
+    const nova = document.createElement('div');
+    nova.className = 'boss-unholy-nova';
+    document.body.appendChild(nova);
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 400);
+    }
+    setTimeout(() => nova.remove(), 1200);
+}
+
+// Boss Shadow Engulf - Shadow Colossus AOE
+function showBossShadowEngulf(){
+    const engulf = document.createElement('div');
+    engulf.className = 'boss-shadow-engulf';
+    document.body.appendChild(engulf);
+    setTimeout(() => engulf.remove(), 1200);
+}
+
+// Boss Event Horizon - Void Dragon special
+function showBossEventHorizon(){
+    const horizon = document.createElement('div');
+    horizon.className = 'boss-event-horizon';
+    document.body.appendChild(horizon);
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 600);
+    }
+    setTimeout(() => horizon.remove(), 1500);
+}
+
+// Boss Armageddon - Chaos Demon King AOE
+function showBossArmageddon(){
+    const armageddon = document.createElement('div');
+    armageddon.className = 'boss-armageddon';
+    document.body.appendChild(armageddon);
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 800);
+    }
+    setTimeout(() => armageddon.remove(), 1500);
+}
+
+// Boss Extinction - Ancient Behemoth AOE
+function showBossExtinction(){
+    const extinction = document.createElement('div');
+    extinction.className = 'boss-extinction';
+    document.body.appendChild(extinction);
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 1000);
+    }
+    setTimeout(() => extinction.remove(), 2000);
+}
+
+// Boss Tempest Fury - Storm Leviathan AOE
+function showBossTempestFury(){
+    const tempest = document.createElement('div');
+    tempest.className = 'boss-tempest-fury';
+    document.body.appendChild(tempest);
+    // Multiple lightning strikes
+    setTimeout(() => showLightningStrike(null), 200);
+    setTimeout(() => showLightningStrike(null), 500);
+    setTimeout(() => showLightningStrike(null), 800);
+    setTimeout(() => tempest.remove(), 1500);
+}
+
+// Boss Terror Wave - Nightmare screen sweep
+function showBossTerrorWave(){
+    const wave = document.createElement('div');
+    wave.className = 'boss-terror-wave';
+    document.body.appendChild(wave);
+    setTimeout(() => wave.remove(), 1000);
+}
+
+// Boss Thousand Eyes - Nightmare Phase 2 special
+function showBossThousandEyes(){
+    const container = document.createElement('div');
+    container.className = 'boss-thousand-eyes';
+    for(let i = 0; i < 30; i++){
+        const eye = document.createElement('div');
+        eye.className = 'nightmare-eye';
+        eye.style.animationDelay = (Math.random() * 0.5) + 's';
+        container.appendChild(eye);
+    }
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 2000);
+}
+
+// Boss Reality Tear - Nightmare Phase 3+ special
+function showBossRealityTear(){
+    const tear = document.createElement('div');
+    tear.className = 'boss-reality-tear';
+    document.body.appendChild(tear);
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 1200);
+    }
+    setTimeout(() => tear.remove(), 1800);
+}
+
+// Boss Big Bang - The Creator ultimate
+function showBossBigBang(){
+    const bang = document.createElement('div');
+    bang.className = 'boss-big-bang';
+    document.body.appendChild(bang);
+    const arena = document.getElementById('battleArena');
+    if(arena){
+        arena.classList.add('screen-shake');
+        setTimeout(() => arena.classList.remove('screen-shake'), 2000);
+    }
+    setTimeout(() => bang.remove(), 2500);
+}
+
+// Boss charge beam effect - epic single target
+function showBossChargeBeam(targetEl, element){
+    if(!targetEl) return;
+
+    const enemyContainer = document.querySelector('.enemy-arena');
+    if(!enemyContainer) return;
+    const fromRect = enemyContainer.getBoundingClientRect();
+    const toRect = targetEl.getBoundingClientRect();
+
+    const beam = document.createElement('div');
+    beam.className = `boss-charge-beam ${element || 'fire'}`;
+
+    // Calculate position and angle
+    const startX = fromRect.left + fromRect.width * 0.3;
+    const startY = fromRect.top + fromRect.height / 2;
+    const endX = toRect.left + toRect.width / 2;
+    const endY = toRect.top + toRect.height / 2;
+
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    beam.style.left = startX + 'px';
+    beam.style.top = startY + 'px';
+    beam.style.transform = `rotate(${angle}deg)`;
+
+    document.body.appendChild(beam);
+    setTimeout(() => beam.remove(), 600);
+}
+
+// Boss impact ring - for devastating single target hits
+function showBossImpactRing(targetEl, element){
+    if(!targetEl) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const ring = document.createElement('div');
+    ring.className = 'boss-impact-ring';
+    ring.style.color = getElementColor(element);
+    ring.style.left = rect.left + rect.width / 2 + 'px';
+    ring.style.top = rect.top + rect.height / 2 + 'px';
+
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), 600);
+}
+
+// Get element color for dynamic styling
+function getElementColor(element){
+    const colors = {
+        fire: 'rgba(255,150,50,1)',
+        ice: 'rgba(100,200,255,1)',
+        water: 'rgba(50,150,255,1)',
+        shadow: 'rgba(150,50,200,1)',
+        void: 'rgba(150,0,255,1)',
+        holy: 'rgba(255,230,100,1)',
+        poison: 'rgba(180,100,220,1)',
+        earth: 'rgba(180,140,80,1)',
+        chaos: 'rgba(255,100,100,1)',
+        lightning: 'rgba(255,255,100,1)'
+    };
+    return colors[element] || 'rgba(255,255,255,1)';
+}
+
 // ACTION BANNER DISPLAY - Shows move name and result
 function showActionBanner(userName, actionName, result, type='attack', isCrit=false){
     const banner = document.getElementById('actionBanner');
@@ -15357,11 +16206,15 @@ function enemyAction(){
     if(!state.battle)return;
     const b=state.battle;
     const cur = battleQueue[turnIdx];
-    
+
+    // v54.7: Increment action ID for this enemy action
+    currentActionId++;
+    const thisActionId = currentActionId;
+
     // Get the specific enemy whose turn it is
     const enemyIdx = cur?.idx || 0;
     const enemy = b.enemies[enemyIdx];
-    
+
     // Skip if this enemy is dead
     if(!enemy || enemy.hp <= 0){
         turnIdx++;
@@ -15563,6 +16416,11 @@ function enemyAction(){
                     setTimeout(()=>arena.classList.remove('screen-shake'),300);
                 }
 
+                // v54.7: EPIC BOSS AOE ANIMATIONS
+                if(enemy.isBoss && enemy.id){
+                    showBossAttackAnimation(enemy.id, atkName, true, alive.map((t,i) => document.getElementById('arenaC'+b.team.indexOf(t))));
+                }
+
                 // v54.6: Show wave animation for water-type AOE attacks
                 const atkLower = atkName.toLowerCase();
                 if(enemy.attackElement === 'water' || atkLower.includes('tsunami') || atkLower.includes('wave') || atkLower.includes('flood') || atkLower.includes('tidal')){
@@ -15612,9 +16470,9 @@ function enemyAction(){
                 renderMain();
                 setTimeout(nextTurn, 800);
 
-                // v54.6: BACKUP PROCESSING CLEARER for enemy AOE
+                // v54.7: BACKUP PROCESSING CLEARER with action ID check
                 setTimeout(() => {
-                    if(processing && state.battle) {
+                    if(processing && state.battle && currentActionId === thisActionId) {
                         console.warn('Backup: clearing processing flag after enemy AOE');
                         processing = false;
                         if(state.battle) nextTurn();
@@ -15631,11 +16489,16 @@ function enemyAction(){
                 if(enemy.focus !== undefined){
                     enemy.focus = Math.max(0, enemy.focus - specialCost);
                 }
-                
+
                 const idx = targetMemberIdx;
                 const arenaCreature = document.getElementById('arenaC'+idx);
                 const targetEl = document.getElementById('c'+idx);
-                
+
+                // v54.7: EPIC BOSS SPECIAL ANIMATIONS
+                if(enemy.isBoss && enemy.id){
+                    showBossAttackAnimation(enemy.id, spec.name, false, [arenaCreature || targetEl]);
+                }
+
                 // FIRE SPECIAL PROJECTILE FROM ENEMY TO PLAYER
                 const element = spec.element || enemy.attackElement || 'energy';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
@@ -15682,9 +16545,9 @@ function enemyAction(){
                     setTimeout(nextTurn, 800);
                 });
 
-                // v54.6: BACKUP PROCESSING CLEARER for enemy special
+                // v54.7: BACKUP PROCESSING CLEARER with action ID check
                 setTimeout(() => {
-                    if(processing && state.battle) {
+                    if(processing && state.battle && currentActionId === thisActionId) {
                         console.warn('Backup: clearing processing flag after enemy special');
                         processing = false;
                         if(state.battle) nextTurn();
@@ -15696,11 +16559,16 @@ function enemyAction(){
                 const t = targetMember;
                 const atkList = enemy.isBoss ? enemy.attacks?.s : enemy.attacks;
                 const atkName = atkList ? atkList[Math.floor(Math.random()*atkList.length)] : 'Attack';
-                
+
                 const idx = targetMemberIdx;
                 const arenaCreature = document.getElementById('arenaC'+idx);
                 const targetEl = document.getElementById('c'+idx);
-                
+
+                // v54.7: EPIC BOSS BASIC ATTACK ANIMATIONS
+                if(enemy.isBoss && enemy.id){
+                    showBossAttackAnimation(enemy.id, atkName, false, [arenaCreature || targetEl]);
+                }
+
                 // FIRE PROJECTILE FROM ENEMY TO PLAYER
                 const element = enemy.attackElement || 'physical';
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
@@ -15749,9 +16617,9 @@ function enemyAction(){
                     setTimeout(nextTurn, 800);
                 });
 
-                // v54.6: BACKUP PROCESSING CLEARER for enemy basic attack
+                // v54.7: BACKUP PROCESSING CLEARER with action ID check
                 setTimeout(() => {
-                    if(processing && state.battle) {
+                    if(processing && state.battle && currentActionId === thisActionId) {
                         console.warn('Backup: clearing processing flag after enemy attack');
                         processing = false;
                         if(state.battle) nextTurn();
