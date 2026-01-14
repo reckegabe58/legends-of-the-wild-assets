@@ -1949,6 +1949,39 @@ body{
     75%{transform:translate(-2px,1px)}
 }
 
+/* v54.6: Wave/Tsunami animation - sweeps across screen */
+.wave-attack{
+    position:fixed;
+    left:0;
+    right:0;
+    height:200px;
+    top:calc(50% - 50px);
+    background:linear-gradient(to top,rgba(59,130,246,0.7),rgba(147,197,253,0.4),transparent);
+    pointer-events:none;
+    z-index:2000;
+    animation:waveSweep 1.2s ease-out forwards;
+}
+.wave-attack::before{
+    content:'';
+    position:absolute;
+    left:0;right:0;top:0;
+    height:30px;
+    background:linear-gradient(to bottom,rgba(255,255,255,0.6),transparent);
+    border-radius:50% 50% 0 0;
+}
+@keyframes waveSweep{
+    0%{transform:translateX(-100%) scaleY(0.5);opacity:0}
+    15%{opacity:1;transform:translateX(-70%) scaleY(1)}
+    85%{opacity:1;transform:translateX(70%) scaleY(1)}
+    100%{transform:translateX(100%) scaleY(0.5);opacity:0}
+}
+@keyframes waveSweepReverse{
+    0%{transform:translateX(100%) scaleY(0.5);opacity:0}
+    15%{opacity:1;transform:translateX(70%) scaleY(1)}
+    85%{opacity:1;transform:translateX(-70%) scaleY(1)}
+    100%{transform:translateX(-100%) scaleY(0.5);opacity:0}
+}
+
 /* v54.5: Shield pop animation for defend */
 @keyframes shieldPop{
     0%{transform:translate(-50%,-50%) scale(0);opacity:0}
@@ -12621,12 +12654,11 @@ function renderBattle(m){
         html+=`</div>`; // End move-buttons-container
     }
 
-    // v54.6: Targeting Instruction Overlays
-    // Attack/Special targeting mode
+    // v54.6: Targeting overlays - removed attack overlay (red glow on enemies is enough)
+    // Just show a subtle cancel button for attack targeting
     if(b.targetingMode){
-        html += `<div class="targeting-overlay">
-            <div style="color:var(--gold);font-family:'Cinzel',serif;font-size:1.2rem">🎯 Select an enemy to attack!</div>
-            <button onclick="cancelTargeting()" style="margin-top:10px;padding:8px 16px;background:rgba(255,100,100,.3);border:1px solid #f66;border-radius:8px;color:#fff;cursor:pointer;font-family:'Cinzel',serif">Cancel</button>
+        html += `<div style="position:absolute;bottom:180px;left:50%;transform:translateX(-50%);z-index:45">
+            <button onclick="cancelTargeting()" style="padding:6px 14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,100,100,.5);border-radius:6px;color:#f99;cursor:pointer;font-family:'Cinzel',serif;font-size:.8rem">Cancel</button>
         </div>`;
     }
 
@@ -12868,8 +12900,19 @@ function doAction(a){
                     setTimeout(nextTurn, 500);
                 }
             });
+
+            // v54.6: BACKUP PROCESSING CLEARER - prevents stuck flag if animation callback fails
+            setTimeout(() => {
+                if(processing && state.battle) {
+                    console.warn('Backup: clearing processing flag after attack animation');
+                    processing = false;
+                    if(state.battle && !document.querySelector('.action-banner')){
+                        nextTurn();
+                    }
+                }
+            }, 2500);
         }, 200);
-        
+
     }else if(a==='def'){
         const mv=getMove(m.cid,m.lv,'def');
         const moveName = mv?.n || 'Defend';
@@ -13002,6 +13045,9 @@ function doAction(a){
                         // Beam sweep across all enemies
                         const firstEnemyEl = document.getElementById('enemyImg'+b.enemies.indexOf(aliveEnemies[0]));
                         showBeamAttack(arenaCreature, firstEnemyEl, element);
+                    } else if(aoeAnimType === 'projectile' && (element === 'water' || moveName.toLowerCase().includes('tsunami') || moveName.toLowerCase().includes('wave') || moveName.toLowerCase().includes('flood') || moveName.toLowerCase().includes('tidal'))){
+                        // v54.6: Water AOE - show wave animation sweeping across
+                        showWaveAnimation('right');
                     }
 
                     // Hit each enemy with delay for visual effect
@@ -13056,6 +13102,15 @@ function doAction(a){
                             setTimeout(nextTurn, 500);
                         }
                     }, aliveEnemies.length * 150 + 200);
+
+                    // v54.6: BACKUP PROCESSING CLEARER for AOE special
+                    setTimeout(() => {
+                        if(processing && state.battle) {
+                            console.warn('Backup: clearing processing flag after AOE special');
+                            processing = false;
+                            if(state.battle) nextTurn();
+                        }
+                    }, aliveEnemies.length * 150 + 2500);
 
                 }else{
                     // ============================================
@@ -13142,6 +13197,15 @@ function doAction(a){
                     } else {
                         fireProjectile(arenaCreature, enemyEl, element, onSpecialImpact);
                     }
+
+                    // v54.6: BACKUP PROCESSING CLEARER for single-target special
+                    setTimeout(() => {
+                        if(processing && state.battle) {
+                            console.warn('Backup: clearing processing flag after special');
+                            processing = false;
+                            if(state.battle) nextTurn();
+                        }
+                    }, 2500);
                 }
             }, 500); // After charge animation
         }else{
@@ -13612,6 +13676,17 @@ function showGroundSlam(targetEl){
     setTimeout(() => slam.remove(), 600);
 }
 
+// v54.6: Wave/Tsunami animation - sweeps across the screen
+function showWaveAnimation(direction = 'right'){
+    const wave = document.createElement('div');
+    wave.className = 'wave-attack';
+    if(direction === 'left'){
+        wave.style.animation = 'waveSweepReverse 1.2s ease-out forwards';
+    }
+    document.body.appendChild(wave);
+    setTimeout(() => wave.remove(), 1200);
+}
+
 // Beam attack effect for high-power specials
 function showBeamAttack(fromEl, toEl, element){
     if(!fromEl || !toEl) return;
@@ -14075,22 +14150,33 @@ function showDefendAnimation(targetEl, moveName, element){
     const centerX = rect.left + rect.width/2;
     const centerY = rect.top + rect.height/2;
 
+    // v54.6: Calculate scale based on creature size (default 120px is base)
+    const baseSize = 120;
+    const creatureSize = Math.max(rect.width, rect.height);
+    const scale = Math.max(0.6, Math.min(2.5, creatureSize / baseSize));
+
     if(defendInfo.type === 'shield'){
-        showShieldDefend(centerX, centerY, defendInfo.element);
+        showShieldDefend(centerX, centerY, defendInfo.element, scale);
     } else if(defendInfo.type === 'barrier'){
-        showBarrierDefend(centerX, centerY, defendInfo.element);
+        showBarrierDefend(centerX, centerY, defendInfo.element, scale);
     } else if(defendInfo.type === 'evasion'){
-        showEvasionDefend(centerX, centerY);
+        showEvasionDefend(centerX, centerY, scale);
     } else if(defendInfo.type === 'harden'){
-        showHardenDefend(centerX, centerY, defendInfo.element);
+        showHardenDefend(centerX, centerY, defendInfo.element, scale);
     }
 }
 
-function showShieldDefend(x, y, element){
+function showShieldDefend(x, y, element, scale = 1){
+    // v54.6: Scale shield size based on creature size
+    const size = Math.round(100 * scale);
+    const offset = size / 2;
+
     const container = document.createElement('div');
     container.className = 'defend-shield';
-    container.style.left = (x - 50) + 'px';
-    container.style.top = (y - 50) + 'px';
+    container.style.left = (x - offset) + 'px';
+    container.style.top = (y - offset) + 'px';
+    container.style.width = size + 'px';
+    container.style.height = size + 'px';
 
     const glow = document.createElement('div');
     glow.className = 'hex-glow';
@@ -14119,11 +14205,17 @@ function showShieldDefend(x, y, element){
     setTimeout(() => container.remove(), 600);
 }
 
-function showBarrierDefend(x, y, element){
+function showBarrierDefend(x, y, element, scale = 1){
+    // v54.6: Scale barrier size based on creature size
+    const width = Math.round(120 * scale);
+    const height = Math.round(80 * scale);
+
     const barrier = document.createElement('div');
     barrier.className = 'defend-barrier';
-    barrier.style.left = (x - 60) + 'px';
-    barrier.style.top = (y - 40) + 'px';
+    barrier.style.left = (x - width/2) + 'px';
+    barrier.style.top = (y - height/2) + 'px';
+    barrier.style.width = width + 'px';
+    barrier.style.height = height + 'px';
 
     const colors = {
         ice: ['rgba(147,197,253,0.6)','rgba(147,197,253,0.3)'],
@@ -14139,11 +14231,17 @@ function showBarrierDefend(x, y, element){
     setTimeout(() => barrier.remove(), 700);
 }
 
-function showEvasionDefend(x, y){
+function showEvasionDefend(x, y, scale = 1){
+    // v54.6: Scale evasion animation based on creature size
+    const width = Math.round(80 * scale);
+    const height = Math.round(100 * scale);
+
     const container = document.createElement('div');
     container.className = 'defend-evasion';
-    container.style.left = (x - 40) + 'px';
-    container.style.top = (y - 50) + 'px';
+    container.style.left = (x - width/2) + 'px';
+    container.style.top = (y - height/2) + 'px';
+    container.style.width = width + 'px';
+    container.style.height = height + 'px';
 
     for(let i = 0; i < 3; i++){
         const ghost = document.createElement('div');
@@ -14155,12 +14253,18 @@ function showEvasionDefend(x, y){
     setTimeout(() => container.remove(), 600);
 }
 
-function showHardenDefend(x, y, element){
+function showHardenDefend(x, y, element, scale = 1){
+    // v54.6: Scale harden animation based on creature size
+    const size = Math.round(100 * scale);
+    const offset = size / 2;
+
     const harden = document.createElement('div');
     harden.className = 'defend-harden';
     if(element) harden.classList.add(`defend-${element}`);
-    harden.style.left = (x - 50) + 'px';
-    harden.style.top = (y - 50) + 'px';
+    harden.style.left = (x - offset) + 'px';
+    harden.style.top = (y - offset) + 'px';
+    harden.style.width = size + 'px';
+    harden.style.height = size + 'px';
 
     document.body.appendChild(harden);
     setTimeout(() => harden.remove(), 700);
@@ -14881,12 +14985,18 @@ function enemyAction(){
             if(actionType === 'aoe'){
                 // AOE attack
                 const atkName = enemy.attacks.a[Math.floor(Math.random()*enemy.attacks.a.length)];
-                
+
                 if(arena){
                     arena.classList.add('screen-shake');
                     setTimeout(()=>arena.classList.remove('screen-shake'),300);
                 }
-                
+
+                // v54.6: Show wave animation for water-type AOE attacks
+                const atkLower = atkName.toLowerCase();
+                if(enemy.attackElement === 'water' || atkLower.includes('tsunami') || atkLower.includes('wave') || atkLower.includes('flood') || atkLower.includes('tidal')){
+                    showWaveAnimation('left'); // Wave comes from enemy side
+                }
+
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
@@ -14903,7 +15013,18 @@ function enemyAction(){
                     const idx = b.team.indexOf(t);
                     const targetEl = document.getElementById('c'+idx);
                     const arenaCreature = document.getElementById('arenaC'+idx);
-                    if(arenaCreature) arenaCreature.classList.add('hit-recoil');
+
+                    // v54.6: Enhanced AOE visual effects on ALL player creatures
+                    if(arenaCreature){
+                        arenaCreature.classList.add('hit-recoil');
+                        // Show impact flash and slash on each creature
+                        showImpactFlash(arenaCreature);
+                        showSlashEffect(arenaCreature, dmgResult.isDevastating);
+                        // Show element effect if enemy has attack element
+                        if(enemy.attackElement){
+                            setTimeout(() => showElementEffect(arenaCreature, enemy.attackElement), 50 + i * 30);
+                        }
+                    }
                     if(targetEl) targetEl.classList.add('anim-hit-shake');
                     setTimeout(()=>{
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
@@ -14918,6 +15039,15 @@ function enemyAction(){
                 processing = false;
                 renderMain();
                 setTimeout(nextTurn, 800);
+
+                // v54.6: BACKUP PROCESSING CLEARER for enemy AOE
+                setTimeout(() => {
+                    if(processing && state.battle) {
+                        console.warn('Backup: clearing processing flag after enemy AOE');
+                        processing = false;
+                        if(state.battle) nextTurn();
+                    }
+                }, 2500);
 
             } else if(actionType === 'special'){
                 // SPECIAL ATTACK
@@ -14973,13 +15103,22 @@ function enemyAction(){
                     addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
                     if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
-                    
+
                     turnIdx++;
                     processing = false; // CRITICAL: Clear before nextTurn
                     renderMain();
                     setTimeout(nextTurn, 800);
                 });
-                
+
+                // v54.6: BACKUP PROCESSING CLEARER for enemy special
+                setTimeout(() => {
+                    if(processing && state.battle) {
+                        console.warn('Backup: clearing processing flag after enemy special');
+                        processing = false;
+                        if(state.battle) nextTurn();
+                    }
+                }, 2500);
+
             } else {
                 // BASIC ATTACK
                 const t = targetMember;
@@ -15037,6 +15176,15 @@ function enemyAction(){
                     renderMain();
                     setTimeout(nextTurn, 800);
                 });
+
+                // v54.6: BACKUP PROCESSING CLEARER for enemy basic attack
+                setTimeout(() => {
+                    if(processing && state.battle) {
+                        console.warn('Backup: clearing processing flag after enemy attack');
+                        processing = false;
+                        if(state.battle) nextTurn();
+                    }
+                }, 2500);
             }
         }, 350); // SLOWER - was 200
     }, 500); // SLOWER - was 400
