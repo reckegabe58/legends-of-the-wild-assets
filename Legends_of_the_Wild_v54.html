@@ -841,7 +841,8 @@ body{
 }
 .arena-creature.active .ground-circle{display:none} /* Hide when active glow shows */
 
-.arena-frame{position:relative;z-index:1;transition:all .2s}
+/* v54.11: Added overflow:visible to allow glow but clip visual artifacts */
+.arena-frame{position:relative;z-index:1;transition:all .2s;overflow:visible}
 .arena-frame img{
     display:block;
     object-fit:contain;
@@ -2044,17 +2045,18 @@ body{
     75%{transform:translate(-2px,1px)}
 }
 
-/* v54.6: Wave/Tsunami animation - sweeps across screen */
+/* v54.6: Wave/Tsunami animation - sweeps across battle arena (v54.11: contained) */
 .wave-attack{
-    position:fixed;
+    position:absolute;
     left:0;
     right:0;
-    height:200px;
-    top:calc(50% - 50px);
+    height:60%;
+    top:20%;
     background:linear-gradient(to top,rgba(59,130,246,0.7),rgba(147,197,253,0.4),transparent);
     pointer-events:none;
-    z-index:2000;
+    z-index:200;
     animation:waveSweep 1.2s ease-out forwards;
+    overflow:hidden;
 }
 .wave-attack::before{
     content:'';
@@ -8666,6 +8668,66 @@ const ARENA_MODES = {
     // FFA mode removed - was broken
 };
 
+// v54.11: Background selection based on chapter/region
+const REGION_BACKGROUNDS = {
+    forest: 'Backgrounds_DarkForest.png',
+    volcano: 'Backgrounds_VolcanoArena.png',
+    ice: 'Backgrounds_Frozen Cave.png',
+    void: 'Backgrounds_CosmicVoid.png',
+    desert: 'Backgrounds_DesertRuins.png',
+    storm: 'Backgrounds_StormSkyRealm.png',
+    ocean: 'Backgrounds_OceanDepths.png',
+    temple: 'Backgrounds_SacredTemple.png'
+};
+
+// v54.11: Preferred element types for each region (creatures of these types spawn more often)
+const REGION_ELEMENT_THEMES = {
+    forest: ['Nature', 'Earth', 'Poison'],
+    volcano: ['Fire'],
+    ice: ['Ice', 'Water'],
+    void: ['Void', 'Shadow', 'Chaos'],
+    desert: ['Earth', 'Fire'],
+    storm: ['Lightning', 'Wind'],
+    ocean: ['Water'],
+    temple: ['Light', 'Holy']
+};
+
+// v54.11: Get battle background based on chapter/region
+function getBattleBackground(chapter){
+    const ch = chapter || getCurrentChapter();
+    const chData = CHAPTERS[ch];
+    const region = chData?.region || 'forest';
+
+    // Map region to background
+    if(REGION_BACKGROUNDS[region]){
+        return REGION_BACKGROUNDS[region];
+    }
+
+    // Fallback based on chapter number
+    const chapterBackgrounds = {
+        1: 'Backgrounds_DarkForest.png',
+        2: 'Backgrounds_VolcanoArena.png',
+        3: 'Backgrounds_Frozen Cave.png',
+        4: 'Backgrounds_CosmicVoid.png',
+        5: 'Backgrounds_CosmicVoid.png'
+    };
+    return chapterBackgrounds[ch] || 'Backgrounds_DarkForest.png';
+}
+
+// v54.11: Get random background for arena battles (varied experience)
+function getArenaBackground(){
+    const backgrounds = [
+        'Backgrounds_DarkForest.png',
+        'Backgrounds_VolcanoArena.png',
+        'Backgrounds_Frozen Cave.png',
+        'Backgrounds_DesertRuins.png',
+        'Backgrounds_StormSkyRealm.png',
+        'Backgrounds_OceanDepths.png',
+        'Backgrounds_SacredTemple.png'
+    ];
+    return backgrounds[Math.floor(Math.random() * backgrounds.length)];
+}
+
 // Arena state (persists during setup)
 let arenaSetup = {
     mode: null,
@@ -9652,8 +9714,13 @@ function renderArenaBattle(m){
     const isTargeting = arenaBattle.targetingMode !== null;
     const activeIdx = cur ? cur.idx : -1;
 
+    // v54.11: Use stored background or get a new one when battle starts
+    if(!arenaBattle.background){
+        arenaBattle.background = getArenaBackground();
+    }
+
     // Use same container class as main battle
-    let html = `<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/Backgrounds_VolcanoArena.png')">`;
+    let html = `<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/${arenaBattle.background}')">`;
 
     // Header - same structure as main battle
     html += `<div class="battle-header">
@@ -9718,7 +9785,7 @@ function renderArenaBattle(m){
             col.forEach(combatant => {
                 const isActive = combatant.idx === activeIdx;
                 const isKO = combatant.curHp <= 0;
-                const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.idx !== activeIdx;
+                const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.idx !== activeIdx && combatant.team !== activeCombatant.team;
                 const evoIdx = getEvo(combatant.cid, combatant.lv);
 
                 let classes = 'arena-creature';
@@ -12638,13 +12705,18 @@ function startWildEncounter(avgLv,chapter){
     // RULE: Regional creatures should appear frequently
     // Player creatures are rare elite encounters
     
-    // Start with regional creatures (weighted 3x to appear more often)
+    // v54.11: Get preferred element types for this region
+    const preferredTypes = REGION_ELEMENT_THEMES[region] || ['Nature', 'Earth'];
+
+    // Start with regional creatures (weighted by how well they match region's element theme)
     let creaturePool = [];
     regionCreatures.forEach(c => {
-        // Add each regional creature 3 times for weighting
-        creaturePool.push({...c, isRegional: true});
-        creaturePool.push({...c, isRegional: true});
-        creaturePool.push({...c, isRegional: true});
+        // Creatures matching the region's theme get 4x weight, others get 2x
+        const matchesTheme = preferredTypes.includes(c.type);
+        const weight = matchesTheme ? 4 : 2;
+        for(let w = 0; w < weight; w++){
+            creaturePool.push({...c, isRegional: true});
+        }
     });
     
     // Add player creatures as RARE elite encounters (only 1 copy each)
@@ -13071,6 +13143,7 @@ function startWildEncounter(avgLv,chapter){
             spd: scaledSpd,
             lv: wildLv,
             img: creature.img,
+            bg: getBattleBackground(chapter), // v54.11: Set background based on chapter/region
             isWild: true,
             isElite: isElite,
             isPlayerCreature: isPlayerCreatureEnemy,
@@ -14256,7 +14329,21 @@ function doAction(a){
                         showWaveAnimation('right');
                     }
 
-                    // Hit each enemy with delay for visual effect
+                    // v54.11: Calculate animation delay so damage applies AFTER animation reaches targets
+                    // Wave animations take 1200ms to sweep across, damage should start at ~500ms
+                    // Lightning takes ~300ms, beam takes ~500ms
+                    let aoeAnimDelay = 150; // Default minimal delay
+                    if(aoeAnimType === 'projectile' && (element === 'water' || moveName.toLowerCase().includes('tsunami') || moveName.toLowerCase().includes('wave'))){
+                        aoeAnimDelay = 500; // Wait for wave to reach enemy side
+                    } else if(aoeAnimType === 'lightning'){
+                        aoeAnimDelay = 300; // Lightning strikes need less delay
+                    } else if(aoeAnimType === 'beam'){
+                        aoeAnimDelay = 400; // Beam sweeps need some delay
+                    } else if(aoeAnimType === 'slam'){
+                        aoeAnimDelay = 350; // Ground slam needs to land first
+                    }
+
+                    // Hit each enemy with delay for visual effect (AFTER animation delay)
                     aliveEnemies.forEach((enemy, i) => {
                         const enemyIdx = b.enemies.indexOf(enemy);
                         const enemyEl = document.getElementById('enemyImg'+enemyIdx);
@@ -14292,10 +14379,10 @@ function doAction(a){
                                 if(hpFill) hpFill.style.width = (enemy.hp / enemy.maxHp) * 100 + '%';
                                 if(chipFill) chipFill.style.width = (enemy.chipHp / enemy.maxHp) * 100 + '%';
                             }
-                        }, i * 150); // Stagger hits for visual effect
+                        }, aoeAnimDelay + i * 150); // v54.11: Wait for animation THEN stagger hits
                     });
 
-                    // After all hits complete
+                    // After all hits complete (account for animation delay)
                     setTimeout(() => {
                         // v54.8: Check action ID before completing turn
                         if(thisActionId !== currentActionId){
@@ -14313,16 +14400,16 @@ function doAction(a){
                             renderMain();
                             setTimeout(nextTurn, 700);
                         }
-                    }, aliveEnemies.length * 180 + 300);
+                    }, aoeAnimDelay + aliveEnemies.length * 180 + 300);
 
-                    // v54.8: BACKUP PROCESSING CLEARER with action ID check
+                    // v54.8: BACKUP PROCESSING CLEARER with action ID check (v54.11: includes animation delay)
                     setTimeout(() => {
                         if(processing && state.battle && thisActionId === currentActionId) {
                             console.warn('Backup: clearing processing flag after AOE special');
                             processing = false;
                             if(state.battle) nextTurn();
                         }
-                    }, aliveEnemies.length * 180 + 3000);
+                    }, aoeAnimDelay + aliveEnemies.length * 180 + 3000);
 
                 }else{
                     // ============================================
@@ -14957,13 +15044,17 @@ function showGroundSlam(targetEl){
 }
 
 // v54.6: Wave/Tsunami animation - sweeps across the screen
+// v54.11: Wave animation contained within battle arena
 function showWaveAnimation(direction = 'right'){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+
     const wave = document.createElement('div');
     wave.className = 'wave-attack';
     if(direction === 'left'){
         wave.style.animation = 'waveSweepReverse 1.2s ease-out forwards';
     }
-    document.body.appendChild(wave);
+    arena.appendChild(wave);
     setTimeout(() => wave.remove(), 1200);
 }
 
@@ -15235,6 +15326,17 @@ function getAttackAnimationType(moveName, element){
        name.includes('smash') || name.includes('dune') || name.includes('desert') ||
        element === 'earth'){
         return 'slam';
+    }
+
+    // v54.11: COMPOUND ATTACKS - Handle attacks with multiple elements (e.g. thunderfang = bite + lightning)
+    // These show bite animation with element overlay
+    if(name.includes('thunderfang') || name.includes('thunder fang') ||
+       name.includes('flamefang') || name.includes('flame fang') ||
+       name.includes('icefang') || name.includes('ice fang') ||
+       name.includes('venom fang') || name.includes('venomfang') ||
+       name.includes('electric bite') || name.includes('fire bite') ||
+       name.includes('frost bite')){
+        return 'bite-elemental';
     }
 
     // LIGHTNING attacks - use lightning strike (after earth check)
@@ -15718,6 +15820,17 @@ function showAttackAnimationByType(targetEl, moveName, element, isCrit){
             break;
         case 'bite':
             showBiteAttack(centerX, centerY);
+            break;
+        case 'bite-elemental':
+            // v54.11: Show bite + element effect (e.g. thunderfang)
+            showBiteAttack(centerX, centerY);
+            if(element === 'lightning' || moveName.toLowerCase().includes('thunder')){
+                setTimeout(() => showLightningStrike(targetEl), 150);
+            } else if(element === 'fire' || moveName.toLowerCase().includes('flame')){
+                setTimeout(() => showFireBurstAttack(centerX, centerY), 150);
+            } else if(element === 'ice' || moveName.toLowerCase().includes('ice') || moveName.toLowerCase().includes('frost')){
+                setTimeout(() => showIceShardAttack(centerX, centerY), 150);
+            }
             break;
         case 'beam':
             // Beam is handled separately in the projectile system
@@ -16341,16 +16454,36 @@ function selectTarget(enemyIdx){
     doAction(action);
 }
 
-// Cancel targeting mode
+// v54.11: Cancel targeting mode (works for both attack and heal targeting)
 function cancelTargeting(){
     const b = state.battle;
     if(b){
         b.targetingMode = false;
         b.selectedTarget = undefined;
+        b.healTargetingMode = false;
+        b.healerIdx = undefined;
+        b.healAmount = undefined;
+    }
+    // Also cancel arena targeting if applicable
+    if(typeof arenaBattle !== 'undefined' && arenaBattle){
+        arenaBattle.targetingMode = null;
+        arenaBattle.selectedTarget = null;
     }
     processing = false;
     renderMain();
 }
+
+// v54.11: Global right-click handler to cancel targeting
+document.addEventListener('contextmenu', function(e){
+    const b = state.battle;
+    const inTargetingMode = b && (b.targetingMode || b.healTargetingMode);
+    const inArenaTargeting = typeof arenaBattle !== 'undefined' && arenaBattle && arenaBattle.targetingMode;
+
+    if(inTargetingMode || inArenaTargeting){
+        e.preventDefault();
+        cancelTargeting();
+    }
+});
 
 // Heal target selection system
 // v54.6: Enhanced heal scaling with level bonus
@@ -16369,9 +16502,11 @@ function showHealTargetSelection(healerIdx, move){
     const healableAllies = b.team.filter((t, i) => t.curHp > 0 && t.curHp < t.maxHp);
 
     if(healableAllies.length === 0){
-        // No one needs healing, do attack instead
+        // v54.11: No one needs healing - show message and let player pick another action
         addLog(`${healer.name||'Hero'}: No allies need healing!`,'info');
-        doAction('atk');
+        processing = false;
+        // Don't auto-attack, just refresh the UI so player can choose a different action
+        renderMain();
         return;
     }
 
