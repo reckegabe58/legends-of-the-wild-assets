@@ -5822,10 +5822,11 @@ const PARTY_SCALING = {
         4:  [1.6,  2.1,  1.0,  1.05],  // Squad: Tough fight
         5:  [2.0,  2.6,  1.1,  1.1],   // Team: Hard boss
         6:  [2.5,  3.1,  1.2,  1.15],  // Group: Very Hard
-        7:  [3.0,  3.6,  1.3,  1.2],   // Party: Epic boss - can one-shot
-        8:  [3.6,  4.2,  1.4,  1.25],  // Raid: Raid boss
-        9:  [4.2,  4.8,  1.5,  1.3],   // Full Class: World boss
-        10: [5.0,  5.5,  1.6,  1.35]   // Max: Ultimate challenge
+        // v54.6: Reduced ATK scaling for large parties (was 3.6-5.5x, now 3.0-4.0x)
+        7:  [3.0,  3.0,  1.3,  1.2],   // Party: Epic boss
+        8:  [3.2,  3.3,  1.4,  1.25],  // Raid: Raid boss
+        9:  [3.4,  3.6,  1.5,  1.3],   // Full Class: World boss
+        10: [3.6,  4.0,  1.6,  1.35]   // Max: Ultimate challenge
     },
     minion: {
         1:  [0.4,  0.5,  0.4,  0.95],  // Solo: Weak but annoying
@@ -5842,14 +5843,14 @@ const PARTY_SCALING = {
 };
 
 // Boss one-shot chance - ONLY for large parties (7+)
-// Represents the danger of coordinating a large group
+// v54.6: Reduced by ~50% to reduce frustration
 function getBossOneShootChance(){
     const size = getPartySize();
     if(size < 7) return 0;      // No one-shots for small parties
-    if(size === 7) return 0.08; // 8% chance
-    if(size === 8) return 0.12; // 12% chance
-    if(size === 9) return 0.15; // 15% chance
-    return 0.18;                // 18% chance for 10
+    if(size === 7) return 0.04; // 4% chance (was 8%)
+    if(size === 8) return 0.06; // 6% chance (was 12%)
+    if(size === 9) return 0.08; // 8% chance (was 15%)
+    return 0.10;                // 10% chance for 10 (was 18%)
 }
 
 // Boss devastating blow multiplier - scales with party size
@@ -6091,6 +6092,25 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
 // ENEMY DAMAGE ADJUSTMENT (v54.3 - Party Size Aware)
 // ============================================
 // Bosses: Devastating blows scale with party size
+// v54.6: Get buff value for a team member
+function getBuffValue(member, buffType){
+    if(!member || !member.buffs) return 0;
+    const buff = member.buffs.find(b => b.type === buffType);
+    return buff ? buff.value : 0;
+}
+
+// v54.6: Check if any team member has party shield buff
+function getPartyShieldValue(){
+    if(!state.battle || !state.battle.team) return 0;
+    for(const m of state.battle.team){
+        if(m.curHp > 0 && m.buffs){
+            const shield = m.buffs.find(b => b.type === 'party_shield');
+            if(shield) return shield.value;
+        }
+    }
+    return 0;
+}
+
 // Large parties (7+): One-shot mechanic enabled
 // Wild enemies: Damage capped based on party size
 // Returns: {damage: number, isDevastating: boolean, isOneShot: boolean}
@@ -6132,7 +6152,19 @@ function adjustEnemyDamage(baseDamage, enemy, target){
         finalDamage = Math.min(baseDamage, maxDamage);
     }
 
-    return { damage: finalDamage, isDevastating, isOneShot };
+    // v54.6: Apply defend_buff (personal damage reduction)
+    const defendBuff = getBuffValue(target, 'defend_buff');
+    if(defendBuff > 0){
+        finalDamage = Math.floor(finalDamage * (1 - defendBuff));
+    }
+
+    // v54.6: Apply party_shield (team-wide damage reduction)
+    const partyShield = getPartyShieldValue();
+    if(partyShield > 0){
+        finalDamage = Math.floor(finalDamage * (1 - partyShield));
+    }
+
+    return { damage: Math.max(1, finalDamage), isDevastating, isOneShot };
 }
 
 // ============================================
@@ -8198,7 +8230,7 @@ function doArenaAction(action){
         const dmgMult = move ? move.p : 1.0;
         const rawDmg = Math.floor(attacker.st.atk * dmgMult * 0.8);
         const defReduction = target.def ? 0.5 : 1.0;
-        const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+        const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.2) * defReduction)); // v54.6: balanced DEF
 
         // v54.6: Get move name and animation type for enhanced animations
         const moveName = move?.n || 'Attack';
@@ -8423,7 +8455,7 @@ function doArenaAction(action){
 
                         fireProjectile(attackerFrame, targetFrame, element, () => {
                             const defReduction = target.def ? 0.5 : 1.0;
-                            const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+                            const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.2) * defReduction)); // v54.6: balanced DEF
                             target.curHp = Math.max(0, target.curHp - finalDmg);
 
                             // Big screen shake for special
@@ -9919,8 +9951,22 @@ function applyItemEffect(student, item){
         case 'damage_buff':
         case 'party_shield':
         case 'focus_regen_buff':
-            showToast('✅ Buff applied! Will take effect in next battle.', 'success');
-            // TODO: Store buff on student for battle
+            // v54.6: Store buff on student for next battle
+            if(!student.buffs) student.buffs = [];
+            student.buffs.push({
+                type: effect.type,
+                value: effect.value,
+                turns: effect.turns || 0,
+                battles: effect.battles || 1
+            });
+            const buffNames = {
+                'defend_buff': '🛡️ Defense Up',
+                'crit_buff': '⚡ Crit Chance Up',
+                'damage_buff': '⚔️ Damage Up',
+                'party_shield': '🔰 Party Shield',
+                'focus_regen_buff': '🔷 Focus Regen Up'
+            };
+            showToast(`✅ ${buffNames[effect.type] || 'Buff'} applied! Will take effect in next battle.`, 'success');
             return true;
             
         default:
@@ -12185,10 +12231,14 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
             const persistedHp = (s.curHp !== undefined && s.curHp > 0) ? Math.min(s.curHp, st.hp) : st.hp;
             const persistedFocus = (s.curFocus !== undefined) ? s.curFocus : STARTING_FOCUS;
 
-            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus}`);
+            // v54.6: Copy buffs from student to battle member
+            const battleBuffs = s.buffs ? [...s.buffs] : [];
+
+            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus} | Buffs: ${battleBuffs.length}`);
 
             return{...s,lv:l,curHp:persistedHp,maxHp:st.hp,st,def:false,cooldown:0,
-                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN};
+                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN,
+                buffs:battleBuffs};
         }),
         isMultiEnemy: allEnemies.length > 1
     };
@@ -12308,8 +12358,11 @@ function nextTurn(){
     
     console.log(`Turn ${turnIdx}: ${cur?.type} ${cur?.idx} (processing=${processing})`);
     
-    // Reduce cooldowns
-    b.team.forEach(m=>{if(m.cooldown>0)m.cooldown--});
+    // Reduce cooldowns (special and heal)
+    b.team.forEach(m=>{
+        if(m.cooldown>0)m.cooldown--;
+        if(m.healCooldown>0)m.healCooldown--;  // v54.6: heal cooldown
+    });
     
     // FOCUS REGEN - At start of player's turn
     if(cur?.type==='player'){
@@ -12618,20 +12671,25 @@ function renderBattle(m){
         }
         
         const canAffordHeal = activeMember.focus >= healCost;
+        const healOnCooldown = activeMember.healCooldown > 0;  // v54.6: heal cooldown
         const canAffordSpec = activeMember.focus >= specCost && activeMember.cooldown === 0;
-        
+
         html+=`<button class="move-btn attack" ${buttonsDisabled?'disabled':''} onclick="doAction('atk')">
                 <span class="move-name">⚔️ ${atkName}</span>
             </button>
             <button class="move-btn defend" ${buttonsDisabled?'disabled':''} onclick="doAction('def')">
                 <span class="move-name">🛡️ ${defName}</span>
-                <span class="move-cost">+5 FP</span>
+                <span class="move-cost">+10 FP</span>
             </button>`;
-            
+
         if(hasHeal){
-            html+=`<button class="move-btn heal" ${buttonsDisabled||!canAffordHeal?'disabled':''} onclick="doAction('heal')">
+            // v54.6: Show heal cooldown or focus cost
+            const healDisabled = buttonsDisabled || !canAffordHeal || healOnCooldown;
+            const healCostText = healOnCooldown ? `⏱️ ${activeMember.healCooldown}` : `${healCost} FP`;
+            const healCostClass = healOnCooldown ? ' cooldown' : (!canAffordHeal ? ' insufficient' : '');
+            html+=`<button class="move-btn heal" ${healDisabled?'disabled':''} onclick="doAction('heal')">
                 <span class="move-name">💚 ${healName}</span>
-                <span class="move-cost${!canAffordHeal?' insufficient':''}">${healCost} FP</span>
+                <span class="move-cost${healCostClass}">${healCostText}</span>
             </button>`;
         }
         
@@ -12785,14 +12843,20 @@ function doAction(a){
         const moveName = mv?.n || 'Attack';
         const element = mv?.e || CREATURES[m.cid]?.type?.toLowerCase() || 'default';
         
-        // Base damage: ATK * move power - enemy DEF reduction
+        // v54.6: Base damage: ATK * move power - enemy DEF reduction (balanced from 0.3 to 0.2)
         let baseDmg = m.st.atk * (mv?.p || 1);
-        let defReduction = targetEnemy.def * 0.3;
+        let defReduction = targetEnemy.def * 0.2;
         let d = Math.max(5, baseDmg - defReduction);
         d = Math.floor(d * (.9 + Math.random() * .2));
-        
+
+        // v54.6: Apply damage_buff from shop items
+        const damageBuff = getBuffValue(m, 'damage_buff');
+        if(damageBuff > 0) d = Math.floor(d * (1 + damageBuff));
+
         // BALANCED CRIT: 5% base + 0.1% per level (max ~10% at lv50)
-        const critChance = Math.min(0.10, 0.05 + (m.lv * 0.001));
+        // v54.6: Add crit_buff from shop items
+        const critBuff = getBuffValue(m, 'crit_buff');
+        const critChance = Math.min(0.25, 0.05 + (m.lv * 0.001) + critBuff);
         const isCrit = Math.random() < critChance;
         if(isCrit) d = Math.floor(d * 1.5);
         
@@ -12952,6 +13016,13 @@ function doAction(a){
         if(c.canHeal){
             const mv=getMove(m.cid,m.lv,'heal');
             if(mv){
+                // v54.6: Check heal cooldown (2-turn cooldown like specials but shorter)
+                if(m.healCooldown && m.healCooldown > 0){
+                    addLog(`${m.name||'Hero'} can't heal yet! (${m.healCooldown} turns left)`, 'dmg');
+                    processing = false;
+                    renderMain();
+                    return;
+                }
                 const healCost = mv.f || 0;
                 // Check if enough focus
                 if(m.focus < healCost){
@@ -14776,6 +14847,10 @@ function executeHeal(healerIdx, targetIdx, healAmount){
     // Log with emergency indicator
     const emergencyText = isEmergency ? ' (EMERGENCY!)' : '';
     addLog(`💚 ${healer.name||'Hero'}: ${mv?.n||'Heal'} → ${target.name||'Ally'} +${actualHeal} HP!${emergencyText}`,'heal');
+
+    // v54.6: Set heal cooldown (2 turns)
+    healer.healCooldown = 2;
+
     turnIdx++;
     renderMain();
     setTimeout(nextTurn, 500);
@@ -15006,7 +15081,7 @@ function enemyAction(){
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
                     // v54.4: AOE damage - 85% ATK, minimal defense scaling
-                    let baseDmg = Math.max(15, enemy.atk * 0.85 - (t.st.def * 0.05));
+                    let baseDmg = Math.max(15, enemy.atk * 0.85 - (t.st.def * 0.10));
                     baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.3));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
                     // v54.1: Apply boss/wild damage adjustment
@@ -15074,7 +15149,7 @@ function enemyAction(){
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
                     // v54.4: Special attack - full power, minimal defense reduction
-                    let baseDmg = Math.max(20, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.08));
+                    let baseDmg = Math.max(20, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
                     baseDmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.25));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.55);
                     // v54.1: Apply boss/wild damage adjustment
@@ -15139,7 +15214,7 @@ function enemyAction(){
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
                     // v54.4: Basic attack - full ATK value, minimal defense reduction
-                    let baseDmg = Math.max(20, enemy.atk * 1.2 - (t.st.def * 0.08));
+                    let baseDmg = Math.max(20, enemy.atk * 1.2 - (t.st.def * 0.15));
                     baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.35));
                     if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
                     // v54.1: Apply boss/wild damage adjustment
@@ -15244,6 +15319,18 @@ function endBattle(won){
                 // Store current HP (even if 0 - they're knocked out)
                 student.curHp = member.curHp;
                 student.curFocus = member.focus;
+
+                // v54.6: Decrement buff battle counters and remove expired buffs
+                if(student.buffs && student.buffs.length > 0){
+                    student.buffs = student.buffs.filter(buff => {
+                        if(buff.battles !== undefined){
+                            buff.battles--;
+                            return buff.battles > 0;
+                        }
+                        return true; // Keep turn-based buffs (handled per-turn)
+                    });
+                }
+
                 debugLog('COMBAT', `${student.name} exits battle | HP: ${student.curHp}/${member.maxHp} | Focus: ${student.curFocus}`);
             }
         });
