@@ -9265,20 +9265,13 @@ function doArenaAction(action){
     const move = getMove(attacker.cid, attacker.lv, action);
     const targetIdx = arenaBattle.combatants.indexOf(target);
 
-    // v54.5: Get correct element IDs based on team
+    // v54.10: Fixed element IDs - both teams use same ID structure in arena battles
+    // renderArenaBattle() renders ALL combatants with arenaC${idx} and c${idx}
     const getArenaEl = (idx, combatant) => {
-        if(combatant.team === 0){
-            return document.getElementById(`arenaC${idx}`);
-        } else {
-            return document.getElementById(`enemy${idx}`);
-        }
+        return document.getElementById(`arenaC${idx}`);
     };
     const getArenaFrame = (idx, combatant) => {
-        if(combatant.team === 0){
-            return document.getElementById(`c${idx}`);
-        } else {
-            return document.getElementById(`enemyImg${idx}`);
-        }
+        return document.getElementById(`c${idx}`);
     };
 
     const attackerEl = getArenaEl(cur.idx, attacker);
