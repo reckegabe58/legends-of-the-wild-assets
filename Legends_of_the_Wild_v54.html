@@ -909,6 +909,16 @@ body{
 .player-arena.large-party .arena-frame.evo3 img{width:110px;height:110px}
 .player-arena.large-party .arena-frame.evo4 img{width:130px;height:130px}
 
+/* Arena Team Right - Blue team indicator for PvP */
+.player-arena.arena-team-right .arena-creature{
+    border-left:3px solid rgba(59,130,246,.6);
+    border-radius:8px;
+    padding-left:5px;
+}
+.player-arena.arena-team-right .arena-creature.active-turn::before{
+    background:radial-gradient(ellipse,rgba(59,130,246,.35) 0%,rgba(59,130,246,.15) 50%,transparent 70%);
+}
+
 /* Turn indicator: Arrow above active creature */
 .active-arrow{
     position:absolute;
@@ -7876,6 +7886,28 @@ function migrateShopSystem(){
 
     // v54.6: Always run natures migration (in case V54.1 was done before V54.3 existed)
     migrateToV54_3_Natures();
+
+    // v54.7: Always correct forced natures (for Mythical creatures like Rúnvíg)
+    correctForcedNatures();
+}
+
+// v54.7: Ensure creatures with forcedNature always have the correct nature
+function correctForcedNatures(){
+    let correctedCount = 0;
+    state.students.forEach(s => {
+        if(s.cid){
+            const creatureData = CREATURES[s.cid];
+            if(creatureData && creatureData.forcedNature && s.nature !== creatureData.forcedNature){
+                console.log(`🔧 Correcting ${s.name || 'student'}'s nature from ${s.nature} to ${creatureData.forcedNature}`);
+                s.nature = creatureData.forcedNature;
+                correctedCount++;
+            }
+        }
+    });
+    if(correctedCount > 0){
+        console.log(`✅ Corrected ${correctedCount} creature(s) with forced natures`);
+        save();
+    }
 }
 
 // V54.1 MIGRATION - Add new state properties for enhanced features
@@ -7952,11 +7984,17 @@ function migrateToV54_3_Natures(){
 
     console.log('🔄 Running V54.3 Natures migration...');
 
-    // Assign random nature to all students with creatures
+    // Assign nature to all students with creatures
     let assignedCount = 0;
     state.students.forEach(s => {
         if(s.cid && !s.nature){
-            s.nature = getRandomNature();
+            // Check if creature has a forced nature (e.g., Mythical creatures)
+            const creatureData = CREATURES[s.cid];
+            if(creatureData && creatureData.forcedNature){
+                s.nature = creatureData.forcedNature;
+            } else {
+                s.nature = getRandomNature();
+            }
             assignedCount++;
             console.log(`  Assigned ${s.nature} nature to ${s.name || 'student'}`);
         }
@@ -8457,6 +8495,9 @@ function checkArenaVictory(){
 }
 
 function arenaNextTurn(){
+    // Unlock action buttons for new turn
+    unlockMoveButtons();
+
     if(!arenaBattle) return;
     if(arenaBattle.processing) return;
 
@@ -8506,15 +8547,38 @@ function arenaNextTurn(){
     renderMain();
 }
 
+// Global action lock to prevent double-click exploits
+let actionLocked = false;
+
+// Lock all move buttons immediately on click
+function lockMoveButtons(){
+    actionLocked = true;
+    document.querySelectorAll('.move-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.style.pointerEvents = 'none';
+    });
+}
+
+// Unlock move buttons (called after turn ends or action cancelled)
+function unlockMoveButtons(){
+    actionLocked = false;
+    // Buttons will be properly re-enabled on next render
+}
+
 // v54.5: Arena action with full battle animations
 function doArenaAction(action){
+    // Immediate lock check - prevents double-click exploits
+    if(actionLocked) return;
     if(!arenaBattle || arenaBattle.processing) return;
 
+    // Lock buttons immediately to prevent spam
+    lockMoveButtons();
+
     const cur = arenaBattle.turnQueue[arenaBattle.turnIdx];
-    if(!cur) return;
+    if(!cur) { unlockMoveButtons(); return; }
 
     const attacker = arenaBattle.combatants[cur.idx];
-    if(attacker.curHp <= 0) { arenaNextTurn(); return; }
+    if(attacker.curHp <= 0) { unlockMoveButtons(); arenaNextTurn(); return; }
 
     const c = CREATURES[attacker.cid];
     const attackerType = c?.type || 'fire';
@@ -8523,14 +8587,16 @@ function doArenaAction(action){
     const validTargets = arenaBattle.combatants.filter(t => t.curHp > 0 && t.team !== attacker.team);
 
     if(validTargets.length === 0){
+        unlockMoveButtons();
         if(checkArenaVictory()){
             setTimeout(() => showArenaVictory(), 500);
         }
         return;
     }
 
-    // Target selection for attacks
+    // Target selection for attacks - unlock for target selection UI
     if((action === 'atk' || action === 'spec') && validTargets.length > 1 && arenaBattle.selectedTarget === null){
+        unlockMoveButtons();
         arenaBattle.targetingMode = action;
         renderMain();
         return;
@@ -9104,37 +9170,60 @@ function renderArenaBattle(m){
         });
         html += `</div>`;
 
-        // Right side - Team 1 (uses enemy-arena styling, but with player creatures)
-        html += `<div class="enemy-arena">`;
+        // Right side - Team 1 (now uses same player-style UI as left side)
+        const rightSize = team1.length;
+        const rightColumns = rightSize <= 3 ? 1 : rightSize <= 6 ? 2 : 3;
 
-        // Render team 1 in column layout similar to minions
-        html += `<div class="minion-column" style="flex-direction:column;gap:15px">`;
-        team1.forEach(combatant => {
-            const idx = arenaBattle.combatants.indexOf(combatant);
-            const isActive = idx === activeIdx;
-            const isKO = combatant.curHp <= 0;
-            const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
-            const evoIdx = getEvo(combatant.cid, combatant.lv);
-            const hpPct = (combatant.curHp/combatant.maxHp)*100;
+        let rightClass = 'player-arena arena-team-right';
+        if(rightSize <= 2) rightClass += ' solo-party';
+        else if(rightSize === 3) rightClass += ' small-party';
+        else if(rightSize <= 6) rightClass += ' medium-party';
+        else rightClass += ' large-party';
 
-            let classes = 'enemy-unit';
-            if(isValidTarget) classes += ' targetable';
-            if(isKO) classes += ' ko';
+        html += `<div class="${rightClass}">`;
 
-            html += `<div class="${classes}" id="enemy${idx}" onclick="${isValidTarget ? `selectArenaTarget(${idx})` : ''}" style="${isKO ? 'opacity:.15;filter:grayscale(.9)' : ''}">
-                ${isActive && !isKO ? '<div style="position:absolute;top:-25px;left:50%;transform:translateX(-50%);color:var(--gold);font-size:1.2rem;animation:bounceArrow 0.6s ease-in-out infinite">▼</div>' : ''}
-                <div class="enemy-hp-float">
-                    <div class="enemy-name" style="font-size:.7rem">${(combatant.name || 'Hero').substring(0, 12)}</div>
-                    <div class="enemy-hp-bar" id="enemyHpBar${idx}">
-                        <div class="enemy-hp-fill" style="width:${hpPct}%"></div>
-                    </div>
-                </div>
-                <div class="enemy-frame wild${team1.length >= 4 ? '-small' : team1.length === 1 ? '-solo' : ''}" id="enemyImg${idx}" style="${isActive ? 'box-shadow:0 0 20px rgba(232,184,74,.6)' : ''}">
-                    <img src="${getImg(combatant.cid, combatant.lv)}" style="animation:creatureIdle 2.5s ease-in-out infinite">
-                </div>
-            </div>`;
+        const rightCols = [[],[],[]];
+        team1.forEach((combatant, i) => {
+            const colIdx = i % rightColumns;
+            rightCols[colIdx].push({...combatant, idx: arenaBattle.combatants.indexOf(combatant)});
         });
-        html += `</div>`;
+
+        rightCols.forEach((col, colIdx) => {
+            if(col.length === 0) return;
+            const colClass = colIdx === 0 ? '' : colIdx === 1 ? ' col-2' : ' col-3';
+            html += `<div class="arena-column${colClass}">`;
+
+            col.forEach(combatant => {
+                const isActive = combatant.idx === activeIdx;
+                const isKO = combatant.curHp <= 0;
+                const isValidTarget = isTargeting && combatant.curHp > 0 && activeCombatant && combatant.team !== activeCombatant.team;
+                const evoIdx = getEvo(combatant.cid, combatant.lv);
+
+                let classes = 'arena-creature';
+                if(isKO) classes += ' ko';
+                if(isActive && !isKO) classes += ' active active-turn';
+                if(isValidTarget) classes += ' targetable';
+
+                html += `<div class="${classes}" id="arenaC${combatant.idx}" ${isValidTarget ? `onclick="selectArenaTarget(${combatant.idx})"` : ''}>
+                    ${isActive && !isKO ? '<span class="active-arrow">▼</span>' : ''}
+
+                    <div class="ground-circle"></div>
+                    <div class="arena-frame evo${evoIdx+1}" id="c${combatant.idx}">
+                        <img src="${getImg(combatant.cid, combatant.lv)}" onerror="this.style.opacity='0.3'">
+                    </div>
+
+                    <div class="creature-bars-minimal">
+                        <div class="minimal-bar hp-minimal">
+                            <div class="minimal-bar-fill hp-fill-minimal" style="width:${Math.max(0,(combatant.curHp/combatant.maxHp)*100)}%"></div>
+                        </div>
+                        <div class="minimal-bar focus-minimal">
+                            <div class="minimal-bar-fill focus-fill-minimal" style="width:${Math.max(0,(combatant.focus/combatant.focusMax)*100)}%"></div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+        });
         html += `</div>`;
     }
 
@@ -11224,9 +11313,15 @@ function setCre(id,cid){
     const s=state.students.find(x=>x.id===id);
     if(s){
         s.cid=cid||null;
-        // v54.3: Assign random nature when creature is assigned
+        // v54.3: Assign nature when creature is assigned
         if(cid){
-            s.nature = getRandomNature();
+            // Check if creature has a forced nature (e.g., Mythical creatures)
+            const creatureData = CREATURES[cid];
+            if(creatureData && creatureData.forcedNature){
+                s.nature = creatureData.forcedNature;
+            } else {
+                s.nature = getRandomNature();
+            }
             const lv = getLv(s.xp);
             const evo = getEvo(cid, lv);
             discoverCreature(cid, evo);
@@ -12654,6 +12749,9 @@ function getCurrentEnemy(){
 }
 
 function nextTurn(){
+    // Unlock action buttons for new turn
+    unlockMoveButtons();
+
     if(!state.battle)return;
     const b=state.battle;
     
@@ -13094,57 +13192,64 @@ function renderBattle(m){
 }
 
 function doAction(a){
-    if(!state.battle)return;
-    
+    // Immediate lock check - prevents double-click exploits
+    if(actionLocked) return;
+    if(!state.battle) return;
+
+    // Lock buttons immediately to prevent spam
+    lockMoveButtons();
+
     // Safety check: if processing is stuck, reset it
     const cur=battleQueue[turnIdx];
     if(cur?.type==='player' && processing){
         console.warn('Processing flag stuck - resetting for player turn');
         processing = false;
     }
-    
+
     const b=state.battle;
     if(cur?.type!=='player'){
         console.warn('doAction called but not player turn');
+        unlockMoveButtons();
         return;
     }
-    
+
     const m=b.team[cur.idx];
-    if(!m||m.curHp<=0){turnIdx++;nextTurn();return}
-    
+    if(!m||m.curHp<=0){unlockMoveButtons();turnIdx++;nextTurn();return}
+
     // Define activeIdx for animations - this is cur.idx
     const activeIdx = cur.idx;
-    
+
     const c=CREATURES[m.cid];
     const el=document.getElementById('c'+cur.idx);
     m.def=false;
-    
+
     // Clear any existing targeting modes when switching actions
     if(a !== 'heal'){
         b.healTargetingMode = false;
         b.healerIdx = null;
         b.healAmount = null;
     }
-    
+
     // For attack and special, check if multiple enemies - need target selection
     const aliveEnemies = b.enemies.filter(e => e.hp > 0);
-    
+
     // Only enter targeting mode if multiple enemies AND no target selected yet
     if((a==='atk' || a==='spec') && aliveEnemies.length > 1 && b.selectedTarget === undefined){
-        // Enter targeting mode
+        // Enter targeting mode - unlock for target selection UI
+        unlockMoveButtons();
         b.targetingMode = a;
         processing = false;
         renderMain();
         return;
     }
-    
+
     // SAFETY: If we have a selected target OR only one enemy, we should proceed
     // Reset processing to allow action to go through
     if(b.selectedTarget !== undefined || aliveEnemies.length === 1){
         processing = false;
     }
-    
-    if(processing) return;
+
+    if(processing) { unlockMoveButtons(); return; }
     processing = true;
     
     // Get target (selected or first alive enemy)
@@ -13904,29 +14009,55 @@ function fireProjectile(fromEl, toEl, element, onImpact){
     requestAnimationFrame(animate);
 }
 
+// Helper: Get tighter creature bounds by targeting the image and applying inset
+// This prevents animations from appearing on transparent PNG areas
+function getCreatureBounds(targetEl){
+    if(!targetEl) return null;
+
+    // Try to find the actual img element inside the frame
+    const img = targetEl.querySelector('img') || targetEl.closest('.arena-frame')?.querySelector('img') ||
+                targetEl.closest('.enemy-frame')?.querySelector('img') || targetEl;
+
+    const rect = img.getBoundingClientRect();
+
+    // Apply 20% inset to account for typical PNG transparency padding
+    const insetX = rect.width * 0.2;
+    const insetY = rect.height * 0.2;
+
+    return {
+        left: rect.left + insetX,
+        top: rect.top + insetY,
+        width: rect.width - (insetX * 2),
+        height: rect.height - (insetY * 2),
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2
+    };
+}
+
 // Show slash effect on target
 function showSlashEffect(targetEl, isCrit = false){
     if(!targetEl) return;
-    
+
     const slash = document.createElement('div');
     slash.className = 'slash-effect' + (isCrit ? ' crit' : '');
-    
-    const rect = targetEl.getBoundingClientRect();
-    slash.style.left = rect.left + rect.width/2 - 50 + 'px';
-    slash.style.top = rect.top + rect.height/2 - 10 + 'px';
-    
+
+    const bounds = getCreatureBounds(targetEl);
+    if(!bounds) return;
+    slash.style.left = bounds.centerX - 50 + 'px';
+    slash.style.top = bounds.centerY - 10 + 'px';
+
     document.body.appendChild(slash);
-    
+
     setTimeout(() => slash.remove(), 300);
 }
 
 // Show impact burst effect
 function showImpactEffect(targetEl, isCrit = false, element = null){
     if(!targetEl) return;
-    
+
     const impact = document.createElement('div');
     impact.className = 'impact-effect' + (isCrit ? ' crit' : '');
-    
+
     // Color based on element
     const colors = {
         fire: 'radial-gradient(circle, rgba(255,100,0,0.8), rgba(255,50,0,0.4), transparent)',
@@ -13941,19 +14072,20 @@ function showImpactEffect(targetEl, isCrit = false, element = null){
         mythical: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(125,211,252,0.7), rgba(56,189,248,0.4), transparent)',
         default: 'radial-gradient(circle, rgba(255,255,255,0.8), rgba(200,200,200,0.4), transparent)'
     };
-    
+
     impact.style.background = colors[element] || colors.default;
     impact.style.width = isCrit ? '120px' : '80px';
     impact.style.height = isCrit ? '120px' : '80px';
     impact.style.borderRadius = '50%';
-    
-    const rect = targetEl.getBoundingClientRect();
+
+    const bounds = getCreatureBounds(targetEl);
+    if(!bounds) return;
     const size = isCrit ? 60 : 40;
-    impact.style.left = rect.left + rect.width/2 - size + 'px';
-    impact.style.top = rect.top + rect.height/2 - size + 'px';
-    
+    impact.style.left = bounds.centerX - size + 'px';
+    impact.style.top = bounds.centerY - size + 'px';
+
     document.body.appendChild(impact);
-    
+
     setTimeout(() => impact.remove(), isCrit ? 600 : 450);
 }
 
@@ -13964,9 +14096,10 @@ function showHealEffect(targetEl){
     const heal = document.createElement('div');
     heal.className = 'heal-burst';
 
-    const rect = targetEl.getBoundingClientRect();
-    heal.style.left = rect.left + rect.width/2 - 50 + 'px';
-    heal.style.top = rect.top + rect.height/2 - 50 + 'px';
+    const bounds = getCreatureBounds(targetEl);
+    if(!bounds) return;
+    heal.style.left = bounds.centerX - 50 + 'px';
+    heal.style.top = bounds.centerY - 50 + 'px';
 
     document.body.appendChild(heal);
     setTimeout(() => heal.remove(), 900);
@@ -13980,11 +14113,12 @@ function showHealEffect(targetEl){
 function showMultiSlash(targetEl, element = 'default'){
     if(!targetEl) return;
 
-    const rect = targetEl.getBoundingClientRect();
+    const bounds = getCreatureBounds(targetEl);
+    if(!bounds) return;
     const container = document.createElement('div');
     container.className = 'multi-slash';
-    container.style.left = rect.left + rect.width/2 - 60 + 'px';
-    container.style.top = rect.top + rect.height/2 - 60 + 'px';
+    container.style.left = bounds.centerX - 60 + 'px';
+    container.style.top = bounds.centerY - 60 + 'px';
 
     // Create 3 slash lines with element colors
     const colors = {
@@ -14048,12 +14182,13 @@ function showElementTrail(fromEl, toEl, element){
 function showComboIndicator(targetEl, comboCount){
     if(!targetEl || comboCount < 2) return;
 
-    const rect = targetEl.getBoundingClientRect();
+    const bounds = getCreatureBounds(targetEl);
+    if(!bounds) return;
     const combo = document.createElement('div');
     combo.className = 'combo-indicator';
     combo.textContent = comboCount >= 3 ? `${comboCount}x COMBO!` : `${comboCount}x HIT!`;
-    combo.style.left = rect.left + rect.width/2 - 40 + 'px';
-    combo.style.top = rect.top - 30 + 'px';
+    combo.style.left = bounds.centerX - 40 + 'px';
+    combo.style.top = bounds.top - 30 + 'px';
 
     // Bigger text for higher combos
     if(comboCount >= 4) combo.style.fontSize = '1.8rem';
@@ -14067,11 +14202,12 @@ function showComboIndicator(targetEl, comboCount){
 function showLightningStrike(targetEl){
     if(!targetEl) return;
 
-    const rect = targetEl.getBoundingClientRect();
+    const bounds = getCreatureBounds(targetEl);
+    if(!bounds) return;
     const bolt = document.createElement('div');
     bolt.className = 'lightning-strike';
-    bolt.style.left = rect.left + rect.width/2 - 30 + 'px';
-    bolt.style.top = rect.top - 150 + 'px';
+    bolt.style.left = bounds.centerX - 30 + 'px';
+    bolt.style.top = bounds.top - 150 + 'px';
 
     document.body.appendChild(bolt);
 
@@ -15662,6 +15798,9 @@ function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
 }
 
 function endBattle(won){
+    // Unlock action buttons when battle ends
+    unlockMoveButtons();
+
     const b=state.battle;
     stopMusic(); // Stop battle music
     window.lastProcessingCheck = null; // Clean up processing watchdog
