@@ -95,6 +95,33 @@ body{
 .card[data-element="sound"]{--card-accent:#63e6be;--card-accent-lt:#96f2d7;--card-accent-glow:rgba(99,230,190,.45);background:linear-gradient(165deg,#304540,#203530)}
 .card[data-element="holy"]{--card-accent:#ffe066;--card-accent-lt:#fff3b0;--card-accent-glow:rgba(255,224,102,.5);background:linear-gradient(165deg,#4a4530,#3a3520)}
 
+/* Mythical Element - Divine Norse Ice/Lightning Theme */
+.card[data-element="mythical"]{
+    --card-accent:#7dd3fc;--card-accent-lt:#bae6fd;--card-accent-glow:rgba(125,211,252,.6);
+    background:linear-gradient(165deg,#1e3a5f 0%,#0f2847 50%,#1a1a3e 100%);
+    border:2px solid rgba(125,211,252,.4);
+    box-shadow:0 8px 32px rgba(0,0,0,.3),0 0 80px rgba(125,211,252,.5),0 0 120px rgba(56,189,248,.3);
+    animation:mythicalCardPulse 4s ease-in-out infinite;
+}
+.card[data-element="mythical"]::before{
+    background:radial-gradient(ellipse at 50% 0%,rgba(125,211,252,.4) 0%,rgba(56,189,248,.2) 30%,transparent 60%);
+    opacity:.8;
+}
+.card[data-element="mythical"]::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,.05) 50%,transparent 70%);
+    animation:mythicalShimmer 3s linear infinite;
+    pointer-events:none;
+}
+@keyframes mythicalCardPulse{
+    0%,100%{box-shadow:0 8px 32px rgba(0,0,0,.3),0 0 80px rgba(125,211,252,.5),0 0 120px rgba(56,189,248,.3)}
+    50%{box-shadow:0 12px 40px rgba(0,0,0,.35),0 0 100px rgba(125,211,252,.7),0 0 160px rgba(56,189,248,.5)}
+}
+@keyframes mythicalShimmer{
+    0%{background-position:-200% 0}
+    100%{background-position:200% 0}
+}
+
 /* Top Pills - Cleaner two-row layout */
 .card-pills{
     display:flex;
@@ -314,6 +341,38 @@ body{
     animation:creatureFloat 3s ease-in-out infinite,holyGlow 2.5s ease-in-out infinite;
 }
 
+/* Mythical Element - Divine Norse Rune Glow with Ice/Lightning effects */
+@keyframes mythicalAura{
+    0%,100%{
+        filter:drop-shadow(0 4px 20px rgba(125,211,252,.4)) drop-shadow(0 0 30px rgba(56,189,248,.3)) brightness(1.05);
+    }
+    25%{
+        filter:drop-shadow(0 4px 25px rgba(125,211,252,.6)) drop-shadow(0 0 40px rgba(255,255,150,.4)) brightness(1.15);
+    }
+    50%{
+        filter:drop-shadow(0 4px 30px rgba(56,189,248,.5)) drop-shadow(0 0 50px rgba(125,211,252,.5)) brightness(1.1);
+    }
+    75%{
+        filter:drop-shadow(0 4px 25px rgba(255,255,200,.4)) drop-shadow(0 0 40px rgba(56,189,248,.4)) brightness(1.12);
+    }
+}
+@keyframes mythicalRunePulse{
+    0%,100%{transform:translateY(0) scale(1)}
+    25%{transform:translateY(-6px) scale(1.02)}
+    50%{transform:translateY(-10px) scale(1.03)}
+    75%{transform:translateY(-6px) scale(1.02)}
+}
+.card[data-element="mythical"] .creature-img img{
+    animation:mythicalRunePulse 4s ease-in-out infinite,mythicalAura 3s ease-in-out infinite;
+}
+.card[data-element="mythical"] .creature-frame::before{
+    animation:mythicalFrameGlow 3s ease-in-out infinite;
+}
+@keyframes mythicalFrameGlow{
+    0%,100%{opacity:.6;box-shadow:0 0 40px rgba(125,211,252,.5),inset 0 0 30px rgba(56,189,248,.3)}
+    50%{opacity:.9;box-shadow:0 0 60px rgba(125,211,252,.7),inset 0 0 50px rgba(56,189,248,.5)}
+}
+
 /* Empty State */
 .creature-empty{width:140px;height:140px;border-radius:50%;background:rgba(0,0,0,.15);border:3px dashed rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center}
 .creature-empty span{font-size:3.5rem;color:rgba(255,255,255,.2)}
@@ -355,6 +414,8 @@ body{
 .nature-speedy{border-color:rgba(250,204,21,.4);background:rgba(250,204,21,.15)}
 .nature-bulky{border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.15)}
 .nature-balanced{border-color:rgba(156,163,175,.4);background:rgba(156,163,175,.15)}
+.nature-godtouched{border-color:rgba(125,211,252,.6);background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(125,211,252,.2));box-shadow:0 0 15px rgba(125,211,252,.3);animation:godtouchedBadgePulse 2s ease-in-out infinite}
+@keyframes godtouchedBadgePulse{0%,100%{box-shadow:0 0 15px rgba(125,211,252,.3)}50%{box-shadow:0 0 25px rgba(125,211,252,.5)}}
 
 /* Starter Dropdown - LIGHT background */
 .starter-select{
@@ -1272,18 +1333,8 @@ body{
 }
 
 /* ============================================
-   ACTIVE CREATURE PANEL - HIDDEN IN V43
-   Replaced by party HUD at bottom
+   ACTIVE CREATURE PANEL
    ============================================ */
-.active-creature-panel{
-    display:none; /* V43: Replaced by party-hud */
-}
-.inactive-party{
-    display:none; /* V43: Replaced by party-hud */
-}
-.combat-ui .move-buttons{
-    display:none; /* V43: Replaced by move-buttons-container */
-}
 .active-creature-panel{
     display:flex;
     align-items:center;
@@ -1832,6 +1883,31 @@ body{
     animation:projectileFly 250ms ease-in forwards,lightningFlash 50ms infinite;
 }
 
+/* Mythical Projectile - Divine Runic Ice/Lightning Orb */
+.projectile.mythical{
+    background:radial-gradient(circle,#ffffff 0%,#7dd3fc 30%,#38bdf8 60%,transparent 75%);
+    box-shadow:0 0 25px #7dd3fc,0 0 50px #38bdf8,0 0 80px rgba(255,255,200,.4);
+    animation:projectileFly 320ms ease-in forwards,mythicalProjectilePulse 80ms infinite;
+    width:40px;
+    height:40px;
+}
+.projectile.mythical::before{
+    content:'';
+    position:absolute;
+    inset:-5px;
+    background:radial-gradient(circle,transparent 40%,rgba(255,255,150,.3) 60%,transparent 80%);
+    border-radius:50%;
+    animation:runeOrbit 200ms linear infinite;
+}
+@keyframes mythicalProjectilePulse{
+    0%,100%{filter:brightness(1) hue-rotate(0deg)}
+    50%{filter:brightness(1.4) hue-rotate(15deg)}
+}
+@keyframes runeOrbit{
+    0%{transform:rotate(0deg)}
+    100%{transform:rotate(360deg)}
+}
+
 @keyframes projectileFly{
     0%{transform:scale(0.5);opacity:1}
     70%{transform:scale(1.2);opacity:1}
@@ -1947,6 +2023,251 @@ body{
     25%{transform:translate(-4px,2px)}
     50%{transform:translate(4px,-2px)}
     75%{transform:translate(-2px,1px)}
+}
+
+/* v54.6: Wave/Tsunami animation - sweeps across screen */
+.wave-attack{
+    position:fixed;
+    left:0;
+    right:0;
+    height:200px;
+    top:calc(50% - 50px);
+    background:linear-gradient(to top,rgba(59,130,246,0.7),rgba(147,197,253,0.4),transparent);
+    pointer-events:none;
+    z-index:2000;
+    animation:waveSweep 1.2s ease-out forwards;
+}
+.wave-attack::before{
+    content:'';
+    position:absolute;
+    left:0;right:0;top:0;
+    height:30px;
+    background:linear-gradient(to bottom,rgba(255,255,255,0.6),transparent);
+    border-radius:50% 50% 0 0;
+}
+@keyframes waveSweep{
+    0%{transform:translateX(-100%) scaleY(0.5);opacity:0}
+    15%{opacity:1;transform:translateX(-70%) scaleY(1)}
+    85%{opacity:1;transform:translateX(70%) scaleY(1)}
+    100%{transform:translateX(100%) scaleY(0.5);opacity:0}
+}
+@keyframes waveSweepReverse{
+    0%{transform:translateX(100%) scaleY(0.5);opacity:0}
+    15%{opacity:1;transform:translateX(70%) scaleY(1)}
+    85%{opacity:1;transform:translateX(-70%) scaleY(1)}
+    100%{transform:translateX(-100%) scaleY(0.5);opacity:0}
+}
+
+/* ============================================
+   MYTHICAL CREATURE SPECIAL ANIMATIONS
+   Divine Norse Runic Effects
+   ============================================ */
+
+/* Cosmic Frost Nova - Full screen frost explosion with runes */
+.cosmic-frost-nova{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3500;
+    background:radial-gradient(circle at center,
+        rgba(255,255,255,0) 0%,
+        rgba(125,211,252,0.2) 20%,
+        rgba(56,189,248,0.4) 40%,
+        rgba(125,211,252,0.6) 60%,
+        rgba(255,255,255,0.3) 80%,
+        transparent 100%);
+    animation:cosmicFrostExpand 1.5s ease-out forwards;
+}
+.cosmic-frost-nova::before{
+    content:'';position:absolute;inset:0;
+    background:repeating-conic-gradient(from 0deg,
+        transparent 0deg,rgba(255,255,255,.1) 5deg,
+        transparent 10deg,rgba(125,211,252,.15) 15deg,
+        transparent 20deg);
+    animation:runeSpinSlow 2s linear;
+}
+.cosmic-frost-nova::after{
+    content:'';position:absolute;
+    top:50%;left:50%;
+    width:300px;height:300px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,255,255,.9) 0%,rgba(125,211,252,.6) 30%,transparent 70%);
+    border-radius:50%;
+    animation:cosmicCoreFlash 0.8s ease-out;
+}
+@keyframes cosmicFrostExpand{
+    0%{opacity:0;transform:scale(0)}
+    20%{opacity:1;transform:scale(0.5)}
+    60%{opacity:1;transform:scale(1.2)}
+    100%{opacity:0;transform:scale(2)}
+}
+@keyframes runeSpinSlow{
+    0%{transform:rotate(0deg)}
+    100%{transform:rotate(180deg)}
+}
+@keyframes cosmicCoreFlash{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+    50%{transform:translate(-50%,-50%) scale(2);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(4);opacity:0}
+}
+
+/* Ragnarok Thunderstrike - Lightning from sky with screen shake */
+.ragnarok-thunder{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3400;
+    overflow:hidden;
+}
+.ragnarok-thunder::before{
+    content:'';position:absolute;
+    top:0;left:50%;
+    width:8px;
+    height:100vh;
+    background:linear-gradient(180deg,
+        rgba(255,255,200,1) 0%,
+        rgba(125,211,252,0.9) 30%,
+        rgba(56,189,248,0.7) 60%,
+        rgba(255,255,150,0.5) 100%);
+    transform:translateX(-50%);
+    box-shadow:0 0 60px 30px rgba(255,255,200,.8),
+               0 0 120px 60px rgba(125,211,252,.5),
+               0 0 200px 100px rgba(56,189,248,.3);
+    animation:thunderBolt 0.6s ease-out forwards;
+}
+.ragnarok-thunder::after{
+    content:'';position:absolute;inset:0;
+    background:rgba(255,255,200,.3);
+    animation:thunderFlash 0.4s ease-out forwards;
+}
+@keyframes thunderBolt{
+    0%{opacity:0;height:0}
+    10%{opacity:1;height:100vh}
+    40%{opacity:1;width:20px}
+    70%{opacity:0.8;width:4px}
+    100%{opacity:0;width:2px}
+}
+@keyframes thunderFlash{
+    0%{opacity:0}
+    20%{opacity:0.5}
+    40%{opacity:0.2}
+    60%{opacity:0.4}
+    100%{opacity:0}
+}
+
+/* Northern Tempest - Swirling ice/wind effect */
+.northern-tempest{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:3300;
+    overflow:hidden;
+}
+.northern-tempest::before{
+    content:'';position:absolute;
+    top:50%;left:50%;
+    width:150vmax;height:150vmax;
+    transform:translate(-50%,-50%);
+    background:conic-gradient(from 0deg,
+        transparent 0deg,
+        rgba(125,211,252,.3) 30deg,
+        transparent 60deg,
+        rgba(255,255,255,.2) 90deg,
+        transparent 120deg,
+        rgba(56,189,248,.25) 150deg,
+        transparent 180deg,
+        rgba(125,211,252,.3) 210deg,
+        transparent 240deg,
+        rgba(255,255,255,.2) 270deg,
+        transparent 300deg,
+        rgba(56,189,248,.25) 330deg,
+        transparent 360deg);
+    animation:tempestSpin 1.5s ease-in-out forwards;
+}
+@keyframes tempestSpin{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(0);opacity:0}
+    30%{transform:translate(-50%,-50%) rotate(180deg) scale(1);opacity:1}
+    70%{transform:translate(-50%,-50%) rotate(540deg) scale(1.2);opacity:1}
+    100%{transform:translate(-50%,-50%) rotate(720deg) scale(1.5);opacity:0}
+}
+
+/* Divine Icy Rebirth - Healing aura with rising runes */
+.divine-rebirth{
+    position:fixed;
+    pointer-events:none;
+    z-index:3200;
+    width:200px;height:200px;
+    border-radius:50%;
+    background:radial-gradient(circle,
+        rgba(125,211,252,.6) 0%,
+        rgba(56,189,248,.3) 40%,
+        transparent 70%);
+    box-shadow:0 0 60px rgba(125,211,252,.5),
+               0 0 120px rgba(56,189,248,.3);
+    animation:divineAuraRise 1.2s ease-out forwards;
+}
+.divine-rebirth::before{
+    content:'ᚱᚢᚾᛖ';
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    font-size:2rem;
+    color:rgba(255,255,255,.8);
+    text-shadow:0 0 20px rgba(125,211,252,1);
+    animation:runeFloat 1.2s ease-out;
+}
+@keyframes divineAuraRise{
+    0%{transform:scale(0.5) translateY(50px);opacity:0}
+    40%{transform:scale(1.2) translateY(-20px);opacity:1}
+    100%{transform:scale(1.5) translateY(-80px);opacity:0}
+}
+@keyframes runeFloat{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}
+    50%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}
+    100%{opacity:0;transform:translate(-50%,-100%) scale(1)}
+}
+
+/* Absolute Rune Aegis - Defensive barrier with rune circle */
+.rune-aegis{
+    position:fixed;
+    pointer-events:none;
+    z-index:3100;
+    width:180px;height:180px;
+    border:4px solid rgba(125,211,252,.8);
+    border-radius:50%;
+    background:radial-gradient(circle,
+        rgba(56,189,248,.2) 0%,
+        rgba(125,211,252,.1) 50%,
+        transparent 70%);
+    box-shadow:0 0 30px rgba(125,211,252,.6),
+               inset 0 0 40px rgba(56,189,248,.3);
+    animation:aegisAppear 0.8s ease-out forwards;
+}
+.rune-aegis::before{
+    content:'';position:absolute;inset:10px;
+    border:2px solid rgba(255,255,255,.4);
+    border-radius:50%;
+    animation:aegisInnerSpin 1s linear;
+}
+.rune-aegis::after{
+    content:'';position:absolute;inset:-15px;
+    border:2px dashed rgba(125,211,252,.5);
+    border-radius:50%;
+    animation:aegisOuterSpin 1.5s linear;
+}
+@keyframes aegisAppear{
+    0%{transform:scale(0);opacity:0}
+    40%{transform:scale(1.3);opacity:1}
+    70%{transform:scale(0.9);opacity:1}
+    100%{transform:scale(1);opacity:0}
+}
+@keyframes aegisInnerSpin{
+    0%{transform:rotate(0deg)}
+    100%{transform:rotate(-180deg)}
+}
+@keyframes aegisOuterSpin{
+    0%{transform:rotate(0deg)}
+    100%{transform:rotate(360deg)}
 }
 
 /* v54.5: Shield pop animation for defend */
@@ -2131,6 +2452,10 @@ body{
 .element-trail.poison{
     background:radial-gradient(circle,#e1bee7,#9c27b0);
     box-shadow:0 0 10px #9c27b0;
+}
+.element-trail.mythical{
+    background:radial-gradient(circle,#ffffff,#7dd3fc);
+    box-shadow:0 0 15px #7dd3fc,0 0 30px #38bdf8,0 0 45px rgba(255,255,200,.5);
 }
 @keyframes trailFade{
     0%{opacity:1;transform:scale(1)}
@@ -5760,7 +6085,7 @@ function getPartyTier(){
 // ============================================
 // DEBUG MODE - Toggle for combat logging
 // ============================================
-let DEBUG_MODE = true; // Set to true for detailed combat logs
+let DEBUG_MODE = false; // v54.6: Disabled for production (set to true for detailed combat logs)
 
 function debugLog(category, ...args) {
     if (!DEBUG_MODE) return;
@@ -5799,10 +6124,11 @@ const PARTY_SCALING = {
         4:  [1.6,  2.1,  1.0,  1.05],  // Squad: Tough fight
         5:  [2.0,  2.6,  1.1,  1.1],   // Team: Hard boss
         6:  [2.5,  3.1,  1.2,  1.15],  // Group: Very Hard
-        7:  [3.0,  3.6,  1.3,  1.2],   // Party: Epic boss - can one-shot
-        8:  [3.6,  4.2,  1.4,  1.25],  // Raid: Raid boss
-        9:  [4.2,  4.8,  1.5,  1.3],   // Full Class: World boss
-        10: [5.0,  5.5,  1.6,  1.35]   // Max: Ultimate challenge
+        // v54.6: Reduced ATK scaling for large parties (was 3.6-5.5x, now 3.0-4.0x)
+        7:  [3.0,  3.0,  1.3,  1.2],   // Party: Epic boss
+        8:  [3.2,  3.3,  1.4,  1.25],  // Raid: Raid boss
+        9:  [3.4,  3.6,  1.5,  1.3],   // Full Class: World boss
+        10: [3.6,  4.0,  1.6,  1.35]   // Max: Ultimate challenge
     },
     minion: {
         1:  [0.4,  0.5,  0.4,  0.95],  // Solo: Weak but annoying
@@ -5819,14 +6145,14 @@ const PARTY_SCALING = {
 };
 
 // Boss one-shot chance - ONLY for large parties (7+)
-// Represents the danger of coordinating a large group
+// v54.6: Reduced by ~50% to reduce frustration
 function getBossOneShootChance(){
     const size = getPartySize();
     if(size < 7) return 0;      // No one-shots for small parties
-    if(size === 7) return 0.08; // 8% chance
-    if(size === 8) return 0.12; // 12% chance
-    if(size === 9) return 0.15; // 15% chance
-    return 0.18;                // 18% chance for 10
+    if(size === 7) return 0.04; // 4% chance (was 8%)
+    if(size === 8) return 0.06; // 6% chance (was 12%)
+    if(size === 9) return 0.08; // 8% chance (was 15%)
+    return 0.10;                // 10% chance for 10 (was 18%)
 }
 
 // Boss devastating blow multiplier - scales with party size
@@ -5949,7 +6275,7 @@ function getPartyScaleFactor(){
 const STARTING_FOCUS = 25;      // Reduced from 50 - prevents turn 1 special spam
 const FOCUS_REGEN_PER_TURN = 10; // Increased from 5 - rewards survival, enables more specials over time
 const MAX_FOCUS = 100;          // Maximum focus cap
-const BASE_SPECIAL_COST = 50;   // Base cost for special attacks (modified by evolution/power)
+const BASE_SPECIAL_COST = 35;   // v54.6: Reduced from 50 - makes specials usable earlier in battle
 
 // ============================================
 // NATURE SYSTEM (v54.3) - Creature Personalities
@@ -5988,7 +6314,10 @@ const NATURES = {
     // Mixed/Balanced variants
     modest:  { hp: +5,  atk: +5,  def: -5,  spd: -5,  desc: "Slight offensive edge with some bulk" },
     mild:    { hp: +5,  atk: 0,   def: -5,  spd: 0,   desc: "Gentle nature with minor HP boost" },
-    quiet:   { hp: +5,  atk: +5,  def: +5,  spd: -15, desc: "Strong but slow, patient fighter" }
+    quiet:   { hp: +5,  atk: +5,  def: +5,  spd: -15, desc: "Strong but slow, patient fighter" },
+
+    // GOD TOUCHED - Divine/Mythical Nature (Creator's Blessing)
+    godtouched: { hp: +20, atk: +15, def: +15, spd: +10, desc: "Blessed by the Creator - divine power flows through this creature" }
 };
 
 // Nature category helper
@@ -5997,7 +6326,9 @@ function getNatureCategory(nature) {
     const defensive = ['bold', 'relaxed', 'impish', 'lax'];
     const speedy = ['timid', 'hasty', 'jolly', 'naive'];
     const bulky = ['calm', 'careful', 'sassy'];
+    const godtouched = ['godtouched'];
 
+    if(godtouched.includes(nature)) return 'godtouched';
     if(offensive.includes(nature)) return 'offensive';
     if(defensive.includes(nature)) return 'defensive';
     if(speedy.includes(nature)) return 'speedy';
@@ -6060,14 +6391,33 @@ function calculateSpecialCost(evoStage, basePower, specialName, isHealingMove = 
         cost += 10;
     }
 
-    // Clamp to valid range (50-100)
-    return Math.max(50, Math.min(100, cost));
+    // v54.6: Clamp to valid range (35-85) - reduced from 50-100 for faster gameplay
+    return Math.max(35, Math.min(85, cost));
 }
 
 // ============================================
 // ENEMY DAMAGE ADJUSTMENT (v54.3 - Party Size Aware)
 // ============================================
 // Bosses: Devastating blows scale with party size
+// v54.6: Get buff value for a team member
+function getBuffValue(member, buffType){
+    if(!member || !member.buffs) return 0;
+    const buff = member.buffs.find(b => b.type === buffType);
+    return buff ? buff.value : 0;
+}
+
+// v54.6: Check if any team member has party shield buff
+function getPartyShieldValue(){
+    if(!state.battle || !state.battle.team) return 0;
+    for(const m of state.battle.team){
+        if(m.curHp > 0 && m.buffs){
+            const shield = m.buffs.find(b => b.type === 'party_shield');
+            if(shield) return shield.value;
+        }
+    }
+    return 0;
+}
+
 // Large parties (7+): One-shot mechanic enabled
 // Wild enemies: Damage capped based on party size
 // Returns: {damage: number, isDevastating: boolean, isOneShot: boolean}
@@ -6109,7 +6459,19 @@ function adjustEnemyDamage(baseDamage, enemy, target){
         finalDamage = Math.min(baseDamage, maxDamage);
     }
 
-    return { damage: finalDamage, isDevastating, isOneShot };
+    // v54.6: Apply defend_buff (personal damage reduction)
+    const defendBuff = getBuffValue(target, 'defend_buff');
+    if(defendBuff > 0){
+        finalDamage = Math.floor(finalDamage * (1 - defendBuff));
+    }
+
+    // v54.6: Apply party_shield (team-wide damage reduction)
+    const partyShield = getPartyShieldValue();
+    if(partyShield > 0){
+        finalDamage = Math.floor(finalDamage * (1 - partyShield));
+    }
+
+    return { damage: Math.max(1, finalDamage), isDevastating, isOneShot };
 }
 
 // ============================================
@@ -6164,7 +6526,8 @@ const ELEMENT_EMOJI = {
     chaos: '🌀',
     cosmic: '🌟',
     sound: '🔊',
-    holy: '☀️'
+    holy: '☀️',
+    mythical: '🐺'
 };
 
 // ============================================
@@ -6614,7 +6977,53 @@ water_serpent:{name:"Water Serpent",type:"Water",evo:3,evAt:[14,24],base:{hp:85,
 wind_hawk:{name:"Wind Hawk",type:"Air",evo:3,evAt:[14,24],base:{hp:70,atk:28,def:16,spd:30},grow:{hp:13,atk:5,def:3,spd:6},imgs:["WindHawk_Evo1.png","WindHawk_Evo2.png","WindHawk_Evo3.png"],names:["Breeze Chick","Gale Hawk","Storm Raptor"],canHeal:false,moves:{atk:[{n:"Gust Slash",lv:1,p:1,f:0},{n:"Cyclone Strike",lv:18,p:1.5,f:0}],def:[{n:"Wind Barrier",lv:1,f:0}],spec:[{n:"Hurricane",lv:12,p:2,f:35}]}},
 lightning_wolf:{name:"Lightning Wolf",type:"Lightning",evo:2,evAt:[12],base:{hp:70,atk:30,def:16,spd:30},grow:{hp:13,atk:5,def:3,spd:5},imgs:["LightningWolf_Evo1.png","LightningWolf_Evo2.png"],names:["Spark Pup","Thunder Wolf"],canHeal:false,moves:{atk:[{n:"Thunder Fang",lv:1,p:1,f:0},{n:"Volt Tackle",lv:10,p:1.4,f:0}],def:[{n:"Static Shield",lv:1,f:0}],spec:[{n:"Lightning Storm",lv:8,p:1.9,f:30}]}},
 fire_raptor:{name:"Fire Raptor",type:"Fire",evo:2,evAt:[12],base:{hp:72,atk:32,def:14,spd:28},grow:{hp:14,atk:6,def:2,spd:5},imgs:["FireRaptor_Evo1.png","FireRaptor_Evo2.png"],names:["Flame Hatchling","Blaze Raptor"],canHeal:false,moves:{atk:[{n:"Flame Claw",lv:1,p:1,f:0},{n:"Blaze Rush",lv:10,p:1.4,f:0}],def:[{n:"Heat Shield",lv:1,f:0}],spec:[{n:"Meteor Strike",lv:8,p:1.9,f:30}]}},
-ice_fox:{name:"Ice Fox",type:"Ice",evo:2,evAt:[12],base:{hp:68,atk:28,def:18,spd:32},grow:{hp:13,atk:5,def:3,spd:6},imgs:["IceFox_Evo1.png","IceFox_Evo2.png"],names:["Frost Kit","Arctic Fox"],canHeal:true,moves:{atk:[{n:"Frost Bite",lv:1,p:1,f:0},{n:"Blizzard Dash",lv:10,p:1.4,f:0}],def:[{n:"Ice Armor",lv:1,f:0}],heal:[{n:"Frost Mend",lv:7,p:.2,f:25}],spec:[{n:"Arctic Blast",lv:8,p:1.9,f:30}]}}
+ice_fox:{name:"Ice Fox",type:"Ice",evo:2,evAt:[12],base:{hp:68,atk:28,def:18,spd:32},grow:{hp:13,atk:5,def:3,spd:6},imgs:["IceFox_Evo1.png","IceFox_Evo2.png"],names:["Frost Kit","Arctic Fox"],canHeal:true,moves:{atk:[{n:"Frost Bite",lv:1,p:1,f:0},{n:"Blizzard Dash",lv:10,p:1.4,f:0}],def:[{n:"Ice Armor",lv:1,f:0}],heal:[{n:"Frost Mend",lv:7,p:.2,f:25}],spec:[{n:"Arctic Blast",lv:8,p:1.9,f:30}]}},
+
+// ============================================
+// RÚNVÍG - THE CREATOR'S MYTHICAL CREATURE
+// Divine Norse Runic Beast - God Touched Nature
+// Inherently stronger than all other creatures
+// ============================================
+runvig:{
+    name:"Rúnvíg",
+    type:"Mythical",
+    evo:4,
+    evAt:[18,28,40],
+    base:{hp:120,atk:35,def:28,spd:25},
+    grow:{hp:22,atk:7,def:6,spd:5},
+    imgs:["Runvig_Evo1.png","Runvig_Evo2.png","Runvig_Evo3.png","Runvig_Evo4.png"],
+    names:["Blikrcub","Ísþurs","Blikrkonungr","Ísfenrir the Eternal"],
+    canHeal:true,
+    forcedNature:"godtouched",
+    isMythical:true,
+    creatorCreature:true,
+    moves:{
+        atk:[
+            {n:"Paw Flash",lv:1,p:1.1,f:0},
+            {n:"Lightning Fang",lv:12,p:1.4,f:0},
+            {n:"Thunderstorm Fang",lv:22,p:1.8,f:0},
+            {n:"Ragnarök Thunderstrike",lv:35,p:2.5,f:0}
+        ],
+        def:[
+            {n:"Baby Rune Shell",lv:1,f:0},
+            {n:"Chill Shield",lv:10,f:0},
+            {n:"Viking Rune Shield",lv:20,f:0},
+            {n:"Absolute Rune Aegis",lv:32,f:0}
+        ],
+        heal:[
+            {n:"Frost Mend",lv:5,p:.25,f:25},
+            {n:"Blue Rune Surge",lv:15,p:.35,f:30},
+            {n:"Glacial Vitality",lv:25,p:.45,f:35},
+            {n:"Divine Icy Rebirth",lv:38,p:.6,f:40}
+        ],
+        spec:[
+            {n:"Icy Puff",lv:8,p:2.0,f:30},
+            {n:"Arctic Pulse",lv:18,p:2.4,f:40},
+            {n:"Northern Tempest",lv:28,p:2.8,f:50},
+            {n:"Cosmic Frost Nova",lv:42,p:3.5,f:65}
+        ]
+    }
+}
 };
 
 // ============================================
@@ -7409,9 +7818,23 @@ function getAvailableBosses(){
 
 function addStoryLog(text,type='normal'){state.storyLog.unshift({text,type,time:new Date().toLocaleTimeString()});if(state.storyLog.length>50)state.storyLog.pop()}
 
-// SAVE/LOAD
-function save(){try{localStorage.setItem('legendsWildV6',JSON.stringify({...state,nextId}))}catch(e){}}
-function load(){try{const s=localStorage.getItem('legendsWildV6');if(s){const d=JSON.parse(s);Object.assign(state,d);nextId=d.nextId||1;migrateShopSystem()}}catch(e){}}
+// SAVE/LOAD - v54.6: Added error notification
+function save(){
+    try{
+        localStorage.setItem('legendsWildV6',JSON.stringify({...state,nextId}));
+    }catch(e){
+        console.error('Save failed:', e);
+        if(typeof showToast === 'function') showToast('⚠️ Save failed! Storage may be full.', 'error');
+    }
+}
+function load(){
+    try{
+        const s=localStorage.getItem('legendsWildV6');
+        if(s){const d=JSON.parse(s);Object.assign(state,d);nextId=d.nextId||1;migrateShopSystem()}
+    }catch(e){
+        console.error('Load failed:', e);
+    }
+}
 
 // SHOP SYSTEM MIGRATION - Initialize shop properties for old saves
 function migrateShopSystem(){
@@ -8161,7 +8584,7 @@ function doArenaAction(action){
         const dmgMult = move ? move.p : 1.0;
         const rawDmg = Math.floor(attacker.st.atk * dmgMult * 0.8);
         const defReduction = target.def ? 0.5 : 1.0;
-        const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+        const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.2) * defReduction)); // v54.6: balanced DEF
 
         // v54.6: Get move name and animation type for enhanced animations
         const moveName = move?.n || 'Attack';
@@ -8386,7 +8809,7 @@ function doArenaAction(action){
 
                         fireProjectile(attackerFrame, targetFrame, element, () => {
                             const defReduction = target.def ? 0.5 : 1.0;
-                            const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.3) * defReduction));
+                            const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.2) * defReduction)); // v54.6: balanced DEF
                             target.curHp = Math.max(0, target.curHp - finalDmg);
 
                             // Big screen shake for special
@@ -9882,8 +10305,22 @@ function applyItemEffect(student, item){
         case 'damage_buff':
         case 'party_shield':
         case 'focus_regen_buff':
-            showToast('✅ Buff applied! Will take effect in next battle.', 'success');
-            // TODO: Store buff on student for battle
+            // v54.6: Store buff on student for next battle
+            if(!student.buffs) student.buffs = [];
+            student.buffs.push({
+                type: effect.type,
+                value: effect.value,
+                turns: effect.turns || 0,
+                battles: effect.battles || 1
+            });
+            const buffNames = {
+                'defend_buff': '🛡️ Defense Up',
+                'crit_buff': '⚡ Crit Chance Up',
+                'damage_buff': '⚔️ Damage Up',
+                'party_shield': '🔰 Party Shield',
+                'focus_regen_buff': '🔷 Focus Regen Up'
+            };
+            showToast(`✅ ${buffNames[effect.type] || 'Buff'} applied! Will take effect in next battle.`, 'success');
             return true;
             
         default:
@@ -12148,10 +12585,14 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
             const persistedHp = (s.curHp !== undefined && s.curHp > 0) ? Math.min(s.curHp, st.hp) : st.hp;
             const persistedFocus = (s.curFocus !== undefined) ? s.curFocus : STARTING_FOCUS;
 
-            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus}`);
+            // v54.6: Copy buffs from student to battle member
+            const battleBuffs = s.buffs ? [...s.buffs] : [];
+
+            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus} | Buffs: ${battleBuffs.length}`);
 
             return{...s,lv:l,curHp:persistedHp,maxHp:st.hp,st,def:false,cooldown:0,
-                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN};
+                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN,
+                buffs:battleBuffs};
         }),
         isMultiEnemy: allEnemies.length > 1
     };
@@ -12271,8 +12712,11 @@ function nextTurn(){
     
     console.log(`Turn ${turnIdx}: ${cur?.type} ${cur?.idx} (processing=${processing})`);
     
-    // Reduce cooldowns
-    b.team.forEach(m=>{if(m.cooldown>0)m.cooldown--});
+    // Reduce cooldowns (special and heal)
+    b.team.forEach(m=>{
+        if(m.cooldown>0)m.cooldown--;
+        if(m.healCooldown>0)m.healCooldown--;  // v54.6: heal cooldown
+    });
     
     // FOCUS REGEN - At start of player's turn
     if(cur?.type==='player'){
@@ -12581,20 +13025,25 @@ function renderBattle(m){
         }
         
         const canAffordHeal = activeMember.focus >= healCost;
+        const healOnCooldown = activeMember.healCooldown > 0;  // v54.6: heal cooldown
         const canAffordSpec = activeMember.focus >= specCost && activeMember.cooldown === 0;
-        
+
         html+=`<button class="move-btn attack" ${buttonsDisabled?'disabled':''} onclick="doAction('atk')">
                 <span class="move-name">⚔️ ${atkName}</span>
             </button>
             <button class="move-btn defend" ${buttonsDisabled?'disabled':''} onclick="doAction('def')">
                 <span class="move-name">🛡️ ${defName}</span>
-                <span class="move-cost">+5 FP</span>
+                <span class="move-cost">+10 FP</span>
             </button>`;
-            
+
         if(hasHeal){
-            html+=`<button class="move-btn heal" ${buttonsDisabled||!canAffordHeal?'disabled':''} onclick="doAction('heal')">
+            // v54.6: Show heal cooldown or focus cost
+            const healDisabled = buttonsDisabled || !canAffordHeal || healOnCooldown;
+            const healCostText = healOnCooldown ? `⏱️ ${activeMember.healCooldown}` : `${healCost} FP`;
+            const healCostClass = healOnCooldown ? ' cooldown' : (!canAffordHeal ? ' insufficient' : '');
+            html+=`<button class="move-btn heal" ${healDisabled?'disabled':''} onclick="doAction('heal')">
                 <span class="move-name">💚 ${healName}</span>
-                <span class="move-cost${!canAffordHeal?' insufficient':''}">${healCost} FP</span>
+                <span class="move-cost${healCostClass}">${healCostText}</span>
             </button>`;
         }
         
@@ -12621,12 +13070,11 @@ function renderBattle(m){
         html+=`</div>`; // End move-buttons-container
     }
 
-    // v54.6: Targeting Instruction Overlays
-    // Attack/Special targeting mode
+    // v54.6: Targeting overlays - removed attack overlay (red glow on enemies is enough)
+    // Just show a subtle cancel button for attack targeting
     if(b.targetingMode){
-        html += `<div class="targeting-overlay">
-            <div style="color:var(--gold);font-family:'Cinzel',serif;font-size:1.2rem">🎯 Select an enemy to attack!</div>
-            <button onclick="cancelTargeting()" style="margin-top:10px;padding:8px 16px;background:rgba(255,100,100,.3);border:1px solid #f66;border-radius:8px;color:#fff;cursor:pointer;font-family:'Cinzel',serif">Cancel</button>
+        html += `<div style="position:absolute;bottom:180px;left:50%;transform:translateX(-50%);z-index:45">
+            <button onclick="cancelTargeting()" style="padding:6px 14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,100,100,.5);border-radius:6px;color:#f99;cursor:pointer;font-family:'Cinzel',serif;font-size:.8rem">Cancel</button>
         </div>`;
     }
 
@@ -12749,14 +13197,20 @@ function doAction(a){
         const moveName = mv?.n || 'Attack';
         const element = mv?.e || CREATURES[m.cid]?.type?.toLowerCase() || 'default';
         
-        // Base damage: ATK * move power - enemy DEF reduction
+        // v54.6: Base damage: ATK * move power - enemy DEF reduction (balanced from 0.3 to 0.2)
         let baseDmg = m.st.atk * (mv?.p || 1);
-        let defReduction = targetEnemy.def * 0.3;
+        let defReduction = targetEnemy.def * 0.2;
         let d = Math.max(5, baseDmg - defReduction);
         d = Math.floor(d * (.9 + Math.random() * .2));
-        
+
+        // v54.6: Apply damage_buff from shop items
+        const damageBuff = getBuffValue(m, 'damage_buff');
+        if(damageBuff > 0) d = Math.floor(d * (1 + damageBuff));
+
         // BALANCED CRIT: 5% base + 0.1% per level (max ~10% at lv50)
-        const critChance = Math.min(0.10, 0.05 + (m.lv * 0.001));
+        // v54.6: Add crit_buff from shop items
+        const critBuff = getBuffValue(m, 'crit_buff');
+        const critChance = Math.min(0.25, 0.05 + (m.lv * 0.001) + critBuff);
         const isCrit = Math.random() < critChance;
         if(isCrit) d = Math.floor(d * 1.5);
         
@@ -12868,8 +13322,19 @@ function doAction(a){
                     setTimeout(nextTurn, 500);
                 }
             });
+
+            // v54.6: BACKUP PROCESSING CLEARER - prevents stuck flag if animation callback fails
+            setTimeout(() => {
+                if(processing && state.battle) {
+                    console.warn('Backup: clearing processing flag after attack animation');
+                    processing = false;
+                    if(state.battle && !document.querySelector('.action-banner')){
+                        nextTurn();
+                    }
+                }
+            }, 2500);
         }, 200);
-        
+
     }else if(a==='def'){
         const mv=getMove(m.cid,m.lv,'def');
         const moveName = mv?.n || 'Defend';
@@ -12893,9 +13358,9 @@ function doAction(a){
             showDefendAnimation(arenaCreature, moveName, creatureType);
         }
 
-        // DEFEND gives +5 Focus bonus
-        m.focus = Math.min(m.focusMax, m.focus + 5);
-        addLog(`${m.name||'Hero'} braces and gains +5 Focus!`, 'def');
+        // v54.6: DEFEND gives +10 Focus bonus (increased from +5 to make defending worthwhile)
+        m.focus = Math.min(m.focusMax, m.focus + 10);
+        addLog(`${m.name||'Hero'} braces and gains +10 Focus!`, 'def');
 
         turnIdx++;
         renderMain();
@@ -12905,6 +13370,13 @@ function doAction(a){
         if(c.canHeal){
             const mv=getMove(m.cid,m.lv,'heal');
             if(mv){
+                // v54.6: Check heal cooldown (2-turn cooldown like specials but shorter)
+                if(m.healCooldown && m.healCooldown > 0){
+                    addLog(`${m.name||'Hero'} can't heal yet! (${m.healCooldown} turns left)`, 'dmg');
+                    processing = false;
+                    renderMain();
+                    return;
+                }
                 const healCost = mv.f || 0;
                 // Check if enough focus
                 if(m.focus < healCost){
@@ -13002,6 +13474,9 @@ function doAction(a){
                         // Beam sweep across all enemies
                         const firstEnemyEl = document.getElementById('enemyImg'+b.enemies.indexOf(aliveEnemies[0]));
                         showBeamAttack(arenaCreature, firstEnemyEl, element);
+                    } else if(aoeAnimType === 'projectile' && (element === 'water' || moveName.toLowerCase().includes('tsunami') || moveName.toLowerCase().includes('wave') || moveName.toLowerCase().includes('flood') || moveName.toLowerCase().includes('tidal'))){
+                        // v54.6: Water AOE - show wave animation sweeping across
+                        showWaveAnimation('right');
                     }
 
                     // Hit each enemy with delay for visual effect
@@ -13056,6 +13531,15 @@ function doAction(a){
                             setTimeout(nextTurn, 500);
                         }
                     }, aliveEnemies.length * 150 + 200);
+
+                    // v54.6: BACKUP PROCESSING CLEARER for AOE special
+                    setTimeout(() => {
+                        if(processing && state.battle) {
+                            console.warn('Backup: clearing processing flag after AOE special');
+                            processing = false;
+                            if(state.battle) nextTurn();
+                        }
+                    }, aliveEnemies.length * 150 + 2500);
 
                 }else{
                     // ============================================
@@ -13142,6 +13626,15 @@ function doAction(a){
                     } else {
                         fireProjectile(arenaCreature, enemyEl, element, onSpecialImpact);
                     }
+
+                    // v54.6: BACKUP PROCESSING CLEARER for single-target special
+                    setTimeout(() => {
+                        if(processing && state.battle) {
+                            console.warn('Backup: clearing processing flag after special');
+                            processing = false;
+                            if(state.battle) nextTurn();
+                        }
+                    }, 2500);
                 }
             }, 500); // After charge animation
         }else{
@@ -13445,6 +13938,7 @@ function showImpactEffect(targetEl, isCrit = false, element = null){
         poison: 'radial-gradient(circle, rgba(180,100,220,0.8), rgba(140,50,180,0.4), transparent)',
         water: 'radial-gradient(circle, rgba(80,180,255,0.8), rgba(50,130,200,0.4), transparent)',
         lightning: 'radial-gradient(circle, rgba(255,255,100,0.9), rgba(255,200,50,0.5), transparent)',
+        mythical: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(125,211,252,0.7), rgba(56,189,248,0.4), transparent)',
         default: 'radial-gradient(circle, rgba(255,255,255,0.8), rgba(200,200,200,0.4), transparent)'
     };
     
@@ -13503,6 +13997,7 @@ function showMultiSlash(targetEl, element = 'default'){
         shadow: '#9c27b0',
         void: '#7b1fa2',
         poison: '#9c27b0',
+        mythical: '#7dd3fc',
         default: '#ffffff'
     };
     const color = colors[element] || colors.default;
@@ -13610,6 +14105,17 @@ function showGroundSlam(targetEl){
 
     document.body.appendChild(slam);
     setTimeout(() => slam.remove(), 600);
+}
+
+// v54.6: Wave/Tsunami animation - sweeps across the screen
+function showWaveAnimation(direction = 'right'){
+    const wave = document.createElement('div');
+    wave.className = 'wave-attack';
+    if(direction === 'left'){
+        wave.style.animation = 'waveSweepReverse 1.2s ease-out forwards';
+    }
+    document.body.appendChild(wave);
+    setTimeout(() => wave.remove(), 1200);
 }
 
 // Beam attack effect for high-power specials
@@ -14075,22 +14581,33 @@ function showDefendAnimation(targetEl, moveName, element){
     const centerX = rect.left + rect.width/2;
     const centerY = rect.top + rect.height/2;
 
+    // v54.6: Calculate scale based on creature size (default 120px is base)
+    const baseSize = 120;
+    const creatureSize = Math.max(rect.width, rect.height);
+    const scale = Math.max(0.6, Math.min(2.5, creatureSize / baseSize));
+
     if(defendInfo.type === 'shield'){
-        showShieldDefend(centerX, centerY, defendInfo.element);
+        showShieldDefend(centerX, centerY, defendInfo.element, scale);
     } else if(defendInfo.type === 'barrier'){
-        showBarrierDefend(centerX, centerY, defendInfo.element);
+        showBarrierDefend(centerX, centerY, defendInfo.element, scale);
     } else if(defendInfo.type === 'evasion'){
-        showEvasionDefend(centerX, centerY);
+        showEvasionDefend(centerX, centerY, scale);
     } else if(defendInfo.type === 'harden'){
-        showHardenDefend(centerX, centerY, defendInfo.element);
+        showHardenDefend(centerX, centerY, defendInfo.element, scale);
     }
 }
 
-function showShieldDefend(x, y, element){
+function showShieldDefend(x, y, element, scale = 1){
+    // v54.6: Scale shield size based on creature size
+    const size = Math.round(100 * scale);
+    const offset = size / 2;
+
     const container = document.createElement('div');
     container.className = 'defend-shield';
-    container.style.left = (x - 50) + 'px';
-    container.style.top = (y - 50) + 'px';
+    container.style.left = (x - offset) + 'px';
+    container.style.top = (y - offset) + 'px';
+    container.style.width = size + 'px';
+    container.style.height = size + 'px';
 
     const glow = document.createElement('div');
     glow.className = 'hex-glow';
@@ -14119,11 +14636,17 @@ function showShieldDefend(x, y, element){
     setTimeout(() => container.remove(), 600);
 }
 
-function showBarrierDefend(x, y, element){
+function showBarrierDefend(x, y, element, scale = 1){
+    // v54.6: Scale barrier size based on creature size
+    const width = Math.round(120 * scale);
+    const height = Math.round(80 * scale);
+
     const barrier = document.createElement('div');
     barrier.className = 'defend-barrier';
-    barrier.style.left = (x - 60) + 'px';
-    barrier.style.top = (y - 40) + 'px';
+    barrier.style.left = (x - width/2) + 'px';
+    barrier.style.top = (y - height/2) + 'px';
+    barrier.style.width = width + 'px';
+    barrier.style.height = height + 'px';
 
     const colors = {
         ice: ['rgba(147,197,253,0.6)','rgba(147,197,253,0.3)'],
@@ -14139,11 +14662,17 @@ function showBarrierDefend(x, y, element){
     setTimeout(() => barrier.remove(), 700);
 }
 
-function showEvasionDefend(x, y){
+function showEvasionDefend(x, y, scale = 1){
+    // v54.6: Scale evasion animation based on creature size
+    const width = Math.round(80 * scale);
+    const height = Math.round(100 * scale);
+
     const container = document.createElement('div');
     container.className = 'defend-evasion';
-    container.style.left = (x - 40) + 'px';
-    container.style.top = (y - 50) + 'px';
+    container.style.left = (x - width/2) + 'px';
+    container.style.top = (y - height/2) + 'px';
+    container.style.width = width + 'px';
+    container.style.height = height + 'px';
 
     for(let i = 0; i < 3; i++){
         const ghost = document.createElement('div');
@@ -14155,12 +14684,18 @@ function showEvasionDefend(x, y){
     setTimeout(() => container.remove(), 600);
 }
 
-function showHardenDefend(x, y, element){
+function showHardenDefend(x, y, element, scale = 1){
+    // v54.6: Scale harden animation based on creature size
+    const size = Math.round(100 * scale);
+    const offset = size / 2;
+
     const harden = document.createElement('div');
     harden.className = 'defend-harden';
     if(element) harden.classList.add(`defend-${element}`);
-    harden.style.left = (x - 50) + 'px';
-    harden.style.top = (y - 50) + 'px';
+    harden.style.left = (x - offset) + 'px';
+    harden.style.top = (y - offset) + 'px';
+    harden.style.width = size + 'px';
+    harden.style.height = size + 'px';
 
     document.body.appendChild(harden);
     setTimeout(() => harden.remove(), 700);
@@ -14632,8 +15167,9 @@ function executeHeal(healerIdx, targetIdx, healAmount){
     }
     playSound('heal');
 
+    // v54.6: Fix - use actualHeal to prevent exceeding maxHp
     const actualHeal = Math.min(finalHealAmount, target.maxHp - target.curHp);
-    target.curHp = Math.min(target.maxHp, target.curHp + finalHealAmount);
+    target.curHp = target.curHp + actualHeal;
 
     // TARGET HEAL ANIMATION
     const targetFrameEl = document.getElementById('c' + targetIdx);
@@ -14667,6 +15203,10 @@ function executeHeal(healerIdx, targetIdx, healAmount){
     // Log with emergency indicator
     const emergencyText = isEmergency ? ' (EMERGENCY!)' : '';
     addLog(`💚 ${healer.name||'Hero'}: ${mv?.n||'Heal'} → ${target.name||'Ally'} +${actualHeal} HP!${emergencyText}`,'heal');
+
+    // v54.6: Set heal cooldown (2 turns)
+    healer.healCooldown = 2;
+
     turnIdx++;
     renderMain();
     setTimeout(nextTurn, 500);
@@ -14881,17 +15421,23 @@ function enemyAction(){
             if(actionType === 'aoe'){
                 // AOE attack
                 const atkName = enemy.attacks.a[Math.floor(Math.random()*enemy.attacks.a.length)];
-                
+
                 if(arena){
                     arena.classList.add('screen-shake');
                     setTimeout(()=>arena.classList.remove('screen-shake'),300);
                 }
-                
+
+                // v54.6: Show wave animation for water-type AOE attacks
+                const atkLower = atkName.toLowerCase();
+                if(enemy.attackElement === 'water' || atkLower.includes('tsunami') || atkLower.includes('wave') || atkLower.includes('flood') || atkLower.includes('tidal')){
+                    showWaveAnimation('left'); // Wave comes from enemy side
+                }
+
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
                     // v54.4: AOE damage - 85% ATK, minimal defense scaling
-                    let baseDmg = Math.max(15, enemy.atk * 0.85 - (t.st.def * 0.05));
+                    let baseDmg = Math.max(15, enemy.atk * 0.85 - (t.st.def * 0.10));
                     baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.3));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
                     // v54.1: Apply boss/wild damage adjustment
@@ -14903,7 +15449,18 @@ function enemyAction(){
                     const idx = b.team.indexOf(t);
                     const targetEl = document.getElementById('c'+idx);
                     const arenaCreature = document.getElementById('arenaC'+idx);
-                    if(arenaCreature) arenaCreature.classList.add('hit-recoil');
+
+                    // v54.6: Enhanced AOE visual effects on ALL player creatures
+                    if(arenaCreature){
+                        arenaCreature.classList.add('hit-recoil');
+                        // Show impact flash and slash on each creature
+                        showImpactFlash(arenaCreature);
+                        showSlashEffect(arenaCreature, dmgResult.isDevastating);
+                        // Show element effect if enemy has attack element
+                        if(enemy.attackElement){
+                            setTimeout(() => showElementEffect(arenaCreature, enemy.attackElement), 50 + i * 30);
+                        }
+                    }
                     if(targetEl) targetEl.classList.add('anim-hit-shake');
                     setTimeout(()=>{
                         if(arenaCreature) arenaCreature.classList.remove('hit-recoil');
@@ -14918,6 +15475,15 @@ function enemyAction(){
                 processing = false;
                 renderMain();
                 setTimeout(nextTurn, 800);
+
+                // v54.6: BACKUP PROCESSING CLEARER for enemy AOE
+                setTimeout(() => {
+                    if(processing && state.battle) {
+                        console.warn('Backup: clearing processing flag after enemy AOE');
+                        processing = false;
+                        if(state.battle) nextTurn();
+                    }
+                }, 2500);
 
             } else if(actionType === 'special'){
                 // SPECIAL ATTACK
@@ -14939,7 +15505,7 @@ function enemyAction(){
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
                     // v54.4: Special attack - full power, minimal defense reduction
-                    let baseDmg = Math.max(20, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.08));
+                    let baseDmg = Math.max(20, Math.floor(enemy.atk * spec.power) - (t.st.def * 0.15));
                     baseDmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.25));
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.55);
                     // v54.1: Apply boss/wild damage adjustment
@@ -14973,13 +15539,22 @@ function enemyAction(){
                     addLog(`⚡ ${enemy.name} used ${spec.name}! ${t.name||'Hero'} -${d}${dmgResult.isDevastating ? ' DEVASTATING!' : ''}`,'enemy');
                     if(dmgResult.isDevastating) addLog(`💀 ${enemy.name} unleashed a DEVASTATING BLOW!`,'dmg');
                     if(t.curHp<=0) addLog(`${t.name||'Hero'} is down!`,'dmg');
-                    
+
                     turnIdx++;
                     processing = false; // CRITICAL: Clear before nextTurn
                     renderMain();
                     setTimeout(nextTurn, 800);
                 });
-                
+
+                // v54.6: BACKUP PROCESSING CLEARER for enemy special
+                setTimeout(() => {
+                    if(processing && state.battle) {
+                        console.warn('Backup: clearing processing flag after enemy special');
+                        processing = false;
+                        if(state.battle) nextTurn();
+                    }
+                }, 2500);
+
             } else {
                 // BASIC ATTACK
                 const t = targetMember;
@@ -14995,7 +15570,7 @@ function enemyAction(){
                 fireProjectile(enemyEl, arenaCreature || targetEl, element, ()=>{
                     t.chipHp = t.curHp;
                     // v54.4: Basic attack - full ATK value, minimal defense reduction
-                    let baseDmg = Math.max(20, enemy.atk * 1.2 - (t.st.def * 0.08));
+                    let baseDmg = Math.max(20, enemy.atk * 1.2 - (t.st.def * 0.15));
                     baseDmg = Math.floor(baseDmg * (0.85 + Math.random() * 0.35));
                     if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
                     // v54.1: Apply boss/wild damage adjustment
@@ -15037,6 +15612,15 @@ function enemyAction(){
                     renderMain();
                     setTimeout(nextTurn, 800);
                 });
+
+                // v54.6: BACKUP PROCESSING CLEARER for enemy basic attack
+                setTimeout(() => {
+                    if(processing && state.battle) {
+                        console.warn('Backup: clearing processing flag after enemy attack');
+                        processing = false;
+                        if(state.battle) nextTurn();
+                    }
+                }, 2500);
             }
         }, 350); // SLOWER - was 200
     }, 500); // SLOWER - was 400
@@ -15063,9 +15647,10 @@ function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
 
     target.hp = Math.min(target.maxHp, target.hp + healAmount);
     
-    // Show floating heal number on healed target
-    const targetEl = document.getElementById('enemyImg' + state.battle.enemies.indexOf(target));
-    if(targetEl) showFloatingDamage(targetEl, actualHeal, 'heal');
+    // v54.6: Show floating heal number on healed target (optimized - use enemyIdx if self-heal)
+    const targetIdx = (target === enemy) ? enemyIdx : state.battle.enemies.indexOf(target);
+    const healTargetEl = document.getElementById('enemyImg' + targetIdx);
+    if(healTargetEl) showFloatingDamage(healTargetEl, actualHeal, 'heal');
     
     const selfHeal = target === enemy;
     addLog(`💚 ${enemy.name} used ${heal.name}!${selfHeal ? '' : ' Healed ' + target.name}`, 'heal');
@@ -15090,6 +15675,18 @@ function endBattle(won){
                 // Store current HP (even if 0 - they're knocked out)
                 student.curHp = member.curHp;
                 student.curFocus = member.focus;
+
+                // v54.6: Decrement buff battle counters and remove expired buffs
+                if(student.buffs && student.buffs.length > 0){
+                    student.buffs = student.buffs.filter(buff => {
+                        if(buff.battles !== undefined){
+                            buff.battles--;
+                            return buff.battles > 0;
+                        }
+                        return true; // Keep turn-based buffs (handled per-turn)
+                    });
+                }
+
                 debugLog('COMBAT', `${student.name} exits battle | HP: ${student.curHp}/${member.maxHp} | Focus: ${student.curFocus}`);
             }
         });
