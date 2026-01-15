@@ -9129,7 +9129,8 @@ function renderArenaModeSelect(activeStudents){
         <div class="arena-modes-grid">`;
 
     Object.entries(ARENA_MODES).forEach(([key, mode]) => {
-        const minPlayers = mode.teams === 'all' ? 3 : mode.teamSize * mode.teams;
+        // Custom mode has flexible teamSize (string), so use minimum of 2 (1 per team)
+        const minPlayers = mode.teams === 'all' ? 3 : (mode.teamSize === 'flexible' ? 2 : mode.teamSize * mode.teams);
         const canPlay = activeStudents.length >= minPlayers;
         const disabledClass = canPlay ? '' : 'disabled';
         const disabledReason = canPlay ? '' : `<span class="mode-disabled-reason">Need ${minPlayers}+ fighters</span>`;
