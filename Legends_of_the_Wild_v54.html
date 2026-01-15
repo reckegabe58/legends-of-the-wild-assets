@@ -8494,6 +8494,61 @@ function load(){
     }
 }
 
+// EXPORT/IMPORT - v54.12: Backup save to file (survives cookie deletion!)
+function exportSave(){
+    try{
+        const saveData = JSON.stringify({...state, nextId, exportVersion: 'v54.12', exportDate: new Date().toISOString()});
+        const blob = new Blob([saveData], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `legends-wild-save-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('📥 Save exported! Keep this file safe.', 'success');
+    }catch(e){
+        console.error('Export failed:', e);
+        showToast('❌ Export failed!', 'error');
+    }
+}
+
+function importSave(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try{
+                const data = JSON.parse(event.target.result);
+                if(!data.students || !data.chapter){
+                    showToast('❌ Invalid save file!', 'error');
+                    return;
+                }
+                if(confirm('⚠️ This will REPLACE your current save. Continue?')){
+                    Object.assign(state, data);
+                    nextId = data.nextId || 1;
+                    migrateShopSystem();
+                    save();
+                    showToast('✅ Save imported successfully!', 'success');
+                    renderNav();
+                    renderMain();
+                }
+            }catch(err){
+                console.error('Import failed:', err);
+                showToast('❌ Failed to read save file!', 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
 // SHOP SYSTEM MIGRATION - Initialize shop properties for old saves
 function migrateShopSystem(){
     // Initialize state.shop if missing
@@ -11863,6 +11918,12 @@ function renderTeacher(m){
             <div class="control-box"><button class="btn btn-primary" onclick="saveGame()" style="width:100%">Save</button></div>
             <div class="control-box"><button class="btn btn-secondary" onclick="loadGame()" style="width:100%">Load</button></div>
             <div class="control-box"><button class="btn btn-danger" onclick="resetGame()" style="width:100%">Reset All</button></div>
+        </div>
+        <hr style="margin:12px 0;border-color:rgba(255,255,255,0.2)">
+        <p style="font-size:12px;color:#ffd700;margin-bottom:8px">📁 Backup to File (survives cookie deletion!)</p>
+        <div class="controls">
+            <div class="control-box"><button class="btn btn-success" onclick="exportSave()" style="width:100%">📥 Export Save</button></div>
+            <div class="control-box"><button class="btn btn-warning" onclick="importSave()" style="width:100%">📤 Import Save</button></div>
         </div>
     </div>`;
     
