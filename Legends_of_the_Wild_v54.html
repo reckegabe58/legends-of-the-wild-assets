@@ -9693,61 +9693,100 @@ function doArenaAction(action){
     console.log('[ARENA] Action:', action, 'Attacker:', attacker.name, 'Target:', target?.name);
 
     if(action === 'atk'){
-        // Basic attack - PvP balanced damage
+        // Basic attack - PvP balanced damage (matched to adventure mode)
         const dmgMult = move ? move.p : 1.0;
-        const rawDmg = Math.floor(attacker.st.atk * dmgMult * 0.8);
+        const rawDmg = Math.floor(attacker.st.atk * dmgMult);
         const defReduction = target.def ? 0.5 : 1.0;
-        const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.2) * defReduction)); // v54.6: balanced DEF
+        let finalDmg = Math.max(5, Math.floor((rawDmg - target.st.def * 0.2) * defReduction));
+        finalDmg = Math.floor(finalDmg * (0.9 + Math.random() * 0.2)); // Random variance like adventure
 
         // v54.6: Get move name and animation type for enhanced animations
         const moveName = move?.n || 'Attack';
         const element = attackerType.toLowerCase();
         const attackAnimType = typeof getAttackAnimationType === 'function' ? getAttackAnimationType(moveName, element) : 'slash';
 
-        // v54.5: Full attack animation sequence
-        // 1. DASH toward enemy
-        const dashDir = attacker.team === 0 ? 'anim-dash-right' : 'anim-dash-left';
-        if(attackerFrame) attackerFrame.classList.add(dashDir);
+        // Crit calculation - same as adventure mode (5% base + 0.1% per level)
+        const critChance = Math.min(0.25, 0.05 + (attacker.lv * 0.001));
+        const isCrit = Math.random() < critChance;
+        if(isCrit) finalDmg = Math.floor(finalDmg * 1.5);
+
+        // Show action banner - same as adventure mode
+        if(typeof showActionBanner === 'function'){
+            showActionBanner(attacker.ownerName, moveName, finalDmg, 'attack', isCrit);
+        }
+
+        // WINDUP animation - same as adventure mode
+        if(attackerFrame){
+            attackerFrame.classList.add('anim-windup');
+            setTimeout(() => {
+                attackerFrame.classList.remove('anim-windup');
+                // Then DASH toward enemy
+                const dashDir = attacker.team === 0 ? 'anim-dash-right' : 'anim-dash-left';
+                attackerFrame.classList.add(dashDir);
+                setTimeout(() => attackerFrame.classList.remove(dashDir), 250);
+            }, 150);
+        }
 
         setTimeout(() => {
-            if(attackerFrame) attackerFrame.classList.remove(dashDir);
-
-            // 2. Fire projectile with enhanced animations
+            // Fire projectile with enhanced animations
             if(attackerFrame && targetFrame){
-                // v54.6: Show element trail particles
+                // Show element trail particles
                 if(typeof showElementTrail === 'function') showElementTrail(attackerFrame, targetFrame, element);
 
-                // v54.6: For beam-type attacks, show beam
+                // For beam-type attacks, show beam
                 if(attackAnimType === 'beam' && typeof showBeamAttack === 'function'){
                     showBeamAttack(attackerFrame, targetFrame, element);
                 }
 
                 fireProjectile(attackerFrame, targetFrame, element, () => {
-                    // 3. On impact - damage + effects
+                    // Play sound - same as adventure mode
+                    if(typeof playSound === 'function') playSound(isCrit ? 'crit' : 'hit');
+
+                    // Apply damage
                     target.curHp = Math.max(0, target.curHp - finalDmg);
 
-                    // Screen shake
-                    if(arena) {
-                        arena.classList.add('screen-shake');
-                        setTimeout(() => arena.classList.remove('screen-shake'), 300);
-                    }
-
                     // Impact effect
-                    showImpactEffect(targetFrame, false, element);
+                    showImpactEffect(targetFrame, isCrit, element);
 
-                    // v54.6: Move-name based attack animation
+                    // Element effect - same as adventure mode
+                    if(typeof showElementEffect === 'function') showElementEffect(targetFrame, element);
+
+                    // Move-name based attack animation
                     if(typeof showAttackAnimationByType === 'function'){
-                        showAttackAnimationByType(targetFrame, moveName, element, false);
+                        showAttackAnimationByType(targetFrame, moveName, element, isCrit);
                     }
 
-                    // Hit shake + damage number
-                    if(targetEl) targetEl.classList.add('hit-shake');
-                    showArenaDamageV2(targetIdx, target, finalDmg, false);
+                    // Target shake animation - same as adventure mode
+                    if(targetFrame){
+                        targetFrame.classList.add(isCrit ? 'anim-crit-shake' : 'anim-hit-shake');
+                        targetFrame.classList.add('anim-hit-flash');
+                        setTimeout(() => {
+                            targetFrame.classList.remove('anim-hit-shake', 'anim-crit-shake', 'anim-hit-flash');
+                        }, 400);
+                    }
 
-                    arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.creatureName} (${attacker.ownerName}) hits ${target.creatureName} (${target.ownerName}) for ${finalDmg} dmg!` });
+                    // Crit flash - same as adventure mode
+                    if(isCrit){
+                        const flashDiv = document.createElement('div');
+                        flashDiv.className = 'crit-flash';
+                        (arena || document.body).appendChild(flashDiv);
+                        setTimeout(() => flashDiv.remove(), 400);
+                    }
+
+                    // Screen shake on big crits - same as adventure mode
+                    if(isCrit && finalDmg > 100 && arena) {
+                        arena.classList.add('screen-shake');
+                        setTimeout(() => arena.classList.remove('screen-shake'), 350);
+                    }
+
+                    // Floating damage number - same as adventure mode
+                    if(typeof showFloatingDamage === 'function'){
+                        showFloatingDamage(targetFrame, finalDmg, isCrit ? 'crit' : 'damage');
+                    }
+
+                    arenaBattle.log.unshift({ t: 'atk', m: `⚔️ ${attacker.creatureName} (${attacker.ownerName}) hits ${target.creatureName} (${target.ownerName}) for ${finalDmg} dmg${isCrit ? ' (CRIT!)' : ''}!` });
 
                     setTimeout(() => {
-                        if(targetEl) targetEl.classList.remove('hit-shake');
                         arenaBattle.processing = false;
                         renderMain();
                         arenaNextTurn();
@@ -9761,19 +9800,25 @@ function doArenaAction(action){
                 renderMain();
                 arenaNextTurn();
             }
-        }, 250);
+        }, 400); // Increased to account for windup animation
 
     } else if(action === 'def'){
-        // Defend - Gain focus and reduce incoming damage
+        // Defend - Gain focus and reduce incoming damage (matched to adventure mode)
         attacker.def = true;
-        attacker.focus = Math.min(attacker.focusMax, attacker.focus + 5);
+        attacker.focus = Math.min(attacker.focusMax, attacker.focus + 10); // +10 like adventure mode
 
         // v54.6: Enhanced defend animation with name-based variants
         const defMove = getMove(attacker.cid, attacker.lv, 'def');
         const defMoveName = defMove?.n || 'Defend';
         const element = attackerType.toLowerCase();
 
+        // Show action banner - same as adventure mode
+        if(typeof showActionBanner === 'function'){
+            showActionBanner(attacker.ownerName, defMoveName, 0, 'defend');
+        }
+
         if(attackerEl) attackerEl.classList.add('defend-glow');
+        if(attackerFrame) attackerFrame.classList.add('anim-defend');
 
         // Use name-based defend animation if available
         if(typeof showDefendAnimation === 'function'){
@@ -9782,17 +9827,18 @@ function doArenaAction(action){
             showDefendEffect(attackerFrame);
         }
 
-        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.creatureName} (${attacker.ownerName}) uses ${defMoveName}!` });
+        arenaBattle.log.unshift({ t: 'def', m: `🛡️ ${attacker.creatureName} (${attacker.ownerName}) uses ${defMoveName}! +10 Focus!` });
 
         setTimeout(() => {
             if(attackerEl) attackerEl.classList.remove('defend-glow');
+            if(attackerFrame) attackerFrame.classList.remove('anim-defend');
             arenaBattle.processing = false;
             renderMain();
             arenaNextTurn();
         }, 600);
 
     } else if(action === 'heal'){
-        // Heal move
+        // Heal move (matched to adventure mode)
         const healMove = getMove(attacker.cid, attacker.lv, 'heal');
         if(!healMove || attacker.focus < (healMove.f || 0)){
             arenaBattle.processing = false;
@@ -9816,6 +9862,14 @@ function doArenaAction(action){
         const healMoveName = healMove?.n || 'Heal';
         const element = attackerType.toLowerCase();
 
+        // Show action banner - same as adventure mode
+        if(typeof showActionBanner === 'function'){
+            showActionBanner(attacker.ownerName, healMoveName, healAmt, 'heal');
+        }
+
+        // Play heal sound
+        if(typeof playSound === 'function') playSound('heal');
+
         if(attackerEl) attackerEl.classList.add('heal-glow');
 
         // Use name-based heal animation if available
@@ -9824,7 +9878,11 @@ function doArenaAction(action){
         } else {
             showHealEffect(attackerFrame);
         }
-        showArenaHealV2(cur.idx, attacker, healAmt);
+
+        // Floating heal number - same as adventure mode
+        if(typeof showFloatingDamage === 'function'){
+            showFloatingDamage(attackerFrame, healAmt, 'heal');
+        }
 
         arenaBattle.log.unshift({ t: 'heal', m: `💚 ${attacker.creatureName} (${attacker.ownerName}) uses ${healMoveName} - ${healAmt} HP!${isEmergency?' (Emergency!)':''}` });
 
@@ -9836,7 +9894,7 @@ function doArenaAction(action){
         }, 700);
 
     } else if(action === 'spec'){
-        // Special attack
+        // Special attack (matched to adventure mode)
         const specMove = getMove(attacker.cid, attacker.lv, 'spec');
         if(!specMove) { arenaBattle.processing = false; return; }
 
@@ -9849,108 +9907,148 @@ function doArenaAction(action){
         }
 
         attacker.focus -= specCost;
-        attacker.cooldown = 3;
+        attacker.cooldown = 4; // Same as adventure mode (4 turns)
 
         const specType = getSpecialType(specMove.n);
         const isAOE = specType.isAOE;
+        const aoeMult = specType.mult; // 0.65 for AOE, 1.0 for ST
         const dmgMult = specMove.p;
-        const rawDmg = Math.floor(attacker.st.atk * dmgMult * 1.2);
 
         // v54.6: Get animation type for specials
         const element = attackerType.toLowerCase();
         const specAnimType = typeof getAttackAnimationType === 'function' ? getAttackAnimationType(specMove.n, element) : 'projectile';
 
-        // v54.5: Special charge-up animation
-        if(attackerFrame) attackerFrame.classList.add('special-charge');
+        // Calculate base damage preview for action banner
+        const baseDmgPreview = Math.floor(attacker.st.atk * 1.2 * Math.min(dmgMult, 2.0) * (isAOE ? aoeMult : 1));
+
+        // Show action banner - same as adventure mode
+        if(typeof showActionBanner === 'function'){
+            showActionBanner(attacker.ownerName, specMove.n + (isAOE ? ' (AOE)' : ''), baseDmgPreview, 'special', true);
+        }
+
+        // Charge-up animation - same as adventure mode
+        if(attackerFrame) attackerFrame.classList.add('anim-charge');
 
         setTimeout(() => {
+            if(attackerFrame) attackerFrame.classList.remove('anim-charge');
+
             // Special dash
             const dashDir = attacker.team === 0 ? 'anim-special-dash' : 'anim-dash-left';
-            if(attackerFrame) {
-                attackerFrame.classList.remove('special-charge');
-                attackerFrame.classList.add(dashDir);
-            }
+            if(attackerFrame) attackerFrame.classList.add(dashDir);
 
             setTimeout(() => {
                 if(attackerFrame) attackerFrame.classList.remove(dashDir);
 
+                // Play special sound
+                if(typeof playSound === 'function') playSound('crit');
+
                 if(isAOE){
-                    // v54.5: AOE - screen shake + hit all enemies
+                    // AOE - screen shake + hit all enemies (matched to adventure mode)
                     if(arena) {
                         arena.classList.add('screen-shake');
                         setTimeout(() => arena.classList.remove('screen-shake'), 400);
                     }
 
-                    // v54.6: Show beam for AOE beam-type attacks
+                    // Show beam for AOE beam-type attacks
                     if(specAnimType === 'beam' && typeof showBeamAttack === 'function' && validTargets.length > 0){
                         const firstTarget = validTargets[0];
                         const firstFrame = getArenaFrame(arenaBattle.combatants.indexOf(firstTarget), firstTarget);
                         showBeamAttack(attackerFrame, firstFrame, element);
                     }
 
+                    let totalDamage = 0;
                     validTargets.forEach((t, i) => {
                         const tIdx = arenaBattle.combatants.indexOf(t);
-                        const aoeDmg = Math.floor(rawDmg * 0.7);
-                        const defReduction = t.def ? 0.5 : 1.0;
-                        const finalDmg = Math.max(1, Math.floor((aoeDmg - t.st.def * 0.25) * defReduction));
+                        // Calculate damage same as adventure mode
+                        let baseDmg = attacker.st.atk * 1.2;
+                        let bonusMult = Math.min(dmgMult, 2.0);
+                        let defReduction = t.st.def * 0.25;
+                        let finalDmg = Math.floor((baseDmg * bonusMult * aoeMult - defReduction) * (0.85 + Math.random() * 0.3));
+                        finalDmg = Math.max(10, finalDmg);
+                        if(t.def) finalDmg = Math.floor(finalDmg * 0.5);
+                        totalDamage += finalDmg;
                         t.curHp = Math.max(0, t.curHp - finalDmg);
 
-                        const tEl = getArenaEl(tIdx, t);
                         const tFrame = getArenaFrame(tIdx, t);
 
                         setTimeout(() => {
-                            if(tEl) tEl.classList.add('hit-shake');
                             showImpactEffect(tFrame, true, element);
-                            // v54.6: Use name-based animation
+                            if(typeof showElementEffect === 'function') showElementEffect(tFrame, element);
                             if(typeof showAttackAnimationByType === 'function'){
                                 showAttackAnimationByType(tFrame, specMove.n, element, true);
                             }
-                            showArenaDamageV2(tIdx, t, finalDmg, true);
-                        }, i * 100);
+                            if(tFrame){
+                                tFrame.classList.add('anim-crit-shake', 'anim-hit-flash');
+                                setTimeout(() => tFrame.classList.remove('anim-crit-shake', 'anim-hit-flash'), 350);
+                            }
+                            if(typeof showFloatingDamage === 'function'){
+                                showFloatingDamage(tFrame, finalDmg, 'crit');
+                            }
+                        }, i * 150);
                     });
-                    arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.creatureName} (${attacker.ownerName}) uses ${specMove.n} - AoE!` });
+                    arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.creatureName} (${attacker.ownerName}) uses ${specMove.n}! Hit ${validTargets.length} enemies for ${totalDamage} total damage!` });
                 } else {
-                    // v54.5: Single target special with projectile
+                    // Single target special with projectile (matched to adventure mode)
                     if(attackerFrame && targetFrame){
-                        // v54.6: Show element trail
+                        // Show element trail
                         if(typeof showElementTrail === 'function') showElementTrail(attackerFrame, targetFrame, element);
 
-                        // v54.6: For beam-type specials, show beam
-                        if(specAnimType === 'beam' && typeof showBeamAttack === 'function'){
+                        // For beam-type specials, show beam
+                        const isHighPower = dmgMult >= 1.5 || specAnimType === 'beam';
+                        if(isHighPower && typeof showBeamAttack === 'function'){
                             showBeamAttack(attackerFrame, targetFrame, element);
                         }
 
-                        fireProjectile(attackerFrame, targetFrame, element, () => {
-                            const defReduction = target.def ? 0.5 : 1.0;
-                            const finalDmg = Math.max(1, Math.floor((rawDmg - target.st.def * 0.2) * defReduction)); // v54.6: balanced DEF
+                        const onSpecialImpact = () => {
+                            // Calculate damage same as adventure mode
+                            let baseDmg = attacker.st.atk * 1.2;
+                            let bonusMult = Math.min(dmgMult, 2.0);
+                            let defReduction = target.st.def * 0.25;
+                            let finalDmg = Math.floor((baseDmg * bonusMult - defReduction) * (0.85 + Math.random() * 0.3));
+                            finalDmg = Math.max(10, finalDmg);
+                            if(target.def) finalDmg = Math.floor(finalDmg * 0.5);
                             target.curHp = Math.max(0, target.curHp - finalDmg);
 
-                            // Big screen shake for special
-                            if(arena) {
-                                arena.classList.add('screen-shake');
-                                setTimeout(() => arena.classList.remove('screen-shake'), 400);
-                            }
-
                             showImpactEffect(targetFrame, true, element);
-                            // v54.6: Use name-based animation
+                            if(typeof showElementEffect === 'function') showElementEffect(targetFrame, element);
                             if(typeof showAttackAnimationByType === 'function'){
                                 showAttackAnimationByType(targetFrame, specMove.n, element, true);
                             }
-                            if(targetEl) targetEl.classList.add('hit-shake');
-                            showArenaDamageV2(targetIdx, target, finalDmg, true);
+
+                            if(targetFrame){
+                                targetFrame.classList.add('anim-crit-shake', 'anim-hit-flash');
+                                setTimeout(() => targetFrame.classList.remove('anim-crit-shake', 'anim-hit-flash'), 450);
+                            }
+
+                            // Screen shake for big specials
+                            if(finalDmg > 60 && arena){
+                                arena.classList.add('screen-shake');
+                                setTimeout(() => arena.classList.remove('screen-shake'), 350);
+                            }
+
+                            if(typeof showFloatingDamage === 'function'){
+                                showFloatingDamage(targetFrame, finalDmg, 'crit');
+                            }
+
                             arenaBattle.log.unshift({ t: 'spec', m: `⚡ ${attacker.creatureName} (${attacker.ownerName}) uses ${specMove.n} on ${target.creatureName} (${target.ownerName}) - ${finalDmg} dmg!` });
-                        });
+                        };
+
+                        // High power uses beam (delayed impact), low power uses projectile
+                        if(isHighPower){
+                            setTimeout(onSpecialImpact, 500);
+                        } else {
+                            fireProjectile(attackerFrame, targetFrame, element, onSpecialImpact);
+                        }
                     }
                 }
 
                 setTimeout(() => {
-                    document.querySelectorAll('.hit-shake').forEach(el => el.classList.remove('hit-shake'));
                     arenaBattle.processing = false;
                     renderMain();
                     arenaNextTurn();
-                }, 600);
+                }, 700);
             }, 300);
-        }, 500);
+        }, 600); // After charge animation
     }
 }
 
