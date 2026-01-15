@@ -3024,6 +3024,234 @@ body{
 }
 
 /* ============================================
+   v54.13: EPIC SPECIAL ANIMATION KEYFRAMES
+   Unique animations for special moves
+   ============================================ */
+
+@keyframes galaxyPulse{
+    0%{opacity:0;transform:scale(0.5)}
+    30%{opacity:1;transform:scale(1)}
+    70%{opacity:1;transform:scale(1.1)}
+    100%{opacity:0;transform:scale(1.5)}
+}
+@keyframes galaxySpin{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(0)}
+    30%{transform:translate(-50%,-50%) rotate(180deg) scale(1)}
+    70%{transform:translate(-50%,-50%) rotate(540deg) scale(1.2)}
+    100%{transform:translate(-50%,-50%) rotate(720deg) scale(0);opacity:0}
+}
+@keyframes starTwinkle{
+    0%{transform:scale(0);opacity:0}
+    50%{transform:scale(2);opacity:1}
+    100%{transform:scale(0);opacity:0}
+}
+@keyframes boltDrop{
+    0%{height:0;opacity:1}
+    50%{height:100%;opacity:1}
+    100%{height:100%;opacity:0}
+}
+@keyframes eclipseExpand{
+    0%{transform:translate(-50%,-50%) scale(0)}
+    50%{transform:translate(-50%,-50%) scale(1)}
+    100%{transform:translate(-50%,-50%) scale(2);opacity:0}
+}
+@keyframes eclipseDarken{
+    0%{opacity:0}
+    30%{opacity:1}
+    70%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes meteorFall{
+    0%{top:-30px;opacity:1}
+    100%{top:70%;opacity:1}
+}
+@keyframes meltdownRing{
+    0%{width:20px;height:20px;opacity:1}
+    100%{width:200px;height:200px;opacity:0}
+}
+@keyframes lavaRise{
+    0%{height:0}
+    40%{height:60%}
+    100%{height:0;opacity:0}
+}
+@keyframes eruptionBall{
+    0%{bottom:0;opacity:1}
+    50%{opacity:1}
+    100%{bottom:100%;opacity:0}
+}
+@keyframes crackGrow{
+    0%{height:0}
+    100%{height:60%}
+}
+@keyframes dustRise{
+    0%{opacity:0;transform:translateY(30px)}
+    30%{opacity:1;transform:translateY(0)}
+    100%{opacity:0;transform:translateY(-20px)}
+}
+@keyframes darkBurst{
+    0%{transform:scale(0);opacity:1}
+    50%{transform:scale(1.3);opacity:1}
+    100%{transform:scale(1.5);opacity:0}
+}
+@keyframes skullFloat{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0}
+    30%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(calc(-50% + var(--float-x)),calc(-50% + var(--float-y)));opacity:0}
+}
+@keyframes mistSpread{
+    0%{opacity:0;transform:scale(0.5)}
+    50%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(1.3)}
+}
+@keyframes bubbleRise{
+    0%{opacity:0;transform:translateY(0)}
+    30%{opacity:1}
+    100%{opacity:0;transform:translateY(-100px)}
+}
+@keyframes warpSpin{
+    0%{transform:rotate(0deg);opacity:0}
+    30%{opacity:1}
+    100%{transform:rotate(360deg);opacity:0}
+}
+@keyframes warpRing{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+    50%{transform:translate(-50%,-50%) scale(2);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(3);opacity:0}
+}
+@keyframes vortexSpin{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(0);opacity:1}
+    30%{transform:translate(-50%,-50%) rotate(180deg) scale(1);opacity:1}
+    70%{transform:translate(-50%,-50%) rotate(540deg) scale(1.2);opacity:1}
+    100%{transform:translate(-50%,-50%) rotate(720deg) scale(0.5);opacity:0}
+}
+@keyframes hydroBeam{
+    0%{width:0}
+    30%{width:80%}
+    70%{width:80%}
+    100%{width:0;left:90%}
+}
+@keyframes infernoBurst{
+    0%{transform:scale(0);opacity:1}
+    30%{transform:scale(1);opacity:1}
+    100%{transform:scale(1.5);opacity:0}
+}
+@keyframes fireRingExpand{
+    0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(3);opacity:0}
+}
+@keyframes frostSweep{
+    0%{transform:translateX(-100%);opacity:0}
+    20%{opacity:1}
+    80%{opacity:1}
+    100%{transform:translateX(100%);opacity:0}
+}
+@keyframes crystalForm{
+    0%{transform:scale(0);opacity:0}
+    50%{transform:scale(1.2);opacity:1}
+    100%{transform:scale(1);opacity:0}
+}
+@keyframes iceEncase{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0}
+    40%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+    70%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(0.9);opacity:0}
+}
+@keyframes vineRise{
+    0%{height:0}
+    70%{height:80%}
+    100%{height:0;opacity:0}
+}
+@keyframes leafSwirl{
+    0%{transform:rotate(0deg) translateY(0);opacity:0}
+    30%{opacity:1}
+    100%{transform:rotate(360deg) translateY(-50px);opacity:0}
+}
+@keyframes dustCharge{
+    0%{transform:translateX(-100%);opacity:0}
+    30%{transform:translateX(0);opacity:1}
+    100%{transform:translateX(20%);opacity:0}
+}
+@keyframes vineWrap{
+    0%{height:0}
+    100%{height:80px}
+}
+@keyframes eyeAppear{
+    0%{opacity:0;transform:scale(0)}
+    40%{opacity:1;transform:scale(1.2)}
+    70%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(0.8)}
+}
+@keyframes voidBurst{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+    40%{transform:translate(-50%,-50%) scale(1.2);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(0);opacity:0}
+}
+@keyframes spectrumBeam{
+    0%{width:0}
+    30%{width:80%}
+    70%{width:80%}
+    100%{width:0;left:90%}
+}
+@keyframes lightPillar{
+    0%{opacity:0;height:0}
+    30%{opacity:1;height:100%}
+    70%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes starFall{
+    0%{top:-20px;opacity:1}
+    80%{opacity:1}
+    100%{top:80%;opacity:0}
+}
+@keyframes crystalShatter{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0}
+    30%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+    50%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(0);opacity:0}
+}
+@keyframes shardFly{
+    0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(calc(-50% + var(--fly-x)),calc(-50% + var(--fly-y))) scale(0);opacity:0}
+}
+@keyframes symbolAppear{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:0}
+    40%{transform:translate(-50%,-50%) scale(1.2);opacity:1}
+    70%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(0.8);opacity:0}
+}
+@keyframes arcFlash{
+    0%{width:0;opacity:1}
+    50%{width:60px;opacity:1}
+    100%{width:0;opacity:0}
+}
+@keyframes gearSpin{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(0);opacity:0}
+    30%{transform:translate(-50%,-50%) rotate(90deg) scale(1);opacity:1}
+    70%{transform:translate(-50%,-50%) rotate(270deg) scale(1);opacity:1}
+    100%{transform:translate(-50%,-50%) rotate(360deg) scale(0);opacity:0}
+}
+@keyframes bugSwarm{
+    0%{transform:translate(0,0);opacity:1}
+    100%{transform:translate(var(--end-x),var(--end-y));opacity:0}
+}
+@keyframes hurricaneSpin{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(0);opacity:1}
+    30%{transform:translate(-50%,-50%) rotate(180deg) scale(1);opacity:1}
+    70%{transform:translate(-50%,-50%) rotate(540deg) scale(1.2);opacity:1}
+    100%{transform:translate(-50%,-50%) rotate(720deg) scale(0);opacity:0}
+}
+@keyframes windLine{
+    0%{opacity:0;transform:translateX(-20px) rotate(var(--rot,0deg))}
+    30%{opacity:1}
+    100%{opacity:0;transform:translateX(20px) rotate(var(--rot,0deg))}
+}
+@keyframes novaExpand{
+    0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+    40%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(2);opacity:0}
+}
+
+/* ============================================
    v54.6: ENHANCED ATTACK ANIMATIONS
    Multi-slash, element trails, combos
    ============================================ */
@@ -5075,6 +5303,42 @@ body{
     color:rgba(232,184,74,.4);
 }
 .team-slot.empty{cursor:default}
+
+/* v54.13: Custom Battle Mode - Flexible team sizes */
+.team-slots.custom-mode{
+    flex-wrap:wrap;
+    justify-content:center;
+    min-height:170px;
+}
+.team-slots.custom-mode .team-slot{
+    transition:all 0.2s ease;
+}
+.team-slot.add-slot{
+    border-style:dashed;
+    border-color:rgba(74,222,128,.5);
+    background:rgba(34,139,34,.15);
+    cursor:default;
+}
+.team-slot.add-slot .slot-placeholder{
+    color:rgba(74,222,128,.8);
+    font-size:2rem;
+}
+.team-count-display{
+    width:100%;
+    text-align:center;
+    font-family:'Fredoka One',cursive;
+    color:var(--gold);
+    font-size:1.1rem;
+    margin-top:10px;
+    padding:8px;
+    background:rgba(232,184,74,.1);
+    border-radius:8px;
+}
+.fighter-card.disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+    filter:grayscale(50%);
+}
 
 /* Available Fighters */
 .available-fighters{margin-bottom:20px}
@@ -8719,8 +8983,8 @@ const ARENA_MODES = {
     '1v1': { name: '1v1 Duel', teamSize: 1, teams: 2, icon: '⚔️', desc: 'One champion vs one challenger!' },
     '2v2': { name: '2v2 Tag Team', teamSize: 2, teams: 2, icon: '🤝', desc: 'Two partners fight together!' },
     '3v3': { name: '3v3 Squad Battle', teamSize: 3, teams: 2, icon: '👥', desc: 'Squad up and dominate!' },
-    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' }
-    // FFA mode removed - was broken
+    '4v4': { name: '4v4 Team War', teamSize: 4, teams: 2, icon: '🏰', desc: 'Full team warfare - 8 fighters!' },
+    'custom': { name: 'Custom Battle', teamSize: 'flexible', teams: 2, icon: '⚙️', desc: 'Build uneven teams! 4v2, 3v1, anything goes!' }
 };
 
 // v54.11: Background selection based on chapter/region
@@ -8886,20 +9150,31 @@ function renderArenaTeamSelect(activeStudents){
     const mode = ARENA_MODES[arenaSetup.mode];
     const teamNum = arenaSetup.currentTeamPicking + 1;
     const isFFA = arenaSetup.mode === 'ffa';
-    const teamLabel = isFFA ? `Fighter ${teamNum}` : `Team ${teamNum}`;
+    const isCustom = arenaSetup.mode === 'custom';
+    const teamLabel = isFFA ? `Fighter ${teamNum}` : (isCustom ? (teamNum === 1 ? '🔴 Red Team' : '🔵 Blue Team') : `Team ${teamNum}`);
     const alreadyPicked = arenaSetup.teams.flat();
     const available = activeStudents.filter(s => !alreadyPicked.includes(s.id));
     const currentTeam = arenaSetup.teams[arenaSetup.currentTeamPicking] || [];
-    const needMore = mode.teamSize - currentTeam.length;
+
+    // v54.13: Custom mode allows flexible team sizes (1-8 fighters)
+    const maxTeamSize = isCustom ? 8 : mode.teamSize;
+    const minTeamSize = isCustom ? 1 : mode.teamSize;
+    const displaySlots = isCustom ? Math.max(currentTeam.length + 1, 2) : mode.teamSize;
 
     let html = `<div class="arena-team-select">
-        <h2 class="arena-section-title">👥 Select ${teamLabel}</h2>
-        <p class="team-select-info">${isFFA ? 'Pick a fighter' : `Pick ${mode.teamSize} fighter${mode.teamSize > 1 ? 's' : ''}`}</p>
+        <h2 class="arena-section-title">👥 Select ${teamLabel}</h2>`;
 
-        <div class="team-slots">`;
+    if(isCustom){
+        html += `<p class="team-select-info">Pick 1-8 fighters for ${teamLabel}. Click "Done" when ready!</p>`;
+    } else {
+        html += `<p class="team-select-info">${isFFA ? 'Pick a fighter' : `Pick ${mode.teamSize} fighter${mode.teamSize > 1 ? 's' : ''}`}</p>`;
+    }
 
-    // Show current team slots
-    for(let i = 0; i < mode.teamSize; i++){
+    html += `<div class="team-slots${isCustom ? ' custom-mode' : ''}">`;
+
+    // Show current team members (for custom mode, show all selected + one empty slot)
+    const slotsToShow = isCustom ? displaySlots : mode.teamSize;
+    for(let i = 0; i < slotsToShow; i++){
         const studentId = currentTeam[i];
         const student = studentId ? activeStudents.find(s => s.id === studentId) : null;
 
@@ -8913,12 +9188,23 @@ function renderArenaTeamSelect(activeStudents){
                 <div class="slot-level">Lv ${lv}</div>
                 <div class="slot-remove">✕</div>
             </div>`;
-        } else {
+        } else if(isCustom && i === currentTeam.length && currentTeam.length < maxTeamSize){
+            // Show "add more" slot only for custom mode
+            html += `<div class="team-slot empty add-slot">
+                <div class="slot-placeholder">+</div>
+                <div class="slot-name">Add Fighter</div>
+            </div>`;
+        } else if(!isCustom){
             html += `<div class="team-slot empty">
                 <div class="slot-placeholder">?</div>
                 <div class="slot-name">Pick Fighter</div>
             </div>`;
         }
+    }
+
+    // For custom mode, show team count
+    if(isCustom){
+        html += `<div class="team-count-display">${currentTeam.length} Fighter${currentTeam.length !== 1 ? 's' : ''} Selected</div>`;
     }
 
     html += `</div>
@@ -8933,8 +9219,9 @@ function renderArenaTeamSelect(activeStudents){
         const st = getStats(s.cid, lv, s.nature);
         const evoIdx = getEvo(s.cid, lv);
         const record = getArenaRecord(s.id);
+        const canAdd = isCustom ? currentTeam.length < maxTeamSize : currentTeam.length < mode.teamSize;
 
-        html += `<div class="fighter-card" onclick="addToArenaTeam(${s.id})">
+        html += `<div class="fighter-card ${canAdd ? '' : 'disabled'}" onclick="${canAdd ? `addToArenaTeam(${s.id})` : ''}">
             <div class="fighter-img-wrap">
                 <img src="${getImg(s.cid, lv)}" class="fighter-img evo${evoIdx+1}">
             </div>
@@ -8951,14 +9238,18 @@ function renderArenaTeamSelect(activeStudents){
         </div>`;
     });
 
+    // Determine if Next/Done button should be enabled
+    const canProceed = isCustom ? currentTeam.length >= minTeamSize : currentTeam.length >= mode.teamSize;
+    const buttonText = isCustom ? (teamNum === 1 ? 'Done → Pick Team 2' : 'Done → Start Battle!') : 'Next →';
+
     html += `</div></div>
 
         <div class="team-select-buttons">
             <button class="arena-btn back" onclick="arenaGoBack()">← Back</button>
-            <button class="arena-btn next ${currentTeam.length < mode.teamSize ? 'disabled' : ''}"
-                    onclick="${currentTeam.length >= mode.teamSize ? 'arenaNextTeam()' : ''}"
-                    ${currentTeam.length < mode.teamSize ? 'disabled' : ''}>
-                Next →
+            <button class="arena-btn next ${canProceed ? '' : 'disabled'}"
+                    onclick="${canProceed ? 'arenaNextTeam()' : ''}"
+                    ${canProceed ? '' : 'disabled'}>
+                ${buttonText}
             </button>
         </div>
     </div>`;
@@ -9096,8 +9387,10 @@ function selectArenaMode(mode){
 function addToArenaTeam(studentId){
     const mode = ARENA_MODES[arenaSetup.mode];
     const currentTeam = arenaSetup.teams[arenaSetup.currentTeamPicking];
+    const isCustom = arenaSetup.mode === 'custom';
+    const maxSize = isCustom ? 8 : mode.teamSize;
 
-    if(currentTeam.length < mode.teamSize){
+    if(currentTeam.length < maxSize){
         currentTeam.push(studentId);
         renderMain();
     }
@@ -9115,6 +9408,7 @@ function removeFromArenaTeam(studentId){
 function arenaNextTeam(){
     const mode = ARENA_MODES[arenaSetup.mode];
     const isFFA = arenaSetup.mode === 'ffa';
+    const isCustom = arenaSetup.mode === 'custom';
     const totalTeams = isFFA ? arenaSetup.teams.length : mode.teams;
 
     arenaSetup.currentTeamPicking++;
@@ -15341,6 +15635,136 @@ function showStatusApplyEffect(targetEl, status){
 function getAttackAnimationType(moveName, element){
     const name = (moveName || '').toLowerCase();
 
+    // ============================================
+    // v54.13: EPIC SPECIAL MOVE ANIMATIONS
+    // Unique animations based on move names for variety
+    // ============================================
+
+    // ULTIMATE/EPIC MOVES - Full screen devastating effects
+    if(name.includes('galaxy') || name.includes('cosmic') || name.includes('universe')){
+        return 'galaxy-crusher';
+    }
+    if(name.includes('ragnarök') || name.includes('ragnarok')){
+        return 'ragnarok';
+    }
+    if(name.includes('eclipse') || name.includes('total darkness')){
+        return 'eclipse';
+    }
+    if(name.includes('meteor') && (name.includes('strike') || name.includes('shower'))){
+        return 'meteor-shower';
+    }
+    if(name.includes('core meltdown') || name.includes('meltdown')){
+        return 'meltdown';
+    }
+    if(name.includes('eruption') || name.includes('volcanic')){
+        return 'eruption';
+    }
+    if(name.includes('armageddon') || name.includes('apocalypse') || name.includes('cataclysm')){
+        return 'armageddon';
+    }
+    if(name.includes('world shaker') || name.includes('earthquake')){
+        return 'earthquake';
+    }
+    if(name.includes('necrotic') || name.includes('death') || name.includes('soul reaper')){
+        return 'necrotic';
+    }
+    if(name.includes('plague burst') || name.includes('plague')){
+        return 'plague';
+    }
+    if(name.includes('reality warp') || name.includes('warp') || name.includes('dimension')){
+        return 'reality-warp';
+    }
+
+    // WATER SPECIALS - Vortex and wave effects
+    if(name.includes('tsunami') || name.includes('tidal wave')){
+        return 'tsunami';
+    }
+    if(name.includes('whirlpool') || name.includes('maelstrom') || name.includes('vortex')){
+        return 'vortex';
+    }
+    if(name.includes('hydro cannon') || name.includes('hydro pump')){
+        return 'hydro-cannon';
+    }
+
+    // FIRE SPECIALS - Inferno and explosion effects
+    if(name.includes('inferno') && (name.includes('burst') || name.includes('blast'))){
+        return 'inferno';
+    }
+    if(name.includes('nova') && !name.includes('super')){
+        return 'nova';
+    }
+    if(name.includes('explosion') || name.includes('detonate') || name.includes('combust')){
+        return 'explosion';
+    }
+
+    // ICE SPECIALS - Blizzard and freeze effects
+    if(name.includes('arctic blast') || name.includes('absolute zero')){
+        return 'arctic-blast';
+    }
+    if(name.includes('blizzard') || name.includes('ice storm')){
+        return 'blizzard';
+    }
+    if(name.includes('glacial') || name.includes('permafrost')){
+        return 'glacial';
+    }
+
+    // LIGHTNING SPECIALS - Storm effects
+    if(name.includes('tempest') || name.includes('storm') && element === 'lightning'){
+        return 'tempest';
+    }
+    if(name.includes('thunderstorm') || (name.includes('lightning') && name.includes('storm'))){
+        return 'thunderstorm';
+    }
+
+    // NATURE SPECIALS - Gaia effects
+    if(name.includes('gaia') || name.includes('nature\'s fury') || name.includes('natures fury')){
+        return 'gaia-fury';
+    }
+    if(name.includes('stampede') || name.includes('rampage')){
+        return 'stampede';
+    }
+    if(name.includes('overgrowth') || name.includes('jungle')){
+        return 'overgrowth';
+    }
+
+    // SHADOW/VOID SPECIALS - Dark effects
+    if(name.includes('nightmare') || name.includes('terror')){
+        return 'nightmare';
+    }
+    if(name.includes('void') && (name.includes('blast') || name.includes('burst'))){
+        return 'void-burst';
+    }
+    if(name.includes('shadow') && (name.includes('ball') || name.includes('bomb'))){
+        return 'shadow-bomb';
+    }
+
+    // LIGHT SPECIALS - Divine effects
+    if(name.includes('spectrum') || name.includes('rainbow')){
+        return 'spectrum';
+    }
+    if(name.includes('holy') || name.includes('divine') || name.includes('radiant')){
+        return 'divine';
+    }
+    if(name.includes('star') && (name.includes('burst') || name.includes('shower'))){
+        return 'starfall';
+    }
+
+    // CRYSTAL/DIAMOND - Shattering effects
+    if(name.includes('diamond') || name.includes('crystal') && (name.includes('crush') || name.includes('break'))){
+        return 'diamond-crusher';
+    }
+    if(name.includes('riddle') || name.includes('sphinx')){
+        return 'sphinx-riddle';
+    }
+
+    // OVERCLOCK/MECHA - Tech effects
+    if(name.includes('overclock') || name.includes('overdrive')){
+        return 'overclock';
+    }
+    if(name.includes('beetle barrage') || name.includes('barrage') && element === 'bug'){
+        return 'swarm-barrage';
+    }
+
     // v54.6: COMPOUND WORDS FIRST - Handle specific combinations before generic checks
     // Sandstorm, duststorm = earth, NOT lightning
     if(name.includes('sandstorm') || name.includes('duststorm') || name.includes('dust storm')){
@@ -15356,7 +15780,7 @@ function getAttackAnimationType(moveName, element){
     }
     // Hurricane, cyclone, gust = air/wind, use slash
     if(name.includes('hurricane') || name.includes('cyclone') || name.includes('gust') || name.includes('wind')){
-        return 'slash';
+        return 'hurricane';
     }
 
     // ICE/FROST attacks - use ice shard or beam
@@ -15866,6 +16290,120 @@ function showAttackAnimationByType(targetEl, moveName, element, isCrit){
     const centerY = rect.top + rect.height/2;
 
     switch(attackType){
+        // ============================================
+        // v54.13: EPIC SPECIAL ANIMATIONS
+        // ============================================
+        case 'galaxy-crusher':
+            showGalaxyCrusher();
+            break;
+        case 'ragnarok':
+            showRagnarokThunder();
+            break;
+        case 'eclipse':
+            showEclipse();
+            break;
+        case 'meteor-shower':
+            showMeteorShower(targetEl);
+            break;
+        case 'meltdown':
+            showCoreMeltdown(targetEl);
+            break;
+        case 'eruption':
+            showEruption(targetEl);
+            break;
+        case 'armageddon':
+            showBossArmageddon();
+            break;
+        case 'earthquake':
+            showEarthquake();
+            break;
+        case 'necrotic':
+            showNecroticBlast(targetEl);
+            break;
+        case 'plague':
+            showPlagueCloud(targetEl);
+            break;
+        case 'reality-warp':
+            showRealityWarp();
+            break;
+        case 'tsunami':
+            showTsunamiWave();
+            break;
+        case 'vortex':
+            showVortex(targetEl);
+            break;
+        case 'hydro-cannon':
+            showHydroCannon(targetEl);
+            break;
+        case 'inferno':
+            showInfernoBurst(targetEl);
+            break;
+        case 'nova':
+            showNovaExplosion(targetEl);
+            break;
+        case 'explosion':
+            showExplosion(targetEl);
+            break;
+        case 'arctic-blast':
+            showArcticBlast();
+            break;
+        case 'blizzard':
+            showBlizzardStorm();
+            break;
+        case 'glacial':
+            showGlacialFreeze(targetEl);
+            break;
+        case 'tempest':
+            showTempestStorm();
+            break;
+        case 'thunderstorm':
+            showThunderstorm();
+            break;
+        case 'gaia-fury':
+            showGaiaFury();
+            break;
+        case 'stampede':
+            showStampede(targetEl);
+            break;
+        case 'overgrowth':
+            showOvergrowth(targetEl);
+            break;
+        case 'nightmare':
+            showNightmareVision();
+            break;
+        case 'void-burst':
+            showVoidBurst(targetEl);
+            break;
+        case 'shadow-bomb':
+            showShadowBomb(targetEl);
+            break;
+        case 'spectrum':
+            showSpectrumBlast(targetEl);
+            break;
+        case 'divine':
+            showDivineLight(targetEl);
+            break;
+        case 'starfall':
+            showStarfall(targetEl);
+            break;
+        case 'diamond-crusher':
+            showDiamondCrusher(targetEl);
+            break;
+        case 'sphinx-riddle':
+            showSphinxRiddle(targetEl);
+            break;
+        case 'overclock':
+            showOverclock(targetEl);
+            break;
+        case 'swarm-barrage':
+            showSwarmBarrage(targetEl);
+            break;
+        case 'hurricane':
+            showHurricane(targetEl);
+            break;
+        // ============================================
+        // Original animations
+        // ============================================
         case 'ice-shard':
             showIceShardAttack(centerX, centerY);
             break;
@@ -15912,6 +16450,18 @@ function showAttackAnimationByType(targetEl, moveName, element, isCrit){
                 showSlashEffect(targetEl, isCrit);
             }
     }
+}
+
+// Helper to get creature bounds for arena-relative positioning
+function getCreatureBounds(targetEl){
+    if(!targetEl) return {centerX: 0, centerY: 0};
+    const rect = targetEl.getBoundingClientRect();
+    return {
+        centerX: rect.left + rect.width/2,
+        centerY: rect.top + rect.height/2,
+        width: rect.width,
+        height: rect.height
+    };
 }
 
 function showIceShardAttack(x, y){
@@ -16004,6 +16554,658 @@ function showSlamAttack(x, y){
 
     document.body.appendChild(container);
     setTimeout(() => container.remove(), 600);
+}
+
+// ============================================
+// v54.13: EPIC SPECIAL MOVE ANIMATIONS
+// Unique devastating effects for special attacks
+// ============================================
+
+// Galaxy Crusher - Cosmic spiral with stars
+function showGalaxyCrusher(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3500;overflow:hidden;border-radius:12px';
+    container.innerHTML = `
+        <div style="position:absolute;inset:0;background:radial-gradient(circle at center,rgba(100,0,200,0.2) 0%,rgba(50,0,150,0.4) 30%,rgba(20,0,80,0.6) 60%,rgba(0,0,0,0.8) 100%);animation:galaxyPulse 1.5s ease-out forwards"></div>
+        <div style="position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:conic-gradient(from 0deg,rgba(255,100,255,0.6),rgba(100,200,255,0.4),rgba(255,200,100,0.5),rgba(100,255,200,0.4),rgba(255,100,255,0.6));border-radius:50%;filter:blur(20px);animation:galaxySpin 1.5s ease-out forwards"></div>
+    `;
+    // Add stars
+    for(let i = 0; i < 20; i++){
+        const star = document.createElement('div');
+        star.style.cssText = `position:absolute;width:4px;height:4px;background:white;border-radius:50%;box-shadow:0 0 10px white;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:starTwinkle ${0.3+Math.random()*0.5}s ease-out ${Math.random()*0.5}s forwards`;
+        container.appendChild(star);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1800);
+}
+
+// Ragnarok Thunder - Multiple lightning bolts with screen flash
+function showRagnarokThunder(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.className = 'ragnarok-thunder';
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3500;overflow:hidden;border-radius:12px';
+    // Flash
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,200,0.6);animation:thunderFlash 0.5s ease-out forwards';
+    container.appendChild(flash);
+    // Multiple bolts
+    for(let i = 0; i < 5; i++){
+        const bolt = document.createElement('div');
+        bolt.style.cssText = `position:absolute;top:0;left:${15+i*18}%;width:8px;height:100%;background:linear-gradient(180deg,rgba(255,255,200,1),rgba(125,211,252,0.8),transparent);box-shadow:0 0 30px rgba(255,255,100,0.8);animation:boltDrop 0.4s ease-out ${i*0.08}s forwards`;
+        container.appendChild(bolt);
+    }
+    arena.appendChild(container);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 600);
+    setTimeout(() => container.remove(), 1000);
+}
+
+// Eclipse - Darkness spreading from center
+function showEclipse(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3400;overflow:hidden;border-radius:12px';
+    container.innerHTML = `
+        <div style="position:absolute;top:50%;left:50%;width:200px;height:200px;transform:translate(-50%,-50%);background:radial-gradient(circle,#000 0%,#000 40%,rgba(100,0,150,0.8) 60%,transparent 70%);border-radius:50%;box-shadow:0 0 100px 50px rgba(0,0,0,0.8);animation:eclipseExpand 1.5s ease-out forwards"></div>
+        <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,transparent 0%,rgba(50,0,100,0.3) 30%,rgba(20,0,50,0.7) 60%,rgba(0,0,0,0.9) 100%);animation:eclipseDarken 1.5s ease-out forwards"></div>
+    `;
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1800);
+}
+
+// Meteor Shower - Multiple fireballs raining down
+function showMeteorShower(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const arenaRect = arena.getBoundingClientRect();
+    for(let i = 0; i < 8; i++){
+        setTimeout(() => {
+            const meteor = document.createElement('div');
+            const startX = 20 + Math.random() * 60;
+            meteor.style.cssText = `position:absolute;width:25px;height:25px;background:radial-gradient(circle,#fff 0%,#ff6b00 30%,#ff0000 60%,transparent 70%);border-radius:50%;box-shadow:0 0 20px #ff6b00;left:${startX}%;top:-30px;z-index:3500;animation:meteorFall 0.6s ease-in forwards`;
+            // Trail
+            const trail = document.createElement('div');
+            trail.style.cssText = 'position:absolute;width:10px;height:80px;background:linear-gradient(180deg,rgba(255,100,0,0.8),rgba(255,200,0,0.4),transparent);transform-origin:center top;transform:translateX(7px) translateY(-70px)';
+            meteor.appendChild(trail);
+            arena.appendChild(meteor);
+            setTimeout(() => {
+                meteor.remove();
+                // Impact flash
+                const impact = document.createElement('div');
+                impact.style.cssText = `position:absolute;left:${startX}%;bottom:20%;width:60px;height:60px;transform:translateX(-50%);background:radial-gradient(circle,rgba(255,200,100,0.9),rgba(255,100,0,0.5),transparent);border-radius:50%;z-index:3400;animation:impactBurst 0.4s ease-out forwards`;
+                arena.appendChild(impact);
+                setTimeout(() => impact.remove(), 400);
+            }, 550);
+        }, i * 100);
+    }
+}
+
+// Core Meltdown - Expanding fire rings
+function showCoreMeltdown(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? targetEl.getBoundingClientRect() : {left:arena.offsetWidth/2,top:arena.offsetHeight/2,width:0,height:0};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.left - arenaRect.left + bounds.width/2;
+    const centerY = bounds.top - arenaRect.top + bounds.height/2;
+
+    for(let i = 0; i < 4; i++){
+        setTimeout(() => {
+            const ring = document.createElement('div');
+            ring.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:20px;height:20px;transform:translate(-50%,-50%);border:4px solid rgba(255,100,0,0.9);border-radius:50%;box-shadow:0 0 20px rgba(255,50,0,0.8),inset 0 0 15px rgba(255,150,0,0.5);z-index:3400;animation:meltdownRing 0.8s ease-out forwards`;
+            arena.appendChild(ring);
+            setTimeout(() => ring.remove(), 800);
+        }, i * 150);
+    }
+    // Central burst
+    const burst = document.createElement('div');
+    burst.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:100px;height:100px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,255,200,1),rgba(255,150,0,0.8),rgba(255,50,0,0.5),transparent);border-radius:50%;z-index:3500;animation:impactBurst 0.6s ease-out forwards`;
+    arena.appendChild(burst);
+    setTimeout(() => burst.remove(), 600);
+}
+
+// Eruption - Lava burst from below
+function showEruption(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3400;overflow:hidden;border-radius:12px';
+    // Lava rise
+    const lava = document.createElement('div');
+    lava.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:0;background:linear-gradient(0deg,rgba(255,50,0,0.9),rgba(255,150,0,0.6),rgba(255,200,100,0.3),transparent);animation:lavaRise 1s ease-out forwards';
+    container.appendChild(lava);
+    // Fireballs flying up
+    for(let i = 0; i < 10; i++){
+        const ball = document.createElement('div');
+        ball.style.cssText = `position:absolute;bottom:0;left:${10+Math.random()*80}%;width:15px;height:15px;background:radial-gradient(circle,#fff,#ff6b00,#ff0000);border-radius:50%;box-shadow:0 0 15px #ff6b00;animation:eruptionBall 1s ease-out ${Math.random()*0.3}s forwards`;
+        container.appendChild(ball);
+    }
+    arena.appendChild(container);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 500);
+    setTimeout(() => container.remove(), 1200);
+}
+
+// Earthquake - Ground cracks and screen shake
+function showEarthquake(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3300;overflow:hidden;border-radius:12px';
+    // Cracks
+    for(let i = 0; i < 5; i++){
+        const crack = document.createElement('div');
+        crack.style.cssText = `position:absolute;bottom:10%;left:${10+i*18}%;width:3px;height:0;background:linear-gradient(0deg,rgba(139,69,19,1),rgba(101,67,33,0.8));box-shadow:0 0 10px rgba(139,69,19,0.5);animation:crackGrow 0.8s ease-out ${i*0.1}s forwards`;
+        container.appendChild(crack);
+    }
+    // Dust cloud
+    const dust = document.createElement('div');
+    dust.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:30%;background:linear-gradient(0deg,rgba(139,90,43,0.6),rgba(180,140,80,0.3),transparent);animation:dustRise 1.2s ease-out forwards';
+    container.appendChild(dust);
+    arena.appendChild(container);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 800);
+    setTimeout(() => container.remove(), 1500);
+}
+
+// Necrotic Blast - Dark energy explosion with skulls
+function showNecroticBlast(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth/2,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const container = document.createElement('div');
+    container.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3400`;
+    // Dark burst
+    const burst = document.createElement('div');
+    burst.style.cssText = 'width:150px;height:150px;background:radial-gradient(circle,rgba(100,0,150,0.9),rgba(50,0,80,0.6),transparent);border-radius:50%;animation:darkBurst 0.8s ease-out forwards';
+    container.appendChild(burst);
+    // Skull symbols
+    for(let i = 0; i < 4; i++){
+        const skull = document.createElement('div');
+        const angle = (i/4) * Math.PI * 2;
+        skull.style.cssText = `position:absolute;left:50%;top:50%;font-size:1.5rem;transform:translate(-50%,-50%);color:rgba(200,150,255,0.9);text-shadow:0 0 10px rgba(150,0,255,0.8);animation:skullFloat 1s ease-out ${i*0.15}s forwards`;
+        skull.style.setProperty('--float-x', Math.cos(angle)*60+'px');
+        skull.style.setProperty('--float-y', Math.sin(angle)*60+'px');
+        skull.textContent = '💀';
+        container.appendChild(skull);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1200);
+}
+
+// Plague Cloud - Toxic green mist spreading
+function showPlagueCloud(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3300;overflow:hidden;border-radius:12px';
+    // Mist layers
+    for(let i = 0; i < 3; i++){
+        const mist = document.createElement('div');
+        mist.style.cssText = `position:absolute;inset:0;background:radial-gradient(ellipse at ${40+i*20}% 60%,rgba(100,200,50,0.4),rgba(50,150,0,0.2),transparent);animation:mistSpread 1.5s ease-out ${i*0.2}s forwards`;
+        container.appendChild(mist);
+    }
+    // Bubble particles
+    for(let i = 0; i < 8; i++){
+        const bubble = document.createElement('div');
+        bubble.style.cssText = `position:absolute;bottom:20%;left:${10+Math.random()*80}%;width:${10+Math.random()*15}px;height:${10+Math.random()*15}px;background:radial-gradient(circle,rgba(150,255,50,0.6),rgba(100,200,0,0.3));border-radius:50%;animation:bubbleRise 1.2s ease-out ${Math.random()*0.5}s forwards`;
+        container.appendChild(bubble);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1800);
+}
+
+// Reality Warp - Dimensional distortion
+function showRealityWarp(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3500;overflow:hidden;border-radius:12px';
+    container.innerHTML = `
+        <div style="position:absolute;inset:0;background:conic-gradient(from 0deg at 50% 50%,transparent,rgba(150,0,255,0.3),transparent,rgba(0,150,255,0.3),transparent);animation:warpSpin 1s ease-out forwards"></div>
+        <div style="position:absolute;top:50%;left:50%;width:100px;height:100px;transform:translate(-50%,-50%);border:3px solid rgba(200,100,255,0.8);border-radius:50%;animation:warpRing 1s ease-out forwards"></div>
+    `;
+    arena.appendChild(container);
+    arena.style.filter = 'hue-rotate(30deg)';
+    setTimeout(() => arena.style.filter = '', 800);
+    setTimeout(() => container.remove(), 1200);
+}
+
+// Tsunami - Giant wave sweeping
+function showTsunamiWave(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const wave = document.createElement('div');
+    wave.className = 'wave-attack';
+    wave.style.height = '80%';
+    wave.style.background = 'linear-gradient(to top,rgba(0,100,200,0.8),rgba(59,130,246,0.6),rgba(147,197,253,0.4),transparent)';
+    arena.appendChild(wave);
+    arena.classList.add('screen-shake');
+    setTimeout(() => arena.classList.remove('screen-shake'), 600);
+    setTimeout(() => wave.remove(), 1200);
+}
+
+// Vortex - Swirling water spiral
+function showVortex(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const vortex = document.createElement('div');
+    vortex.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:150px;height:150px;transform:translate(-50%,-50%);background:conic-gradient(from 0deg,rgba(59,130,246,0.8),rgba(147,197,253,0.4),rgba(59,130,246,0.8),rgba(147,197,253,0.4),rgba(59,130,246,0.8));border-radius:50%;z-index:3400;animation:vortexSpin 1s ease-out forwards`;
+    arena.appendChild(vortex);
+    setTimeout(() => vortex.remove(), 1000);
+}
+
+// Hydro Cannon - Powerful water beam
+function showHydroCannon(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const beam = document.createElement('div');
+    beam.style.cssText = 'position:absolute;left:10%;top:45%;width:0;height:30px;background:linear-gradient(90deg,rgba(59,130,246,0.9),rgba(147,197,253,0.7),rgba(255,255,255,0.8));border-radius:15px;box-shadow:0 0 30px rgba(59,130,246,0.8);z-index:3400;animation:hydroBeam 0.8s ease-out forwards';
+    arena.appendChild(beam);
+    setTimeout(() => beam.remove(), 900);
+}
+
+// Inferno Burst - Massive fire explosion
+function showInfernoBurst(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const container = document.createElement('div');
+    container.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3500`;
+    // Core explosion
+    const core = document.createElement('div');
+    core.style.cssText = 'width:180px;height:180px;background:radial-gradient(circle,rgba(255,255,200,1) 0%,rgba(255,150,0,0.9) 30%,rgba(255,50,0,0.6) 60%,transparent 80%);border-radius:50%;animation:infernoBurst 0.8s ease-out forwards';
+    container.appendChild(core);
+    // Fire rings
+    for(let i = 0; i < 3; i++){
+        const ring = document.createElement('div');
+        ring.style.cssText = `position:absolute;left:50%;top:50%;width:${60+i*40}px;height:${60+i*40}px;transform:translate(-50%,-50%);border:3px solid rgba(255,100,0,${0.8-i*0.2});border-radius:50%;animation:fireRingExpand 0.6s ease-out ${i*0.1}s forwards`;
+        container.appendChild(ring);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1000);
+}
+
+// Nova Explosion - Radiant burst
+function showNovaExplosion(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const nova = document.createElement('div');
+    nova.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:200px;height:200px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,255,255,1) 0%,rgba(255,200,100,0.8) 30%,rgba(255,100,50,0.5) 60%,transparent 80%);border-radius:50%;z-index:3500;animation:novaExpand 0.8s ease-out forwards`;
+    arena.appendChild(nova);
+    // Flash
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,200,0.4);border-radius:12px;animation:critFlash 0.3s ease-out forwards';
+    arena.appendChild(flash);
+    setTimeout(() => { nova.remove(); flash.remove(); }, 1000);
+}
+
+// Explosion - Generic explosion effect
+function showExplosion(targetEl){
+    showNovaExplosion(targetEl);
+}
+
+// Arctic Blast - Freezing wind sweep
+function showArcticBlast(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3400;overflow:hidden;border-radius:12px';
+    // Frost sweep
+    const frost = document.createElement('div');
+    frost.style.cssText = 'position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(147,197,253,0.6),rgba(255,255,255,0.4),transparent);animation:frostSweep 0.8s ease-out forwards';
+    container.appendChild(frost);
+    // Ice crystals
+    for(let i = 0; i < 15; i++){
+        const crystal = document.createElement('div');
+        crystal.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:15px solid rgba(200,230,255,0.8);filter:drop-shadow(0 0 5px rgba(147,197,253,0.8));animation:crystalForm 0.5s ease-out ${Math.random()*0.3}s forwards`;
+        container.appendChild(crystal);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1000);
+}
+
+// Blizzard Storm - Swirling snow and ice
+function showBlizzardStorm(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    showBossBlizzard();
+}
+
+// Glacial Freeze - Encasing in ice
+function showGlacialFreeze(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const ice = document.createElement('div');
+    ice.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:120px;height:140px;transform:translate(-50%,-50%);background:linear-gradient(180deg,rgba(200,230,255,0.3),rgba(147,197,253,0.5),rgba(100,180,255,0.3));border:3px solid rgba(147,197,253,0.8);border-radius:10px;z-index:3400;animation:iceEncase 0.8s ease-out forwards`;
+    arena.appendChild(ice);
+    setTimeout(() => ice.remove(), 1000);
+}
+
+// Tempest Storm - Lightning and wind
+function showTempestStorm(){
+    showBossTempestFury();
+}
+
+// Thunderstorm - Multiple lightning strikes
+function showThunderstorm(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    // Multiple lightning strikes
+    for(let i = 0; i < 6; i++){
+        setTimeout(() => {
+            const bolt = document.createElement('div');
+            bolt.style.cssText = `position:absolute;top:0;left:${10+Math.random()*80}%;width:6px;height:100%;background:linear-gradient(180deg,rgba(255,255,200,1),rgba(255,255,100,0.8),transparent);box-shadow:0 0 20px rgba(255,255,100,0.9);z-index:3500;animation:boltDrop 0.3s ease-out forwards`;
+            arena.appendChild(bolt);
+            setTimeout(() => bolt.remove(), 300);
+        }, i * 120);
+    }
+    // Flash
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,200,0.3);border-radius:12px;animation:thunderFlash 0.8s ease-out forwards';
+    arena.appendChild(flash);
+    arena.classList.add('screen-shake');
+    setTimeout(() => { arena.classList.remove('screen-shake'); flash.remove(); }, 800);
+}
+
+// Gaia's Fury - Nature's wrath
+function showGaiaFury(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3400;overflow:hidden;border-radius:12px';
+    // Vines rising
+    for(let i = 0; i < 8; i++){
+        const vine = document.createElement('div');
+        vine.style.cssText = `position:absolute;bottom:0;left:${5+i*12}%;width:8px;height:0;background:linear-gradient(0deg,rgba(34,139,34,0.9),rgba(50,205,50,0.7));border-radius:4px;animation:vineRise 0.8s ease-out ${i*0.1}s forwards`;
+        container.appendChild(vine);
+    }
+    // Leaves swirling
+    for(let i = 0; i < 12; i++){
+        const leaf = document.createElement('div');
+        leaf.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:1.2rem;animation:leafSwirl 1.2s ease-out ${Math.random()*0.4}s forwards`;
+        leaf.textContent = '🍃';
+        container.appendChild(leaf);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1500);
+}
+
+// Stampede - Charging impact
+function showStampede(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    // Dust cloud
+    const dust = document.createElement('div');
+    dust.style.cssText = 'position:absolute;left:0;right:0;bottom:10%;height:40%;background:linear-gradient(0deg,rgba(139,90,43,0.5),rgba(180,140,80,0.3),transparent);animation:dustCharge 0.8s ease-out forwards';
+    arena.appendChild(dust);
+    // Impact effects
+    for(let i = 0; i < 4; i++){
+        setTimeout(() => {
+            const impact = document.createElement('div');
+            impact.style.cssText = `position:absolute;left:${60+i*10}%;bottom:30%;width:50px;height:50px;background:radial-gradient(circle,rgba(255,255,255,0.8),rgba(180,140,80,0.5),transparent);border-radius:50%;animation:impactBurst 0.4s ease-out forwards`;
+            arena.appendChild(impact);
+            setTimeout(() => impact.remove(), 400);
+        }, i * 100);
+    }
+    arena.classList.add('screen-shake');
+    setTimeout(() => { arena.classList.remove('screen-shake'); dust.remove(); }, 1000);
+}
+
+// Overgrowth - Rapid plant growth
+function showOvergrowth(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+
+    const container = document.createElement('div');
+    container.style.cssText = `position:absolute;left:${bounds.centerX-arenaRect.left}px;top:${bounds.centerY-arenaRect.top}px;transform:translate(-50%,-50%);pointer-events:none;z-index:3400`;
+    // Vines wrapping
+    for(let i = 0; i < 6; i++){
+        const vine = document.createElement('div');
+        const angle = (i/6) * Math.PI * 2;
+        vine.style.cssText = `position:absolute;left:50%;top:50%;width:8px;height:0;background:linear-gradient(0deg,rgba(34,139,34,0.9),rgba(50,205,50,0.7));border-radius:4px;transform-origin:center bottom;transform:rotate(${angle*180/Math.PI}deg);animation:vineWrap 0.6s ease-out ${i*0.1}s forwards`;
+        container.appendChild(vine);
+    }
+    arena.appendChild(container);
+    setTimeout(() => container.remove(), 1000);
+}
+
+// Nightmare Vision - Dark terror effect
+function showNightmareVision(){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    showBossTerrorWave();
+    // Eyes appearing
+    for(let i = 0; i < 8; i++){
+        setTimeout(() => {
+            const eye = document.createElement('div');
+            eye.style.cssText = `position:absolute;left:${Math.random()*80+10}%;top:${Math.random()*60+20}%;font-size:2rem;opacity:0;animation:eyeAppear 0.8s ease-out forwards;z-index:3600`;
+            eye.textContent = '👁️';
+            arena.appendChild(eye);
+            setTimeout(() => eye.remove(), 800);
+        }, i * 100);
+    }
+}
+
+// Void Burst - Dark energy explosion
+function showVoidBurst(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const void_burst = document.createElement('div');
+    void_burst.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:150px;height:150px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(0,0,0,0.9) 0%,rgba(100,0,150,0.7) 40%,rgba(150,0,255,0.4) 70%,transparent 100%);border-radius:50%;z-index:3500;animation:voidBurst 0.8s ease-out forwards`;
+    arena.appendChild(void_burst);
+    setTimeout(() => void_burst.remove(), 1000);
+}
+
+// Shadow Bomb - Dark orb impact
+function showShadowBomb(targetEl){
+    showVoidBurst(targetEl);
+}
+
+// Spectrum Blast - Rainbow beam
+function showSpectrumBlast(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const beam = document.createElement('div');
+    beam.style.cssText = 'position:absolute;left:10%;top:40%;width:0;height:50px;background:linear-gradient(180deg,rgba(255,0,0,0.7),rgba(255,127,0,0.7),rgba(255,255,0,0.7),rgba(0,255,0,0.7),rgba(0,0,255,0.7),rgba(148,0,211,0.7));border-radius:25px;box-shadow:0 0 30px rgba(255,255,255,0.5);z-index:3400;animation:spectrumBeam 0.8s ease-out forwards';
+    arena.appendChild(beam);
+    setTimeout(() => beam.remove(), 1000);
+}
+
+// Divine Light - Holy radiance
+function showDivineLight(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    // Light pillar
+    const pillar = document.createElement('div');
+    pillar.style.cssText = `position:absolute;left:${centerX}px;top:0;width:60px;height:100%;transform:translateX(-50%);background:linear-gradient(180deg,rgba(255,255,200,0.9),rgba(255,220,100,0.6),transparent);box-shadow:0 0 40px rgba(255,255,150,0.5);z-index:3500;animation:lightPillar 0.8s ease-out forwards`;
+    arena.appendChild(pillar);
+    // Radiant burst
+    const burst = document.createElement('div');
+    burst.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:120px;height:120px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,255,255,0.9),rgba(255,220,100,0.6),transparent);border-radius:50%;z-index:3400;animation:impactBurst 0.6s ease-out 0.2s forwards`;
+    arena.appendChild(burst);
+    setTimeout(() => { pillar.remove(); burst.remove(); }, 1000);
+}
+
+// Starfall - Stars raining down
+function showStarfall(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    for(let i = 0; i < 12; i++){
+        setTimeout(() => {
+            const star = document.createElement('div');
+            star.style.cssText = `position:absolute;top:-20px;left:${Math.random()*80+10}%;font-size:1.5rem;filter:drop-shadow(0 0 10px rgba(255,255,100,0.8));z-index:3500;animation:starFall 0.6s ease-in forwards`;
+            star.textContent = '⭐';
+            arena.appendChild(star);
+            setTimeout(() => star.remove(), 600);
+        }, i * 80);
+    }
+}
+
+// Diamond Crusher - Crystal shatter
+function showDiamondCrusher(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    // Crystal formation then shatter
+    const crystal = document.createElement('div');
+    crystal.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:80px;height:100px;transform:translate(-50%,-50%);background:linear-gradient(135deg,rgba(200,230,255,0.8),rgba(147,197,253,0.6),rgba(255,255,255,0.9));clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);z-index:3500;animation:crystalShatter 0.8s ease-out forwards`;
+    arena.appendChild(crystal);
+    // Shards flying
+    setTimeout(() => {
+        for(let i = 0; i < 8; i++){
+            const shard = document.createElement('div');
+            const angle = (i/8) * Math.PI * 2;
+            shard.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:15px;height:20px;background:linear-gradient(135deg,rgba(200,230,255,0.9),rgba(147,197,253,0.7));clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);z-index:3400;animation:shardFly 0.5s ease-out forwards`;
+            shard.style.setProperty('--fly-x', Math.cos(angle)*80+'px');
+            shard.style.setProperty('--fly-y', Math.sin(angle)*80+'px');
+            arena.appendChild(shard);
+            setTimeout(() => shard.remove(), 500);
+        }
+    }, 300);
+    setTimeout(() => crystal.remove(), 800);
+}
+
+// Sphinx Riddle - Mystical sand symbols
+function showSphinxRiddle(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const symbols = ['𓂀', '𓃭', '𓆣', '𓇯', '𓊝'];
+    for(let i = 0; i < 5; i++){
+        setTimeout(() => {
+            const symbol = document.createElement('div');
+            const angle = (i/5) * Math.PI * 2;
+            const radius = 70;
+            symbol.style.cssText = `position:absolute;left:${centerX + Math.cos(angle)*radius}px;top:${centerY + Math.sin(angle)*radius}px;font-size:2rem;color:rgba(218,165,32,0.9);text-shadow:0 0 15px rgba(218,165,32,0.8);transform:translate(-50%,-50%);z-index:3500;animation:symbolAppear 0.6s ease-out forwards`;
+            symbol.textContent = symbols[i];
+            arena.appendChild(symbol);
+            setTimeout(() => symbol.remove(), 800);
+        }, i * 100);
+    }
+    // Sand burst
+    const sand = document.createElement('div');
+    sand.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:100px;height:100px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(218,165,32,0.6),rgba(180,140,80,0.4),transparent);border-radius:50%;z-index:3400;animation:impactBurst 0.6s ease-out forwards`;
+    arena.appendChild(sand);
+    setTimeout(() => sand.remove(), 600);
+}
+
+// Overclock - Mechanical surge
+function showOverclock(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    // Electric arcs
+    for(let i = 0; i < 6; i++){
+        const arc = document.createElement('div');
+        const angle = (i/6) * Math.PI * 2;
+        arc.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:60px;height:4px;background:linear-gradient(90deg,rgba(100,200,255,0.9),rgba(255,255,100,0.8),transparent);transform-origin:left center;transform:rotate(${angle*180/Math.PI}deg);z-index:3500;animation:arcFlash 0.4s ease-out ${i*0.05}s forwards`;
+        arena.appendChild(arc);
+        setTimeout(() => arc.remove(), 500);
+    }
+    // Central gear
+    const gear = document.createElement('div');
+    gear.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;font-size:3rem;transform:translate(-50%,-50%);filter:drop-shadow(0 0 15px rgba(100,200,255,0.8));z-index:3400;animation:gearSpin 0.8s ease-out forwards`;
+    gear.textContent = '⚙️';
+    arena.appendChild(gear);
+    setTimeout(() => gear.remove(), 800);
+}
+
+// Swarm Barrage - Insects attacking
+function showSwarmBarrage(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    for(let i = 0; i < 15; i++){
+        setTimeout(() => {
+            const bug = document.createElement('div');
+            const startX = Math.random() * arena.offsetWidth;
+            bug.style.cssText = `position:absolute;left:${startX}px;top:-20px;font-size:1rem;z-index:3500;animation:bugSwarm 0.6s ease-in forwards`;
+            bug.style.setProperty('--end-x', (centerX - startX) + 'px');
+            bug.style.setProperty('--end-y', (centerY + 20) + 'px');
+            bug.textContent = '🪲';
+            arena.appendChild(bug);
+            setTimeout(() => bug.remove(), 600);
+        }, i * 50);
+    }
+}
+
+// Hurricane - Swirling wind
+function showHurricane(targetEl){
+    const arena = document.getElementById('battleArena');
+    if(!arena) return;
+    const bounds = targetEl ? getCreatureBounds(targetEl) : {centerX:arena.offsetWidth*0.7,centerY:arena.offsetHeight/2};
+    const arenaRect = arena.getBoundingClientRect();
+    const centerX = bounds.centerX - arenaRect.left;
+    const centerY = bounds.centerY - arenaRect.top;
+
+    const hurricane = document.createElement('div');
+    hurricane.style.cssText = `position:absolute;left:${centerX}px;top:${centerY}px;width:120px;height:120px;transform:translate(-50%,-50%);background:conic-gradient(from 0deg,rgba(200,200,200,0.3),rgba(150,200,255,0.4),rgba(200,200,200,0.3),rgba(150,200,255,0.4));border-radius:50%;z-index:3400;animation:hurricaneSpin 1s ease-out forwards`;
+    arena.appendChild(hurricane);
+    // Wind lines
+    for(let i = 0; i < 8; i++){
+        const line = document.createElement('div');
+        line.style.cssText = `position:absolute;left:${centerX-60+Math.random()*120}px;top:${centerY-60+Math.random()*120}px;width:40px;height:3px;background:linear-gradient(90deg,transparent,rgba(200,200,200,0.6),transparent);transform:rotate(${Math.random()*360}deg);z-index:3300;animation:windLine 0.8s ease-out forwards`;
+        arena.appendChild(line);
+        setTimeout(() => line.remove(), 800);
+    }
+    setTimeout(() => hurricane.remove(), 1000);
 }
 
 // ============================================
@@ -16951,6 +18153,16 @@ function enemyAction(){
                     showWaveAnimation('left'); // Wave comes from enemy side
                 }
 
+                // v54.13: WILD CREATURE AOE ANIMATIONS
+                // Wild encounters also get move-based animations for AOE attacks
+                if(!enemy.isBoss){
+                    // Show animation on first alive target
+                    const firstTarget = alive[0] ? document.getElementById('arenaC'+b.team.indexOf(alive[0])) : null;
+                    if(firstTarget){
+                        showAttackAnimationByType(firstTarget, atkName, enemy.attackElement);
+                    }
+                }
+
                 addLog(`💥 ${enemy.name}: ${atkName}!`,'enemy');
                 alive.forEach((t,i)=>{
                     t.chipHp = t.curHp;
@@ -17022,6 +18234,12 @@ function enemyAction(){
                 // v54.7: EPIC BOSS SPECIAL ANIMATIONS
                 if(enemy.isBoss && enemy.id){
                     showBossAttackAnimation(enemy.id, spec.name, false, [freshArenaCreature || freshTargetEl]);
+                }
+
+                // v54.13: WILD CREATURE SPECIAL ANIMATIONS
+                // Wild encounters and minions also get move-based animations for specials
+                if(!enemy.isBoss && (freshArenaCreature || freshTargetEl)){
+                    showAttackAnimationByType(freshArenaCreature || freshTargetEl, spec.name || spec.n, spec.element || enemy.attackElement);
                 }
 
                 // FIRE SPECIAL PROJECTILE FROM ENEMY TO PLAYER - v54.8: Use fresh enemyEl
@@ -17104,6 +18322,12 @@ function enemyAction(){
                 // v54.7: EPIC BOSS BASIC ATTACK ANIMATIONS
                 if(enemy.isBoss && enemy.id){
                     showBossAttackAnimation(enemy.id, atkName, false, [freshArenaCreature || freshTargetEl]);
+                }
+
+                // v54.13: WILD CREATURE ATTACK ANIMATIONS
+                // Wild encounters and minions also get move-based animations
+                if(!enemy.isBoss && (freshArenaCreature || freshTargetEl)){
+                    showAttackAnimationByType(freshArenaCreature || freshTargetEl, atkName, enemy.attackElement);
                 }
 
                 // FIRE PROJECTILE FROM ENEMY TO PLAYER - v54.8: Use fresh enemyEl
