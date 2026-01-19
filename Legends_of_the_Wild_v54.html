@@ -8395,6 +8395,146 @@ special:{weight:15,name:"Special Event"},
 boss:{weight:10,name:"Boss Appears"}
 };
 
+// ============================================
+// v54.14: ALLY ENCOUNTERS - Quest Creatures
+// ============================================
+// Rare encounters with friendly creatures that offer choices
+// 8% chance during special events to trigger an ally encounter
+const ALLY_ENCOUNTERS = [
+    {
+        id: 'injured_phoenix',
+        name: 'Injured Phoenix Chick',
+        img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png',
+        regions: ['volcano', 'forest'], // Where this encounter can occur
+        intro: `Through the smoke and ash, you hear a soft chirping. A wounded Phoenix Chick lies among the embers, its flames flickering weakly. It looks at you with pleading eyes...`,
+        choices: [
+            {
+                text: '🩹 Tend to its wounds carefully',
+                outcome: 'heal',
+                result: `You gently tend to the Phoenix Chick's wounds. As your kindness flows into it, the creature's flames reignite with grateful warmth! The Phoenix blesses your party with its eternal fire!`,
+                reward: {type: 'xp_all', amount: 'scaled', multiplier: 2.0}
+            },
+            {
+                text: '🔥 Share your party\'s warmth and food',
+                outcome: 'feed',
+                result: `You share provisions with the weakened creature. It chirps happily and suddenly bursts into brilliant flames - a rebirth! As thanks, it sheds a feather of pure fire.`,
+                reward: {type: 'coins_all', amount: 'scaled', multiplier: 3.0}
+            },
+            {
+                text: '🎭 Perform an encouraging dance',
+                outcome: 'entertain',
+                result: `Your party's silly dance makes the Phoenix Chick chirp with laughter! Its spirits lifted, the flames grow stronger. It does a little dance back, showering your team with sparks of joy!`,
+                reward: {type: 'focus_restore', amount: 30}
+            },
+            {
+                text: '❌ Leave it be - nature must run its course',
+                outcome: 'ignore',
+                result: `You decide not to interfere with nature. As you walk away, you feel a strange chill. Perhaps some opportunities shouldn't be passed up...`,
+                reward: {type: 'nothing'}
+            }
+        ]
+    },
+    {
+        id: 'sealed_spirit',
+        name: 'Sealed Earth Spirit',
+        img: 'Quest_Creatures/Quest_SealedEarthSpirit.png',
+        regions: ['forest', 'ice', 'void'],
+        intro: `Ancient runes glow on a massive stone. Inside, you sense a presence - an Earth Spirit, sealed long ago! It whispers through the rock: "Will you... free me?"`,
+        choices: [
+            {
+                text: '⚡ Channel your creatures\' energy to break the seal',
+                outcome: 'break',
+                result: `Your creatures focus their power on the ancient runes. With a thunderous crack, the seal shatters! The Earth Spirit emerges, ancient and powerful. "For your bravery, I grant you the strength of mountains!"`,
+                reward: {type: 'xp_all', amount: 'scaled', multiplier: 2.5}
+            },
+            {
+                text: '📖 Study the runes to understand the seal',
+                outcome: 'study',
+                result: `You carefully examine the ancient inscriptions. Knowledge floods your mind - this spirit was sealed to protect something precious. The spirit shares its wisdom, teaching your party ancient secrets!`,
+                reward: {type: 'xp_one', amount: 'scaled', multiplier: 5.0}
+            },
+            {
+                text: '🙏 Offer a respectful prayer to the spirit',
+                outcome: 'pray',
+                result: `You kneel and offer a sincere prayer. The spirit is moved by your respect. Though it cannot be freed by faith alone, it blesses your party with earthen protection.`,
+                reward: {type: 'coins_all', amount: 'scaled', multiplier: 2.0}
+            },
+            {
+                text: '🚫 The seal was placed for a reason - walk away',
+                outcome: 'leave',
+                result: `Wise caution guides you away. Some things are sealed for good reasons. The spirit's whisper fades: "Perhaps... this was meant to be..."`,
+                reward: {type: 'small_xp', amount: 10}
+            }
+        ]
+    },
+    {
+        id: 'lost_whale',
+        name: 'The Lost Whale',
+        img: 'Quest_Creatures/Quest_TheLostWhale.png',
+        regions: ['ice', 'void'],
+        intro: `A majestic Sky Whale floats before you, lost and confused. Its songs echo with sadness - it has strayed far from its pod and cannot find its way home among the stars...`,
+        choices: [
+            {
+                text: '🌟 Help it navigate using the stars',
+                outcome: 'guide',
+                result: `You point toward the constellation patterns leading home. The Whale's eyes light up with recognition! With a joyful song, it circles your party, raining down stardust before disappearing into the sky.`,
+                reward: {type: 'xp_all', amount: 'scaled', multiplier: 2.0}
+            },
+            {
+                text: '🎵 Sing a song to comfort it',
+                outcome: 'sing',
+                result: `Your party raises their voices in harmony. The Whale hums along, and suddenly - it remembers! This was the lullaby of its pod! Overjoyed, it shares treasures from the depths of space.`,
+                reward: {type: 'coins_all', amount: 'scaled', multiplier: 4.0}
+            },
+            {
+                text: '🤗 Let your creatures befriend it',
+                outcome: 'befriend',
+                result: `Your creatures approach with gentle curiosity. The Whale lowers its massive head and makes a friend. Though it must leave, it grants your party a portion of its cosmic energy!`,
+                reward: {type: 'heal_all', amount: 999}
+            },
+            {
+                text: '👋 Wish it well and continue on',
+                outcome: 'farewell',
+                result: `You wave goodbye with kind wishes. The Whale sings a melancholic note and drifts away. Sometimes the best help is simply kindness...`,
+                reward: {type: 'small_coins', amount: 15}
+            }
+        ]
+    },
+    {
+        id: 'messenger_raven',
+        name: 'The Messenger Raven',
+        img: 'Quest_Creatures/Quest_TheMessengerRaven.png',
+        regions: ['forest', 'volcano', 'ice', 'void'],
+        intro: `A magnificent Raven lands before you, bearing a scroll tied to its leg. Its eyes gleam with intelligence. "Caw! I bear an important message, but first - a test of your wisdom!"`,
+        choices: [
+            {
+                text: '🧩 Accept the Raven\'s riddle challenge',
+                outcome: 'riddle',
+                result: `"What has roots nobody sees, is taller than trees, up up it goes, yet never grows?" You answer: "A mountain!" The Raven caws approvingly and reveals the scroll's treasure map!`,
+                reward: {type: 'coins_all', amount: 'scaled', multiplier: 3.5}
+            },
+            {
+                text: '🍖 Offer the Raven a treat',
+                outcome: 'treat',
+                result: `The Raven's eyes light up at the food. "Caw! Generosity is its own wisdom!" It shares gossip from across the lands - valuable information that helps your training!`,
+                reward: {type: 'xp_all', amount: 'scaled', multiplier: 1.5}
+            },
+            {
+                text: '💬 Ask the Raven about its travels',
+                outcome: 'listen',
+                result: `The Raven tells tales of distant lands and ancient powers. Your party listens intently, gaining wisdom from worlds beyond. "Knowledge is the greatest treasure," it declares.`,
+                reward: {type: 'xp_one', amount: 'scaled', multiplier: 3.0}
+            },
+            {
+                text: '📜 Try to read the message yourself',
+                outcome: 'snoop',
+                result: `You reach for the scroll, but the Raven pecks your hand! "CAW! Manners, young one!" It flies away in a huff. Perhaps patience would have served better...`,
+                reward: {type: 'nothing'}
+            }
+        ]
+    }
+];
+
 // XP TABLE - Redesigned for proper pacing
 // Chapter 1 target: Levels 1-22 (can reach 24-25 with grinding)
 // Chapter 2 target: Levels 23-35
@@ -10809,22 +10949,67 @@ function partyNeedsRest(){
     });
 }
 
+// ============================================
+// v54.14: INDIVIDUAL HEAL/REVIVE FUNCTIONS
+// ============================================
+// Heal a single creature to full HP
+function healCreature(studentId){
+    const student = state.students.find(s => s.id === studentId);
+    if(!student || !student.cid) return;
+
+    const lv = getLv(student.xp);
+    const st = getStats(student.cid, lv, student.nature);
+
+    // Only heal if wounded (not KO)
+    if(student.curHp > 0 && student.curHp < st.hp){
+        student.curHp = st.hp;
+        addStoryLog(`💚 ${student.name || CREATURES[student.cid].name} healed to full HP!`, 'special');
+        save();
+        renderMain();
+    }
+}
+
+// Revive a KO'd creature to 50% HP
+function reviveCreature(studentId){
+    const student = state.students.find(s => s.id === studentId);
+    if(!student || !student.cid) return;
+
+    const lv = getLv(student.xp);
+    const st = getStats(student.cid, lv, student.nature);
+
+    // Only revive if KO'd
+    if(student.curHp <= 0){
+        student.curHp = Math.floor(st.hp * 0.5); // Revive to 50% HP
+        student.curFocus = STARTING_FOCUS; // Also restore starting focus
+        addStoryLog(`💔 ${student.name || CREATURES[student.cid].name} has been revived!`, 'special');
+        save();
+        renderMain();
+    }
+}
+
+// Restore a creature's focus to full
+function restoreFocus(studentId){
+    const student = state.students.find(s => s.id === studentId);
+    if(!student || !student.cid) return;
+
+    // Only restore if not full
+    if(student.curFocus === undefined || student.curFocus < MAX_FOCUS){
+        student.curFocus = MAX_FOCUS;
+        addStoryLog(`⚡ ${student.name || CREATURES[student.cid].name}'s Focus restored!`, 'special');
+        save();
+        renderMain();
+    }
+}
+
 // RENDER: LEGENDS TEAM (Active students)
 function renderTeam(m){
     const active=getActiveStudents();
     const count=active.length;
 
-    // v54.4: Check if party needs rest
-    const needsRest = partyNeedsRest();
-    const restBtnStyle = needsRest
-        ? 'background:linear-gradient(135deg,#4ade80,#22c55e);color:#000;'
-        : 'background:#333;color:#666;cursor:not-allowed;';
-
+    // v54.14: Removed "Rest Party" button - individual heal/revive per creature now
     let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
         <h2 class="section-title" style="margin:0">🏫 Legends Team</h2>
-        <button onclick="${needsRest ? 'restParty()' : ''}" style="padding:10px 20px;border:none;border-radius:8px;font-weight:bold;${restBtnStyle}" ${needsRest ? '' : 'disabled'}>
-            💤 Rest Party ${needsRest ? '(Heal All)' : '(Full HP)'}
-        </button>
+        <span style="color:#888;font-size:.8rem">💡 Heal or revive creatures individually</span>
     </div>`;
     
     if(!count){
@@ -10930,6 +11115,20 @@ function renderTeam(m){
                 <div style="height:6px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;">
                     <div style="width:${focusPercent}%;height:100%;background:#60a5fa;border-radius:3px;transition:width .3s"></div>
                 </div>
+                ${isKO ? `
+                    <button onclick="reviveCreature(${s.id})" style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:6px;color:#fff;font-weight:bold;cursor:pointer;font-size:.8rem">
+                        💔 Revive (50% HP)
+                    </button>
+                ` : isWounded ? `
+                    <button onclick="healCreature(${s.id})" style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:6px;color:#000;font-weight:bold;cursor:pointer;font-size:.8rem">
+                        💚 Heal to Full
+                    </button>
+                ` : ''}
+                ${curFocus < MAX_FOCUS ? `
+                    <button onclick="restoreFocus(${s.id})" style="margin-top:${isKO || isWounded ? '4' : '8'}px;width:100%;padding:6px;background:linear-gradient(135deg,#60a5fa,#3b82f6);border:none;border-radius:6px;color:#fff;font-weight:bold;cursor:pointer;font-size:.75rem">
+                        ⚡ Restore Focus
+                    </button>
+                ` : ''}
             </div>`;
 
             // Mini Stat Bar - With icons from UI_Elements
@@ -13046,6 +13245,171 @@ function showSummonAnimation(bossName, minions, callback){
     }, 2000); // Show for 2 seconds
 }
 
+// ============================================
+// v54.14: BOSS SUMMON/HEAL ON THEIR TURN
+// ============================================
+// This is called at the START of a boss's turn to decide if they should
+// summon minions or heal instead of making a normal attack.
+// Returns true if the boss used their turn for summon/heal, false otherwise.
+function checkBossSummonOnTurn(boss, bossIdx){
+    const b = state.battle;
+    if(!b || !boss.isBoss) return false;
+
+    // Track summon waves (0 = none, 1 = first wave at 40%, 2 = second wave at 20%)
+    if(boss.summonWaves === undefined) boss.summonWaves = 0;
+
+    const hpPercent = boss.hp / boss.maxHp;
+
+    // Check if boss should summon/heal based on HP thresholds
+    let shouldAct = false;
+    let waveNumber = 0;
+
+    if(hpPercent <= 0.2 && boss.summonWaves < 2){
+        shouldAct = true;
+        waveNumber = 2;
+    } else if(hpPercent <= 0.4 && boss.summonWaves < 1){
+        shouldAct = true;
+        waveNumber = 1;
+    }
+
+    if(!shouldAct) return false;
+
+    // Update summon wave tracker
+    boss.summonWaves = waveNumber;
+
+    // Check if boss has minions to spawn
+    const minionPool = boss.minionPool;
+
+    // BOSSES WITHOUT MINIONS: Self-heal instead of summoning
+    if(!minionPool || !minionPool.length){
+        // v54.14: Wave-based heal amounts (first wave = 25%, second wave = 15%)
+        const healPercent = waveNumber === 1 ? 0.25 : 0.15;
+        const healAmount = Math.floor(boss.maxHp * healPercent);
+        const actualHeal = Math.min(healAmount, boss.maxHp - boss.hp);
+        boss.hp = Math.min(boss.maxHp, boss.hp + healAmount);
+
+        // Show heal animation and message
+        const bossEl = document.getElementById('enemyImg' + bossIdx);
+        if(bossEl){
+            bossEl.classList.add('anim-heal');
+            setTimeout(() => bossEl.classList.remove('anim-heal'), 550);
+            showFloatingDamage(bossEl, actualHeal, 'heal');
+        }
+
+        const healMsg = waveNumber === 2 ?
+            `💚 ${boss.name} desperately channels remaining energy! (+${actualHeal} HP)` :
+            `💚 ${boss.name} channels dark energy and heals itself! (+${actualHeal} HP)`;
+        playSound('heal');
+        addLog(healMsg, 'enemy');
+        renderMain();
+
+        // End boss turn
+        turnIdx++;
+        processing = false;
+        setTimeout(nextTurn, 800);
+        return true;
+    }
+
+    // v54.14: Party-aware minion spawning
+    const avgLv = getAvgLevel();
+    const partyTier = getPartyTier();
+
+    // Wave 1: Full minion count based on party size
+    // Wave 2: Fewer but elite (30% stronger)
+    const isWave2 = waveNumber === 2;
+    const baseMinions = isWave2 ? 1 : 2;
+    const numMinions = getBossMinionCount(baseMinions);
+    const wave2Multiplier = isWave2 ? 1.3 : 1.0;
+
+    console.log(`Boss Summon (On Turn): Wave ${waveNumber}, spawning ${numMinions} minions`);
+
+    const newMinions = [];
+    for(let i = 0; i < numMinions; i++){
+        const minionId = minionPool[Math.floor(Math.random() * minionPool.length)];
+        const minionData = MINIONS[minionId];
+        if(!minionData) continue;
+
+        const minionLv = Math.max(avgLv - 5, 10);
+        const lvScale = 1 + (minionLv - 1) * 0.08;
+
+        // Apply party-adaptive scaling to minions
+        const baseHP = Math.floor(minionData.base.hp * lvScale * wave2Multiplier);
+        const baseATK = Math.floor(minionData.base.atk * lvScale * wave2Multiplier);
+        const baseDEF = Math.floor(minionData.base.def * lvScale);
+        const baseSPD = Math.floor(minionData.base.spd * lvScale);
+
+        const scaled = scaleBossMinion(baseHP, baseATK, baseDEF, baseSPD);
+
+        // v54.14: Elite prefix for wave 2 minions
+        const minionName = isWave2 ? `Elite ${minionData.name}` : minionData.name;
+
+        newMinions.push({
+            id: minionId,
+            name: minionName,
+            type: minionData.type,
+            lv: minionLv,
+            hp: scaled.hp,
+            maxHp: scaled.hp,
+            atk: scaled.atk,
+            def: scaled.def,
+            spd: scaled.spd,
+            xp: Math.floor((20 + minionLv * 3) * wave2Multiplier),
+            coins: Math.floor((10 + minionLv * 2) * wave2Multiplier),
+            img: minionData.img,
+            isMinion: true,
+            isElite: isWave2,
+            attacks: ['Minion Strike', 'Quick Attack', 'Slash']
+        });
+    }
+
+    if(newMinions.length > 0){
+        // CRITICAL: Set processing flag to block ALL turn advancement during summon
+        processing = true;
+
+        // Show summon animation BEFORE adding minions
+        showSummonAnimation(boss.name, newMinions, () => {
+            // Add minions to battle after animation
+            b.enemies.push(...newMinions);
+
+            // Add minions to turn order with correct indices
+            newMinions.forEach((m, i) => {
+                const enemyIdx = b.enemies.length - newMinions.length + i;
+                battleQueue.push({type:'enemy', idx: enemyIdx, spd: m.spd});
+            });
+
+            // Re-sort turn order by speed
+            battleQueue.sort((a,b) => b.spd - a.spd);
+
+            // v54.14: Wave-specific summon messages
+            if(isWave2){
+                addLog(`⚡ ${boss.name} calls upon elite reinforcements!`, 'enemy');
+                addLog(`👹 ${newMinions.length} ELITE minion(s) enter the battle!`, 'enemy');
+            } else {
+                addLog(`💀 ${boss.name} summons reinforcements!`, 'enemy');
+                addLog(`👹 ${newMinions.length} minion(s) join the fight!`, 'enemy');
+            }
+
+            // Force re-render to show new minions
+            renderMain();
+
+            // CRITICAL: Advance turn and clear processing
+            turnIdx++;
+            processing = false;
+
+            // Trigger next turn after delay (avoids recursion)
+            setTimeout(() => {
+                if(!processing){ // Double-check processing isn't stuck
+                    nextTurn();
+                }
+            }, 600);
+        });
+
+        return true; // Boss used their turn
+    }
+
+    return false;
+}
+
 // DM Narrative Generator
 const DM_NARRATIVES = {
     wild: {
@@ -13170,8 +13534,11 @@ function startWildEncounter(avgLv,chapter){
     });
     
     // Add player creatures as RARE elite encounters (only 1 copy each)
+    // v54.14: EXCLUDE mythical creatures like Runvig from normal pool (they have special encounters)
     Object.entries(CREATURES).forEach(([cid, c]) => {
-        
+        // Skip mythical creatures - they have their own super-rare encounter system
+        if(c.isMythical || c.creatorCreature) return;
+
         // EVO 1: Available early game (before first evolution threshold + buffer)
         const evo1MaxLv = c.evAt ? c.evAt[0] + 3 : 18;
         if(avgLv <= evo1MaxLv){
@@ -13388,6 +13755,73 @@ function startWildEncounter(avgLv,chapter){
         }
     }
     
+    // ============================================
+    // v54.14: MYTHICAL ELITE ENCOUNTER (RUNVIG)
+    // ============================================
+    // Super rare chance to encounter the legendary Runvig!
+    // 1% chance in Chapter 3, 2% in Chapter 4, 3% in Chapter 5
+    // This is a mini-boss level encounter with a single extremely powerful enemy
+    if(chapter >= 3 && avgLv >= 25){
+        const runvigChance = 0.01 + (chapter - 3) * 0.01; // 1% ch3, 2% ch4, 3% ch5
+        if(Math.random() < runvigChance){
+            const runvig = CREATURES.runvig;
+            if(runvig){
+                // Determine evolution based on average party level
+                let evoStage = 0;
+                if(avgLv >= 40) evoStage = 3;
+                else if(avgLv >= 28) evoStage = 2;
+                else if(avgLv >= 18) evoStage = 1;
+
+                const evoGrowth = evoStage * 8; // Significant stat growth per evolution
+                const lvScale = 1 + (avgLv - 20) * 0.04;
+                const partyScale = 1 + (partySize - 1) * 0.15;
+
+                const runvigEnemy = {
+                    id: 'runvig_elite',
+                    name: '★★★ ' + (runvig.names[evoStage] || runvig.name) + ' ★★★',
+                    type: runvig.type,
+                    lv: Math.max(avgLv + 5, 30),
+                    hp: Math.floor((runvig.base.hp + runvig.grow.hp * evoGrowth) * lvScale * partyScale * 2.0),
+                    maxHp: Math.floor((runvig.base.hp + runvig.grow.hp * evoGrowth) * lvScale * partyScale * 2.0),
+                    atk: Math.floor((runvig.base.atk + runvig.grow.atk * evoGrowth) * lvScale * partyScale * 1.5),
+                    def: Math.floor((runvig.base.def + runvig.grow.def * evoGrowth) * lvScale * 1.3),
+                    spd: Math.floor((runvig.base.spd + runvig.grow.spd * evoGrowth) * lvScale),
+                    img: 'Player_Creatures/' + runvig.imgs[evoStage],
+                    xp: Math.floor(500 + avgLv * 20), // Massive XP reward
+                    coins: Math.floor(200 + avgLv * 10), // Great coin reward
+                    isWild: true,
+                    isElite: true,
+                    isMythicalElite: true,
+                    evoStage: evoStage + 1,
+                    attacks: ['Lightning Fang', 'Thunderstorm Fang'],
+                    attackElement: 'lightning',
+                    focus: 80,
+                    focusMax: 100,
+                    focusRegen: 15,
+                    hasSpecial: true,
+                    specialAttack: {name: 'Ragnarök Thunderstrike', power: 2.2, cooldown: 3, element: 'lightning', focusCost: 50},
+                    specialCooldown: 0,
+                    canHeal: true,
+                    healAttack: {name: 'Frost Mend', power: 0.3, focusCost: 35}
+                };
+
+                const narratives = [
+                    `The air crackles with ancient power. A blinding flash reveals a creature of legend - ${runvigEnemy.name}! The mythical beast has chosen YOU as its challenger!`,
+                    `Thunder rumbles from a clear sky. Nordic runes glow in the earth beneath your feet. ${runvigEnemy.name} descends from the heavens, eyes blazing with primordial fury!`,
+                    `"You dare tread in MY domain?" A voice like thunder echoes across the land. ${runvigEnemy.name} appears - a creature spoken of only in ancient tales!`,
+                    `Legends speak of a creature that commands the storms themselves. Today, you stand before that legend. ${runvigEnemy.name} AWAKENS!`
+                ];
+
+                addStoryLog(`⚡⚡⚡ MYTHICAL ENCOUNTER: ${runvigEnemy.name}! ⚡⚡⚡`, 'battle');
+
+                showEventOverlay('⚡ MYTHICAL ELITE! ⚡', narratives[Math.floor(Math.random() * narratives.length)], 'gold', () => {
+                    startBattleWith(runvigEnemy, 'tier3'); // Use tier3 size for epic feel
+                });
+                return;
+            }
+        }
+    }
+
     // If we're doing a previous boss encounter
     if(bossToFight){
         // Scale boss to current party level
@@ -13547,23 +13981,42 @@ function startWildEncounter(avgLv,chapter){
         }
 
         // ============================================
-        // ELITE ENEMY SYSTEM (Chapter 3+)
+        // v54.14: ELITE ENEMY SYSTEM (All Chapters)
         // ============================================
         // Elite enemies are stronger variants with ★ in name
+        // Chapter 1-2: Max 1 elite per encounter (5% chance)
+        // Chapter 3+: Multiple elites allowed, higher chance
         let isElite = false;
         let eliteHpMult = 1.0;
         let eliteAtkMult = 1.0;
         let eliteXpMult = 1.0;
 
-        if(chapter >= 3){
-            // Elite chance increases with chapter: 15% ch3, 20% ch4, 25% ch5
-            const eliteChance = 0.10 + (chapter - 2) * 0.05;
+        // Count how many elites we've already created in this encounter
+        const currentEliteCount = enemies.filter(e => e.isElite).length;
+
+        // Determine max elites based on chapter
+        const maxElites = chapter <= 2 ? 1 : (chapter === 3 ? 2 : 3);
+
+        // Only allow more elites if under the limit
+        if(currentEliteCount < maxElites){
+            // Elite chance varies by chapter
+            let eliteChance;
+            if(chapter <= 2){
+                eliteChance = 0.05; // 5% in early chapters
+            } else {
+                eliteChance = 0.10 + (chapter - 2) * 0.05; // 10% ch3, 15% ch4, 20% ch5
+            }
 
             if(Math.random() < eliteChance){
                 isElite = true;
                 // Elite stat multipliers scale with chapter
-                eliteHpMult = 1.25 + (chapter - 3) * 0.1;   // 1.25x ch3, 1.35x ch4, 1.45x ch5
-                eliteAtkMult = 1.20 + (chapter - 3) * 0.08; // 1.20x ch3, 1.28x ch4, 1.36x ch5
+                if(chapter <= 2){
+                    eliteHpMult = 1.15; // Weaker elites in early game
+                    eliteAtkMult = 1.10;
+                } else {
+                    eliteHpMult = 1.25 + (chapter - 3) * 0.1;   // 1.25x ch3, 1.35x ch4, 1.45x ch5
+                    eliteAtkMult = 1.20 + (chapter - 3) * 0.08; // 1.20x ch3, 1.28x ch4, 1.36x ch5
+                }
                 eliteXpMult = 1.5; // 50% more XP for elite kills
             }
         }
@@ -13680,12 +14133,21 @@ function treasureEvent(chapter=1, avgLv=1){
 }
 
 function specialEvent(chapter=1, avgLv=1){
+    // v54.14: 8% chance of ALLY ENCOUNTER event!
+    if(Math.random() < 0.08){
+        const regions = {1:'forest', 2:'volcano', 3:'ice', 4:'void', 5:'void'};
+        const currentRegion = regions[chapter] || 'forest';
+        if(triggerAllyEncounter(currentRegion, avgLv)){
+            return; // Successfully triggered ally encounter
+        }
+    }
+
     // 5% chance of RARE Creator Blessing event!
     if(Math.random() < 0.05){
         creatorBlessingEvent(avgLv);
         return;
     }
-    
+
     const eventTypes = ['blessing', 'wisdom', 'training', 'luck'];
     const eventType = eventTypes[Math.floor(Math.random()*eventTypes.length)];
     
@@ -13788,6 +14250,169 @@ function showCreatorOverlay(title, narrative, giftName, giftReward){
         </div>
     `;
     document.getElementById('eventOverlay').classList.add('active');
+}
+
+// ============================================
+// v54.14: ALLY ENCOUNTER SYSTEM
+// ============================================
+// Triggers a random ally encounter based on current region
+function triggerAllyEncounter(region, avgLv){
+    // Get encounters available in this region
+    const availableEncounters = ALLY_ENCOUNTERS.filter(e => e.regions.includes(region));
+    if(availableEncounters.length === 0) return false;
+
+    // Pick a random encounter
+    const encounter = availableEncounters[Math.floor(Math.random() * availableEncounters.length)];
+
+    // Store encounter data for choice selection
+    window._currentAllyEncounter = {
+        encounter: encounter,
+        avgLv: avgLv
+    };
+
+    addStoryLog(`🌟 ALLY ENCOUNTER: ${encounter.name}!`, 'special');
+
+    // Show the encounter overlay with choices
+    showAllyEncounterOverlay(encounter);
+    return true;
+}
+
+// Display ally encounter with 4 choices
+function showAllyEncounterOverlay(encounter){
+    const choicesHtml = encounter.choices.map((choice, idx) => `
+        <button class="ally-choice-btn" onclick="selectAllyChoice(${idx})" style="
+            display:block;
+            width:100%;
+            margin:8px 0;
+            padding:12px 16px;
+            background:linear-gradient(135deg,rgba(100,150,200,.2),rgba(50,100,150,.3));
+            border:1px solid rgba(100,200,255,.4);
+            border-radius:8px;
+            color:#fff;
+            cursor:pointer;
+            text-align:left;
+            font-family:'Cinzel',serif;
+            font-size:.9rem;
+            transition:all .2s ease;
+        " onmouseover="this.style.background='linear-gradient(135deg,rgba(100,200,255,.3),rgba(50,150,200,.4))';this.style.transform='translateX(5px)'"
+           onmouseout="this.style.background='linear-gradient(135deg,rgba(100,150,200,.2),rgba(50,100,150,.3))';this.style.transform='none'">
+            ${choice.text}
+        </button>
+    `).join('');
+
+    document.querySelector('#eventOverlay .overlay-content').innerHTML = `
+        <div style="text-align:center">
+            <div style="width:200px;height:200px;margin:0 auto 15px;border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(100,200,255,.4)">
+                <img src="${G}/${encounter.img}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML='<div style=font-size:5rem>🌟</div>'">
+            </div>
+            <h2 style="color:#7dd3fc;font-family:'Uncial Antiqua',cursive;font-size:1.4rem;margin-bottom:10px;text-shadow:0 0 20px rgba(100,200,255,.5)">🌟 ${encounter.name}</h2>
+            <p style="color:#ddd;margin:15px 0;line-height:1.6;font-size:.9rem;max-width:500px;margin:0 auto 20px;white-space:pre-line">${encounter.intro}</p>
+            <div style="max-width:400px;margin:0 auto;text-align:left">
+                <div style="color:#7dd3fc;font-size:.85rem;margin-bottom:8px;text-align:center">What will you do?</div>
+                ${choicesHtml}
+            </div>
+        </div>
+    `;
+    document.getElementById('eventOverlay').classList.add('active');
+}
+
+// Handle ally encounter choice selection
+function selectAllyChoice(choiceIdx){
+    const data = window._currentAllyEncounter;
+    if(!data) return;
+
+    const encounter = data.encounter;
+    const avgLv = data.avgLv;
+    const choice = encounter.choices[choiceIdx];
+
+    if(!choice) return;
+
+    // Calculate scaled rewards
+    const scaledXP = Math.floor(20 + Math.pow(avgLv, 1.5) * 1.5);
+    const scaledCoins = Math.floor(25 + avgLv * 3);
+
+    // Process reward
+    let rewardText = '';
+    const reward = choice.reward;
+
+    switch(reward.type){
+        case 'xp_all':
+            const xpAmount = Math.floor(scaledXP * (reward.multiplier || 1));
+            getActiveStudents().forEach(s => addXP(s.id, xpAmount));
+            rewardText = `+${xpAmount} XP to all party members!`;
+            break;
+        case 'xp_one':
+            const xpOneAmount = Math.floor(scaledXP * (reward.multiplier || 1));
+            const randomStudent = getActiveStudents()[Math.floor(Math.random() * getActiveStudents().length)];
+            if(randomStudent){
+                addXP(randomStudent.id, xpOneAmount);
+                rewardText = `+${xpOneAmount} XP to ${randomStudent.name || 'a party member'}!`;
+            }
+            break;
+        case 'coins_all':
+            const coinAmount = Math.floor(scaledCoins * (reward.multiplier || 1));
+            getActiveStudents().forEach(s => { s.coins = (s.coins || 0) + coinAmount; });
+            rewardText = `+${coinAmount} 🪙 to all party members!`;
+            break;
+        case 'focus_restore':
+            getActiveStudents().forEach(s => {
+                if(s.curFocus !== undefined){
+                    s.curFocus = Math.min(MAX_FOCUS, s.curFocus + reward.amount);
+                }
+            });
+            rewardText = `+${reward.amount} Focus restored to all!`;
+            break;
+        case 'heal_all':
+            getActiveStudents().forEach(s => {
+                if(s.cid){
+                    const st = getStats(s.cid, getLv(s.xp), s.nature);
+                    s.curHp = st.hp;
+                }
+            });
+            rewardText = `All party members fully healed!`;
+            break;
+        case 'small_xp':
+            getActiveStudents().forEach(s => addXP(s.id, reward.amount));
+            rewardText = `+${reward.amount} XP to all.`;
+            break;
+        case 'small_coins':
+            getActiveStudents().forEach(s => { s.coins = (s.coins || 0) + reward.amount; });
+            rewardText = `+${reward.amount} 🪙 to all.`;
+            break;
+        case 'nothing':
+            rewardText = 'No reward...';
+            break;
+        default:
+            rewardText = '';
+    }
+
+    // Show result
+    addStoryLog(`${encounter.name}: ${choice.outcome} - ${rewardText}`, 'special');
+
+    showAllyEncounterResult(encounter, choice, rewardText);
+    save();
+
+    // Clear encounter data
+    window._currentAllyEncounter = null;
+}
+
+// Show the result of ally encounter choice
+function showAllyEncounterResult(encounter, choice, rewardText){
+    document.querySelector('#eventOverlay .overlay-content').innerHTML = `
+        <div style="text-align:center">
+            <div style="width:180px;height:180px;margin:0 auto 15px;border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(100,255,150,.4)">
+                <img src="${G}/${encounter.img}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML='<div style=font-size:5rem>✨</div>'">
+            </div>
+            <h2 style="color:#4ade80;font-family:'Uncial Antiqua',cursive;font-size:1.3rem;margin-bottom:15px;text-shadow:0 0 20px rgba(100,255,150,.5)">${encounter.name}</h2>
+            <p style="color:#ddd;margin:15px 0;line-height:1.7;font-size:.9rem;max-width:480px;margin:0 auto;white-space:pre-line">${choice.result}</p>
+            ${rewardText ? `
+                <div style="margin-top:20px;padding:15px;background:rgba(100,255,150,.1);border:2px solid #4ade80;border-radius:12px">
+                    <div style="color:#4ade80;font-size:1rem">${rewardText}</div>
+                </div>
+            ` : ''}
+            <button class="btn btn-primary" onclick="closeEventAndContinue()" style="margin-top:20px;padding:12px 30px;font-size:1rem;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;color:#111">Continue</button>
+        </div>
+    `;
 }
 
 function showEventOverlay(title,msg,color,onContinue,imgUrl){
@@ -14598,20 +15223,15 @@ function doAction(a){
                 // Add to battle log
                 addLog(`${m.name||'Hero'} used ${moveName}! ${d} damage${isCrit?' (CRIT!)':''}`, 'dmg');
 
-                // CRITICAL: Clear processing flag BEFORE checking for summon
+                // CRITICAL: Clear processing flag before advancing turn
                 processing = false;
 
-                // Check if boss should summon minions (at 40% HP)
-                // This may set processing = true if summon happens
-                checkBossMinionSummon();
+                // v54.14: Boss summon/heal moved to boss's turn - removed checkBossMinionSummon() call here
+                // Bosses now make tactical decisions on their turn, not immediately on damage
 
-                // CRITICAL: Only advance turn if NOT processing (e.g., summon animation started)
-                // If processing is true, the summon callback will call nextTurn()
-                if(!processing){
-                    turnIdx++;
-                    renderMain();
-                    setTimeout(nextTurn, 600);
-                }
+                turnIdx++;
+                renderMain();
+                setTimeout(nextTurn, 600);
             });
 
             // v54.8: BACKUP PROCESSING CLEARER with action ID check
@@ -14665,6 +15285,7 @@ function doAction(a){
                 if(m.healCooldown && m.healCooldown > 0){
                     addLog(`${m.name||'Hero'} can't heal yet! (${m.healCooldown} turns left)`, 'dmg');
                     processing = false;
+                    unlockMoveButtons(); // v54.14: Fix soft lock
                     renderMain();
                     return;
                 }
@@ -14673,6 +15294,7 @@ function doAction(a){
                 if(m.focus < healCost){
                     addLog(`${m.name||'Hero'} doesn't have enough Focus! (Need ${healCost})`, 'dmg');
                     processing = false;
+                    unlockMoveButtons(); // v54.14: Fix soft lock
                     renderMain();
                     return;
                 }
@@ -14696,6 +15318,7 @@ function doAction(a){
             if(m.focus < specCost){
                 addLog(`${m.name||'Hero'} doesn't have enough Focus! (Need ${specCost})`, 'dmg');
                 processing = false;
+                unlockMoveButtons(); // v54.14: Fix soft lock
                 renderMain();
                 return;
             }
@@ -14843,13 +15466,11 @@ function doAction(a){
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! Hit ${aliveEnemies.length} enemies for ${totalDamage} total damage!`, 'spec');
 
                         processing = false;
-                        checkBossMinionSummon();
 
-                        if(!processing){
-                            turnIdx++;
-                            renderMain();
-                            setTimeout(nextTurn, 700);
-                        }
+                        // v54.14: Boss summon/heal moved to boss's turn - removed checkBossMinionSummon() call here
+                        turnIdx++;
+                        renderMain();
+                        setTimeout(nextTurn, 700);
                     }, aoeAnimDelay + aliveEnemies.length * 180 + 300);
 
                     // v54.8: BACKUP PROCESSING CLEARER with action ID check (v54.11: includes animation delay)
@@ -14941,13 +15562,11 @@ function doAction(a){
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! ${d} damage!`, 'spec');
 
                         processing = false;
-                        checkBossMinionSummon();
 
-                        if(!processing){
-                            turnIdx++;
-                            renderMain();
-                            setTimeout(nextTurn, 700);
-                        }
+                        // v54.14: Boss summon/heal moved to boss's turn - removed checkBossMinionSummon() call here
+                        turnIdx++;
+                        renderMain();
+                        setTimeout(nextTurn, 700);
                     };
 
                     // High power uses beam (delayed impact), low power uses projectile
@@ -17907,6 +18526,7 @@ function cancelTargeting(){
     b.targetingMode = false;
     b.selectedTarget = undefined;
     processing = false;
+    unlockMoveButtons(); // v54.14: Fix soft lock - unlock buttons when canceling target selection
     renderMain();
 }
 
@@ -17917,6 +18537,7 @@ function cancelHealTargeting(){
     b.healerIdx = null;
     b.healAmount = null;
     processing = false;
+    unlockMoveButtons(); // v54.14: Fix soft lock - unlock buttons when canceling heal
     renderMain();
 }
 
@@ -18028,21 +18649,34 @@ function enemyAction(){
         nextTurn();
         return;
     }
-    
+
+    // ============================================
+    // v54.14: BOSS SUMMON/HEAL ON THEIR TURN
+    // ============================================
+    // Bosses now summon minions or heal as an ACTION on their turn
+    // This replaces the old instant-trigger when HP threshold was reached
+    if(enemy.isBoss){
+        const shouldSummonOrHeal = checkBossSummonOnTurn(enemy, enemyIdx);
+        if(shouldSummonOrHeal){
+            // Boss used their turn to summon/heal - end turn is handled in the function
+            return;
+        }
+    }
+
     // FOCUS REGEN for enemies (hidden from player) - v54.1 uses constants
     if(enemy.focus !== undefined && enemy.focusMax){
         enemy.focus = Math.min(enemy.focusMax, enemy.focus + (enemy.focusRegen || FOCUS_REGEN_PER_TURN));
     }
-    
+
     // Reduce special cooldown
     if(enemy.specialCooldown > 0) enemy.specialCooldown--;
-    
+
     const alive = b.team.filter(m=>m.curHp>0);
     if(!alive.length){endBattle(false);return}
-    
+
     const enemyEl = document.getElementById('enemyImg'+enemyIdx);
     const arena = document.getElementById('battleArena');
-    
+
     // ============================================
     // v54.3: INTELLIGENT AI DECISION MAKING
     // ============================================
