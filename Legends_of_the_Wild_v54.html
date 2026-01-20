@@ -9133,6 +9133,73 @@ function getCurrentChapter(){
     return 1;
 }
 
+// v54.16: Get quest progress for current chapter
+function getChapterQuestProgress(chapter){
+    if(!state.quests) return { total: 0, completed: 0, available: [], status: 'none' };
+
+    const ch = chapter || getCurrentChapter();
+    const progress = { total: 0, completed: 0, available: [], inProgress: [], failed: [] };
+
+    // Check each quest for stages in this chapter
+    Object.keys(ALLY_QUESTS).forEach(questId => {
+        const questDef = ALLY_QUESTS[questId];
+        const quest = state.quests[questId];
+
+        // Find stages available in this chapter
+        questDef.stageChapters.forEach((stageCh, idx) => {
+            if(stageCh === ch){
+                progress.total++;
+                const stageNum = idx + 1;
+
+                if(quest.status === 'failed'){
+                    progress.failed.push({ questId, stage: stageNum, name: questDef.name });
+                } else if(quest.stage > stageNum || quest.status === 'completed'){
+                    progress.completed++;
+                } else if(quest.stage === stageNum && quest.status === 'active'){
+                    progress.inProgress.push({ questId, stage: stageNum, name: questDef.name });
+                } else if(quest.stage === stageNum && quest.status === 'not_started'){
+                    progress.available.push({ questId, stage: stageNum, name: questDef.name });
+                }
+            }
+        });
+    });
+
+    return progress;
+}
+
+// v54.16: Check if all chapter quest requirements are met
+function isChapterQuestsComplete(chapter){
+    const progress = getChapterQuestProgress(chapter);
+    // Consider complete if all available quest stages are done (excluding failed quests)
+    return progress.completed >= progress.total - progress.failed.length;
+}
+
+// v54.16: Get quest status summary for UI
+function getQuestStatusSummary(){
+    if(!state.quests) return [];
+
+    const summary = [];
+    Object.keys(ALLY_QUESTS).forEach(questId => {
+        const questDef = ALLY_QUESTS[questId];
+        const quest = state.quests[questId];
+
+        summary.push({
+            id: questId,
+            name: questDef.name,
+            creature: questDef.creature,
+            element: questDef.element,
+            img: questDef.img,
+            stage: quest.stage,
+            totalStages: questDef.totalStages,
+            status: quest.status,
+            affinity: quest.affinity,
+            nextRegions: quest.status === 'active' ? questDef.regions[quest.stage] : null
+        });
+    });
+
+    return summary;
+}
+
 // ============================================
 // SHOP HELPER FUNCTIONS
 // ============================================
@@ -10176,27 +10243,63 @@ function handleQuestCombatEnd(victory){
     const quest = state.quests[callback.questId];
     const questDef = ALLY_QUESTS[callback.questId];
     const choice = callback.choice;
+    const meta = window._questCombatMeta;
 
     // Record combat result
     quest.trialResults.push(victory);
 
-    // Clear callback
+    // Clear callbacks
     window._questCombatCallback = null;
+    window._questCombatMeta = null;
 
     // Check for special conditions
     const config = questDef.stages[callback.stage].combatConfig[choice.combat];
+    let questFailed = false;
 
-    // Duel with yield mechanic - check if we killed instead of yielded
-    if(config && config.failIfKilled && !victory){
-        // If we lost the duel but it was a yield situation
-        // This would be handled in battle end logic
+    // v54.16: Duel with failIfKilled - check if enemy was killed instead of yielding
+    if(config && config.failIfKilled && victory){
+        // If victory was through killing (enemy HP = 0) instead of yield
+        // Check if the enemy actually died (no yield message in log)
+        const hadYield = state.log && state.log.some(l => l.t === 'yield');
+        if(!hadYield){
+            // Enemy was killed, not yielded - quest fails!
+            questFailed = true;
+            quest.status = 'failed';
+            quest.stageOutcomes.push('killed_ally');
+            state.log.push({t:'quest', m:`💔 You killed ${questDef.creature}... The bond is broken forever.`});
+        }
+    }
+
+    // v54.16: Protective battle - check if ally survived
+    if(config && config.ally && meta && meta.ally){
+        if(meta.ally.hp <= 0){
+            // Ally died - loss affects affinity and outcome
+            quest.affinity -= 15;
+            quest.stageOutcomes.push('ally_died');
+        }
+    }
+
+    // v54.16: Combat loss handling
+    if(!victory && !questFailed){
+        // Combat loss - record but don't necessarily fail quest
+        quest.stageOutcomes.push('combat_loss');
+        quest.affinity -= 5; // Small affinity penalty for losing
+
+        // Some combat types don't fail quest on loss
+        if(choice.combat === 'trial' || choice.combat === 'trial_duel'){
+            // Trial battles - losing is okay, just affects rewards
+            questFailed = false;
+        } else if(config && config.survivalTurns){
+            // Survival - if didn't survive, still continue
+            questFailed = false;
+        }
     }
 
     save();
 
     // Show outcome after short delay
     setTimeout(() => {
-        showQuestOutcome(callback.questId, choice, !victory && choice.questFail);
+        showQuestOutcome(callback.questId, choice, questFailed);
     }, 500);
 
     return true;
@@ -13233,7 +13336,67 @@ function renderAdventure(m){
             <button class="challenge-btn" onclick="completeChallenge()">Challenge Complete</button>
         </div>`;
     }
-    
+
+    // v54.16: Quest progress indicator
+    if(state.quests){
+        const questProgress = getChapterQuestProgress(ch);
+        if(questProgress.total > 0){
+            html+=`<div class="quest-progress-box" style="margin:15px auto;padding:12px;background:rgba(192,132,252,0.1);border:1px solid rgba(192,132,252,0.3);border-radius:10px;max-width:400px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:#c084fc;font-size:0.9rem;font-weight:bold;">📜 Chapter ${ch} Quests</span>
+                    <span style="color:#888;font-size:0.75rem;">${questProgress.completed}/${questProgress.total} complete</span>
+                </div>`;
+
+            // Show in-progress quests
+            if(questProgress.inProgress.length > 0){
+                questProgress.inProgress.forEach(q => {
+                    const questDef = ALLY_QUESTS[q.questId];
+                    const regions = questDef.regions[state.quests[q.questId].stage] || [];
+                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(251,191,36,0.1);border-radius:6px;margin-bottom:4px;">
+                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #fbbf24;" onerror="this.style.opacity='0.3'">
+                        <div style="flex:1;">
+                            <div style="color:#fbbf24;font-size:0.75rem;font-weight:bold;">${q.name}</div>
+                            <div style="color:#888;font-size:0.65rem;">Stage ${q.stage} - Look in: ${regions.join(', ') || 'any region'}</div>
+                        </div>
+                        <span style="color:#fbbf24;font-size:0.7rem;">⏳ Active</span>
+                    </div>`;
+                });
+            }
+
+            // Show available quests (not started)
+            if(questProgress.available.length > 0){
+                questProgress.available.forEach(q => {
+                    const questDef = ALLY_QUESTS[q.questId];
+                    const regions = questDef.regions[1] || [];
+                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(74,222,128,0.1);border-radius:6px;margin-bottom:4px;">
+                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #4ade80;opacity:0.7;" onerror="this.style.opacity='0.3'">
+                        <div style="flex:1;">
+                            <div style="color:#4ade80;font-size:0.75rem;font-weight:bold;">${q.name}</div>
+                            <div style="color:#888;font-size:0.65rem;">Find in: ${regions.join(', ') || 'any region'}</div>
+                        </div>
+                        <span style="color:#4ade80;font-size:0.7rem;">✨ New</span>
+                    </div>`;
+                });
+            }
+
+            // Show failed quests
+            if(questProgress.failed.length > 0){
+                questProgress.failed.forEach(q => {
+                    const questDef = ALLY_QUESTS[q.questId];
+                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(248,113,113,0.1);border-radius:6px;margin-bottom:4px;opacity:0.6;">
+                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #f87171;opacity:0.5;" onerror="this.style.opacity='0.3'">
+                        <div style="flex:1;">
+                            <div style="color:#f87171;font-size:0.75rem;">${q.name}</div>
+                        </div>
+                        <span style="color:#f87171;font-size:0.7rem;">❌ Failed</span>
+                    </div>`;
+                });
+            }
+
+            html+=`</div>`;
+        }
+    }
+
     // Adventure button
     html+=`<button class="adventure-btn" ${canAdventure?`onclick="startAdventure()"`:'disabled'}>
         ⚔️ Begin Adventure
