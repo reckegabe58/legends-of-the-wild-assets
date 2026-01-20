@@ -8561,6 +8561,396 @@ const ALLY_ENCOUNTERS = [
     }
 ];
 
+// ============================================
+// v54.16: ALLY QUESTS - Multi-Stage Quest System
+// ============================================
+// Complex narrative quests with branching paths, combat integration,
+// affinity tracking, and tiered rewards. Creatures become Home Base companions.
+
+const ALLY_QUESTS = {
+    phoenix_chick: {
+        id: 'phoenix_chick',
+        name: "The Phoenix's Trial",
+        creature: 'Phoenix Chick',
+        element: 'Fire',
+        img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png',
+        totalStages: 4,
+        stageChapters: [1, 1, 2, 2], // Which chapter each stage unlocks in
+        regions: {
+            1: ['volcano'],
+            2: ['forest', 'volcano'],
+            3: ['volcano', 'void'],
+            4: ['any']
+        },
+        stages: {
+            1: {
+                name: 'Embers in the Ash',
+                introTrust: `Among the cooling lava rocks, you hear a weak chirping. A small phoenix chick lies in the ash, one wing bent at an odd angle. Burn marks scar its feathers - not from lava, but from dark magic. It sees you and tries to flee, but collapses.`,
+                choices: [
+                    { id: 'A', text: '🩹 Slowly approach with food and water', outcome: 'trust', affinity: 15, combat: null, result: `The chick watches warily but accepts your offering. Trust begins to form between you.` },
+                    { id: 'B', text: '💊 Use a healing item on it immediately', outcome: 'trust', affinity: 5, combat: null, result: `The sudden approach startles it. It pecks at you but calms when the pain eases.` },
+                    { id: 'C', text: '🤲 Try to pick it up to examine the wound', outcome: 'neutral', affinity: -5, combat: 'swarm', result: `The chick panics and calls for help! Shadow remnants attack!` },
+                    { id: 'D', text: '🚶 Leave it alone - nature will decide', outcome: 'failure', affinity: -15, combat: null, result: `You walk away. The chick's eyes follow you with despair.` }
+                ],
+                combatConfig: {
+                    swarm: { enemies: ['shadow_wisp', 'shadow_wisp', 'shadow_wisp'], survivalTurns: null }
+                },
+                rewards: { good: { xp: 50, item: 'phoenix_ember' }, neutral: { xp: 30 }, bad: { xp: 10 } }
+            },
+            2: {
+                name: 'The Healing Flame',
+                introTrust: `Weeks later, you spot familiar golden feathers in the underbrush. The phoenix chick has been following you! Its wing has healed somewhat, but it still can't fly. It chirps excitedly when it sees you.`,
+                introRedemption: `A weak flame flickers in the distance. The phoenix chick you abandoned lies in a hunters' trap, too weak to burn through the ropes. It sees you approach and flinches.`,
+                choicesTrust: [
+                    { id: 'A', text: '🕊️ Spend time helping it practice flying', outcome: 'bond', affinity: 20, combat: null, result: `Hours of patience. The chick makes small flights. A deep bond forms between you.` },
+                    { id: 'B', text: '🌿 Find herbs to strengthen its wing', outcome: 'trust', affinity: 10, combat: null, result: `You search the forest for healing herbs. The chick waits loyally for your return.` },
+                    { id: 'C', text: '⚔️ Challenge it to a friendly duel', outcome: 'duel', affinity: 5, combat: 'duel', result: `A test of strength! The chick accepts, flames blazing with determination.` },
+                    { id: 'D', text: '👋 It\'s slowing you down. Part ways.', outcome: 'abandon', affinity: -20, combat: null, result: `The chick's flames dim. It doesn't follow. The bond breaks.` }
+                ],
+                choicesRedemption: [
+                    { id: 'A', text: '🙏 Free it and apologize', outcome: 'redemption', affinity: 10, combat: null, result: `The chick hesitates, then allows you near. Second chances are precious.` },
+                    { id: 'B', text: '🍖 Free it and offer food', outcome: 'redemption', affinity: 5, combat: null, result: `Actions speak louder than words. The chick eats cautiously.` },
+                    { id: 'C', text: '✂️ Free it but keep distance', outcome: 'neutral', affinity: 0, combat: null, result: `The chick limps away, glancing back once with uncertainty.` },
+                    { id: 'D', text: '🚫 Leave it - you made your choice', outcome: 'fail', affinity: -100, combat: null, result: `Hunters approach. You hear a pained screech as you leave. The quest has failed.`, questFail: true }
+                ],
+                combatConfig: {
+                    duel: { enemy: 'phoenix_chick_young', yieldAtPercent: 25, failIfKilled: true }
+                },
+                rewards: { good: { xp: 75, status: 'warm_bond' }, medium: { xp: 50 }, redemption: { xp: 40 }, fail: { xp: 10 } }
+            },
+            3: {
+                name: 'Shadows of the Past',
+                introTrust: `The phoenix chick finds you in a panic, tugging at your clothes. It leads you to a cliff overlooking a dark canyon. Below, shadow creatures are attacking... other phoenixes! A small flock, trapped and outnumbered. The chick looks at you pleadingly.`,
+                choices: [
+                    { id: 'A', text: '⚔️ Charge in to help! The family needs us!', outcome: 'protect', affinity: 15, combat: 'protective', result: `You leap into battle alongside the chick! Together, you fight to save its family!` },
+                    { id: 'B', text: '🎭 Create a distraction while they escape', outcome: 'distract', affinity: 10, combat: 'swarm', result: `Risky but clever. You draw the shadows away while the phoenixes flee.` },
+                    { id: 'C', text: '⚠️ It\'s too dangerous - find another way', outcome: 'coward', affinity: -10, combat: null, result: `The chick looks devastated as shadows overwhelm the flock. You did nothing.` },
+                    { id: 'D', text: '🤷 Let the chick decide - it\'s its family', outcome: 'passive', affinity: -5, combat: null, result: `The chick chirps frantically, then dives in alone. You watch from safety.` }
+                ],
+                combatConfig: {
+                    protective: { enemies: ['shadow_wisp', 'shadow_wisp', 'shadow_wisp', 'shadow_wisp', 'shadow_hunter'], ally: 'phoenix_chick_ally', allyDamageLimit: 50 },
+                    swarm: { enemies: ['shadow_wisp', 'shadow_wisp', 'shadow_wisp', 'shadow_wisp', 'shadow_wisp', 'shadow_wisp'], survivalTurns: 5 }
+                },
+                rewards: { protectWin: { xp: 100, blessing: 'phoenix_blessing' }, protectLose: { xp: 60 }, swarmWin: { xp: 80 }, swarmLose: { xp: 40 }, noCombat: { xp: 20 } }
+            },
+            4: {
+                name: 'A New Dawn',
+                introVictory: `The phoenix chick, now nearly grown, lands before you with elegant grace. Its feathers shimmer with renewed fire. Behind it, the elder phoenix watches. 'You saved our flock,' a voice echoes in your mind. 'My child wishes to stay with you. Will you accept this bond?'`,
+                introBittersweet: `The young phoenix finds you at camp, its flames tinged with blue - the color of mourning. But when it sees you, warmth returns. It has no flock now. But it has you. It nudges your hand, a question in its eyes.`,
+                introGrief: `You haven't seen the phoenix in weeks. Then one night, a weak flame appears at your campfire. The chick is thin, feathers dull. It came back despite everything. It has nowhere else to go.`,
+                choicesVictory: [
+                    { id: 'A', text: '💖 "I would be honored. Together, always."', outcome: 'bond', affinity: 25, combat: null, result: `The phoenix's flames surge with joy. A bond is sealed for eternity.` },
+                    { id: 'B', text: '⚔️ "Prove your strength - one final duel!"', outcome: 'trial', affinity: 15, combat: 'trial_duel', result: `A warrior's bond! The phoenix accepts eagerly, flames blazing bright.` },
+                    { id: 'C', text: '🏠 "You should stay with your family."', outcome: 'release', affinity: 5, combat: null, result: `The phoenix dims but nods. You part as friends, forever grateful.` }
+                ],
+                choicesGrief: [
+                    { id: 'A', text: '🙏 "I\'m sorry. Stay with me."', outcome: 'heal', affinity: 10, combat: null, result: `Healing begins. The bond is imperfect but real.` },
+                    { id: 'B', text: '💪 "You\'re stronger than you know."', outcome: 'encourage', affinity: 5, combat: null, result: `The chick's flames brighten slightly. Hope returns.` },
+                    { id: 'C', text: '🚫 "I can\'t undo what happened. Goodbye."', outcome: 'fail', affinity: -100, combat: null, result: `The flame goes out. The phoenix flies away forever.`, questFail: true }
+                ],
+                combatConfig: {
+                    trial_duel: { enemy: 'phoenix_young_full', yieldAtPercent: 0, failIfKilled: false }
+                }
+            }
+        },
+        rewards: {
+            legendary: { companion: true, item: 'phoenix_feather_amulet', xp: 200, coins: 500, title: 'Phoenix Friend' },
+            rare: { companion: true, item: 'ember_heart_charm', xp: 150, coins: 300 },
+            common: { companion: true, xp: 100, coins: 150 },
+            failed: { companion: false, xp: 25, coins: 50 }
+        },
+        rewardThresholds: { legendary: { minAffinity: 50, maxFailures: 0 }, rare: { minAffinity: 20, maxFailures: 1 }, common: { minAffinity: 0 } }
+    },
+
+    earth_spirit: {
+        id: 'earth_spirit',
+        name: "The Spirit's Freedom",
+        creature: 'Terranis',
+        element: 'Earth',
+        img: 'Quest_Creatures/Quest_SealedEarthSpirit.png',
+        totalStages: 3,
+        stageChapters: [1, 1, 2],
+        regions: {
+            1: ['forest', 'ice'],
+            2: ['forest', 'ice', 'void'],
+            3: ['any']
+        },
+        stages: {
+            1: {
+                name: 'The Trembling Stone',
+                introTrust: `The ground shudders beneath your feet. In a clearing, you find a massive stone covered in ancient runes. Cracks spider across its surface, and a deep voice rumbles from within: 'Please... so long in darkness... help me...'`,
+                choices: [
+                    { id: 'A', text: '💬 Try to communicate - ask what happened', outcome: 'trust', affinity: 15, combat: null, result: `The spirit shares its tragic history. You learn of Terranis, guardian of these lands, sealed by fearful villagers.`, lore: true },
+                    { id: 'B', text: '🔍 Examine the seal carefully', outcome: 'study', affinity: 10, combat: null, result: `Ancient magic. Powerful. But not evil. The spirit waits patiently as you study.` },
+                    { id: 'C', text: '💥 Try to break the seal immediately', outcome: 'damage', affinity: -5, combat: 'swarm', result: `BOOM! Energy explodes outward! Corrupted earth elementals attack!` },
+                    { id: 'D', text: '🛡️ This feels dangerous. Reinforce the seal.', outcome: 'reject', affinity: -20, combat: null, result: `The voice goes silent. A sense of deep sadness emanates from the stone.` }
+                ],
+                combatConfig: {
+                    swarm: { enemies: ['corrupted_elemental', 'corrupted_elemental', 'corrupted_elemental'], survivalTurns: null }
+                },
+                rewards: { good: { xp: 50, item: 'ancient_runestone' }, damage: { xp: 30 }, bad: { xp: 20 } }
+            },
+            2: {
+                name: 'The Corruption Within',
+                introTrust: `You return to find the seal crumbling faster. Through the cracks, you see the spirit - once noble stone, now streaked with dark veins. 'The corruption spreads,' Terranis groans. 'Free me now, before I lose myself. Or... end me. Do not let me become a monster.'`,
+                introDamaged: `The seal is shattered. Terranis stands free - but wrong. Dark energy crackles across its form. 'Too... fast...' it growls. 'Can't... control...' It looks at you with fading recognition. 'Run... or fight... FIGHT ME!'`,
+                choicesTrust: [
+                    { id: 'A', text: '🔓 "I\'ll free you. I trust you."', outcome: 'free', affinity: 20, combat: null, result: `You break the seal properly. Terranis emerges, struggling but sane.` },
+                    { id: 'B', text: '✨ "Let me purify the corruption first."', outcome: 'purify', affinity: 15, combat: 'trial', result: `A ritual of cleansing. Risky but could save Terranis fully.` },
+                    { id: 'C', text: '⚔️ "I\'m sorry, but I have to end this."', outcome: 'mercy', affinity: -10, combat: 'mercy', result: `Terranis closes its eyes. 'I understand. Make it quick.'` },
+                    { id: 'D', text: '🤔 "I need to think about this." *Leave*', outcome: 'abandon', affinity: -25, combat: null, result: `When you return, the seal has broken. Terranis is gone. Screams echo in the distance.` }
+                ],
+                choicesDamaged: [
+                    { id: 'A', text: '📢 "Fight it, Terranis! Remember who you are!"', outcome: 'rally', affinity: 10, combat: 'protective', result: `Your words reach it! The corruption wavers!` },
+                    { id: 'B', text: '⚡ "I\'ll weaken the corruption - hold on!"', outcome: 'attack', affinity: 5, combat: 'swarm', result: `You attack the dark energy directly. Risky but brave.` },
+                    { id: 'C', text: '💀 "There\'s no saving you now. I\'m sorry."', outcome: 'kill', affinity: -15, combat: 'duel', result: `You attack the corrupted spirit. A mercy... or a murder?` }
+                ],
+                combatConfig: {
+                    trial: { survivalTurns: 5, aoePerTurn: 'corruption_wave' },
+                    mercy: { enemy: 'terranis_weak', somber: true },
+                    protective: { enemies: ['corruption_spawn', 'corruption_spawn', 'corruption_spawn'], ally: 'terranis_ally', allyDamageLimit: 50 },
+                    swarm: { enemies: ['corruption_spawn', 'corruption_spawn'], survivalTurns: null },
+                    duel: { enemy: 'terranis_corrupted', yieldAtPercent: 0, failIfKilled: false }
+                },
+                rewards: { purifyWin: { xp: 100, item: 'purified_core' }, free: { xp: 75 }, damaged: { xp: 60 }, mercyKill: { xp: 50, passive: 'earth_gratitude', questEnd: 'common' } }
+            },
+            3: {
+                name: 'Guardian Reborn',
+                introTrust: `Terranis has followed you, its form now stable - a magnificent guardian of living stone and ancient wood. 'You gave me a second chance,' it rumbles. 'I cannot repay this debt. But I can offer you my eternal friendship. Will you accept a guardian's oath?'`,
+                choices: [
+                    { id: 'A', text: '🤝 "I would be honored, Terranis."', outcome: 'accept', affinity: 25, combat: null, result: `The ground shakes as the oath is sealed. A bond of stone and soul.` },
+                    { id: 'B', text: '⚔️ "Prove you\'re free of corruption - one final test!"', outcome: 'test', affinity: 15, combat: 'trial', result: `Terranis nods gravely. 'Test me. I will show you my true self.'` },
+                    { id: 'C', text: '🕊️ "You don\'t owe me anything. You\'re free."', outcome: 'release', affinity: 15, combat: null, result: `Terranis pauses. 'Then I choose to stay. As a friend, not a debt.'` }
+                ],
+                combatConfig: {
+                    trial: { enemies: ['earth_construct', 'earth_construct', 'earth_construct'], ally: 'terranis_ally', celebration: true }
+                }
+            }
+        },
+        rewards: {
+            legendary: { companion: true, item: 'earthbound_seal', xp: 200, coins: 400 },
+            rare: { companion: true, item: 'stone_heart_amulet', xp: 125, coins: 250 },
+            common: { companion: true, xp: 75, coins: 150 },
+            failed: { companion: false, xp: 25, coins: 50 }
+        },
+        rewardThresholds: { legendary: { minAffinity: 40, maxFailures: 0, requirePurify: true }, rare: { minAffinity: 15, maxFailures: 1 }, common: { minAffinity: 0 } }
+    },
+
+    lost_whale: {
+        id: 'lost_whale',
+        name: "The Whale's Journey",
+        creature: 'Aria',
+        element: 'Water',
+        img: 'Quest_Creatures/Quest_TheLostWhale.png',
+        totalStages: 4,
+        stageChapters: [1, 1, 2, 2],
+        regions: {
+            1: ['ice'],
+            2: ['ice'],
+            3: ['ice', 'void'],
+            4: ['void']
+        },
+        stages: {
+            1: {
+                name: 'Songs in the Ice',
+                introTrust: `A haunting melody echoes across the frozen wastes. You find the source: a massive creature half-buried in snow - a sky-whale calf, its crystalline fins cracked from the cold. It sings a mournful song, searching for an answer that doesn't come.`,
+                choices: [
+                    { id: 'A', text: '🎵 Sing back - try to communicate', outcome: 'connect', affinity: 15, combat: null, result: `Your voice is small, but the whale's eyes brighten. Contact! You've made a connection.`, special: 'whale_song' },
+                    { id: 'B', text: '🔥 Build a fire to warm it', outcome: 'care', affinity: 10, combat: null, result: `The whale shifts closer to the warmth, making grateful sounds.` },
+                    { id: 'C', text: '🔍 Examine its injuries', outcome: 'study', affinity: 5, combat: null, result: `The damage is severe. This creature needs serious help.` },
+                    { id: 'D', text: '🚶 It\'s too big to help. Leave it.', outcome: 'abandon', affinity: -20, combat: null, result: `The whale's song grows sadder as you walk away.` }
+                ],
+                rewards: { connect: { xp: 60, ability: 'whale_song' }, care: { xp: 40 }, study: { xp: 40 }, abandon: { xp: 10 } }
+            },
+            2: {
+                name: 'The Frozen Path',
+                introConnected: `The whale, whom you've named Aria, shows you images in your mind: her pod flying through an aurora, a sudden storm, falling... She asks: 'Help find? Please help find family?' She's strong enough to move now, but not to fly.`,
+                introBasic: `You return to find the whale on its feet - or fins. It's survived, but looks lost. When it sees you, it makes hopeful sounds and gestures with its head toward the distant mountains. It wants to go somewhere.`,
+                choices: [
+                    { id: 'A', text: '🗺️ "I\'ll guide you. We\'ll find them together."', outcome: 'guide', affinity: 20, combat: null, result: `Aria trumpets with joy! The journey begins!` },
+                    { id: 'B', text: '🔭 "Let me scout ahead for dangers first."', outcome: 'scout', affinity: 10, combat: 'swarm', result: `You venture into the ice fields. Aria waits anxiously.` },
+                    { id: 'C', text: '🧠 "Show me where you last saw them."', outcome: 'memory', affinity: 10, combat: null, result: `Aria projects memories. You see a landmark - the Frozen Spire!` },
+                    { id: 'D', text: '🚫 "I can\'t make that journey. Good luck."', outcome: 'refuse', affinity: -15, combat: null, result: `Aria's song turns to a wail of despair. She tries to follow anyway.` }
+                ],
+                combatConfig: {
+                    swarm: { enemies: ['ice_wolf', 'ice_wolf', 'ice_wolf', 'ice_wolf'], survivalTurns: null }
+                },
+                rewards: { guide: { xp: 75 }, scoutWin: { xp: 80 }, scoutLose: { xp: 40, injury: 'aria_hurt' }, memory: { xp: 70 }, refuse: { xp: 15, path: 'guilt' } }
+            },
+            3: {
+                name: 'The Frozen Spire',
+                introTrust: `You and Aria reach the Frozen Spire - a mountain of pure ice where the aurora touches the earth. Aria's song grows urgent. She senses something! But the path is guarded by creatures of living frost. And worse - hunters have followed the whale's song. They want Aria.`,
+                choices: [
+                    { id: 'A', text: '⚔️ "Together, Aria. No one takes you!"', outcome: 'fight', affinity: 20, combat: 'protective', result: `Stand and fight! Aria joins the battle!` },
+                    { id: 'B', text: '🛡️ "I\'ll hold them off - get to the Spire!"', outcome: 'sacrifice', affinity: 15, combat: 'swarm', result: `You buy time while Aria escapes. Heroic sacrifice.` },
+                    { id: 'C', text: '🤫 "Quick, we need to sneak past them!"', outcome: 'stealth', affinity: 10, combat: null, result: `Stealth through the ice fields. Tense but bloodless.`, skillCheck: 'spd' },
+                    { id: 'D', text: '💰 "Maybe if I give them the whale..."', outcome: 'betray', affinity: -50, combat: 'betrayal', result: `You approach the hunters with a dark offer. But they betray you too.`, betrayal: true }
+                ],
+                combatConfig: {
+                    protective: { enemies: ['whale_hunter', 'whale_hunter', 'whale_hunter', 'whale_hunter'], ally: 'aria_ally', allyDamageLimit: 50, allyAttack: 'sonic_wave' },
+                    swarm: { enemies: ['whale_hunter', 'whale_hunter', 'whale_hunter', 'whale_hunter', 'whale_hunter'], survivalTurns: 6, hard: true },
+                    betrayal: { enemies: ['whale_hunter', 'whale_hunter'], solo: true }
+                },
+                rewards: { protectWin: { xp: 125, status: 'bond_of_bravery' }, sacrificeWin: { xp: 150, title: 'selfless_guardian' }, sacrificeLose: { xp: 60, injury: true }, stealthSuccess: { xp: 100 }, stealthFail: { xp: 75 }, betrayal: { xp: 25, lockFailed: true } }
+            },
+            4: {
+                name: 'Where Sky Meets Ice',
+                introBonded: `At the peak of the Frozen Spire, the aurora dances overhead. Aria sings, and this time, songs answer! Her pod descends from the sky - magnificent sky-whales of every color. Aria rushes to them, then stops, looking back at you. The elder whale's voice enters your mind: 'You saved our child. What would you ask of us?'`,
+                introBetrayal: `Aria's pod arrives, but she doesn't approach you. The elder whale's gaze is cold. 'We know what you considered. Our child told us everything.' There is no warmth here. Only judgment.`,
+                choicesBonded: [
+                    { id: 'A', text: '💙 "Only Aria\'s happiness. She should stay."', outcome: 'selfless', affinity: 25, combat: null, result: `Aria nuzzles you one last time, then joins her pod. But she'll visit.` },
+                    { id: 'B', text: '🙏 "Could Aria visit me sometimes?"', outcome: 'request', affinity: 20, combat: null, result: `The elder nods. 'A bond like yours transcends distance.'` },
+                    { id: 'C', text: '🎁 "I want nothing. Helping was enough."', outcome: 'humble', affinity: 25, combat: null, result: `The elder is impressed. 'Then accept this gift freely given.'` }
+                ],
+                choicesBetrayal: [
+                    { id: 'A', text: '😔 "I made a terrible mistake. I\'m sorry."', outcome: 'apologize', affinity: 5, combat: null, result: `Aria looks at you for a long moment. She doesn't forgive... but she doesn't hate.` },
+                    { id: 'B', text: '😤 "I saved her in the end!"', outcome: 'justify', affinity: -10, combat: null, result: `The elder scoffs. 'Actions born of guilt, not love. Begone.'` },
+                    { id: 'C', text: '😠 "I don\'t need your forgiveness."', outcome: 'defiant', affinity: -20, combat: null, result: `'Then you shall have our indifference. We will forget you existed.'` }
+                ]
+            }
+        },
+        rewards: {
+            legendary: { companion: true, item: 'deepwater_pearl', xp: 200, coins: 400, title: 'Sky-Whale Friend' },
+            rare: { companion: true, item: 'aurora_shard', xp: 150, coins: 300 },
+            common: { companion: false, xp: 100, coins: 150, memory: true },
+            failed: { companion: false, xp: 30, coins: 50, mark: 'oathbreaker' }
+        },
+        rewardThresholds: { legendary: { minAffinity: 50, noBetrayal: true }, rare: { minAffinity: 25 }, common: { minAffinity: 0 } }
+    },
+
+    messenger_raven: {
+        id: 'messenger_raven',
+        name: "The Raven's Secret",
+        creature: 'Umbral',
+        element: 'Shadow',
+        img: 'Quest_Creatures/Quest_TheMessengerRaven.png',
+        totalStages: 3,
+        stageChapters: [1, 1, 2],
+        regions: {
+            1: ['forest', 'volcano'],
+            2: ['any'],
+            3: ['void']
+        },
+        stages: {
+            1: {
+                name: "The Shadow's Message",
+                introTrust: `A raven crashes through the canopy, dark feathers trailing shadow. It clutches a sealed scroll in its talons. As you approach, it speaks in a rasping voice: 'Hunted... Must deliver... Will you... help?' Its eyes hold ancient intelligence.`,
+                choices: [
+                    { id: 'A', text: '❓ "Who\'s hunting you? Tell me everything."', outcome: 'trust', affinity: 15, combat: null, result: `The raven shares its burden. You learn of Umbral, last of the Shadow Messengers, and the dangerous truth it carries.`, lore: true },
+                    { id: 'B', text: '📍 "Where does the message need to go?"', outcome: 'practical', affinity: 10, combat: null, result: `'The void between worlds. Too far for me now.' The destination is known.` },
+                    { id: 'C', text: '📜 "Let me see that scroll."', outcome: 'suspicious', affinity: -5, combat: null, result: `The raven clutches it tighter. 'Secret. Sacred. Not for your eyes.' Trust wavers.` },
+                    { id: 'D', text: '🚫 "I don\'t help shadow creatures."', outcome: 'reject', affinity: -20, combat: null, result: `The raven's eyes dim. 'Then darkness wins this day.' It flies away, wounded.` }
+                ],
+                rewards: { trust: { xp: 60, status: 'umbrals_trust' }, practical: { xp: 50 }, suspicious: { xp: 30 }, reject: { xp: 10, path: 'redemption' } }
+            },
+            2: {
+                name: 'Secrets and Hunters',
+                introTrust: `Umbral has recovered enough to travel, but dark figures move in the shadows. 'The Sealed Ones sent hunters,' Umbral warns. 'We must move quickly. But first - a choice. The message... there is another copy. I could give it to you. If I fall, you could complete the delivery. But reading it... changes things. Knowledge is never free.'`,
+                introWary: `You find Umbral fighting off shadow assassins! The raven is losing. 'If you want the message delivered,' it croaks, 'now is the time to prove yourself!'`,
+                choicesTrust: [
+                    { id: 'A', text: '🤝 "Give me the copy. I won\'t read it."', outcome: 'promise', affinity: 20, combat: null, result: `Umbral's eyes glow. 'An honest soul. Rare.' Trust is sealed.` },
+                    { id: 'B', text: '📖 "I want to know what I\'m carrying."', outcome: 'knowledge', affinity: 10, combat: null, result: `Umbral hesitates, then reveals: the message could seal the shadow realm forever.`, secret: true },
+                    { id: 'C', text: '🛡️ "Keep it. I\'ll just protect you."', outcome: 'protect', affinity: 5, combat: null, result: `'Perhaps wiser. Let us go.' The journey continues.` },
+                    { id: 'D', text: '🔍 *Read it secretly when Umbral sleeps*', outcome: 'betray', affinity: -15, combat: null, result: `You learn the truth... and Umbral learns of your betrayal.`, betrayal: true }
+                ],
+                choicesWary: [
+                    { id: 'A', text: '⚔️ Rush in to help!', outcome: 'fight', affinity: 15, combat: 'protective', result: `You prove yourself in battle!` },
+                    { id: 'B', text: '🎭 Create a distraction', outcome: 'distract', affinity: 10, combat: 'swarm', result: `You draw the assassins away. Cunning.` },
+                    { id: 'C', text: '👀 Wait and see who wins', outcome: 'coward', affinity: -10, combat: null, result: `The coward's choice. Umbral barely survives.` }
+                ],
+                combatConfig: {
+                    protective: { enemies: ['shadow_assassin', 'shadow_assassin', 'shadow_assassin'], ally: 'umbral_ally', allyDamageLimit: 40 },
+                    swarm: { enemies: ['shadow_assassin', 'shadow_assassin'], survivalTurns: null }
+                },
+                rewards: { promise: { xp: 100, status: 'keeper_of_secrets' }, knowledge: { xp: 80, burden: true }, protect: { xp: 70 }, betray: { xp: 50, umbralsKnows: true }, fightWin: { xp: 90 }, fightLose: { xp: 40, umbralCritical: true }, distract: { xp: 70 }, coward: { xp: 20 } }
+            },
+            3: {
+                name: 'The Final Delivery',
+                introTrust: `The void between worlds stretches before you. Umbral is weak but determined. 'There,' it points with a wing. 'The Eternal Archive. The keeper waits.' But shadows mass behind you - an army of hunters. 'They cannot follow into the Archive. But we must reach the gates first.'`,
+                choices: [
+                    { id: 'A', text: '🤝 "Together. We finish this together."', outcome: 'together', affinity: 20, combat: 'gauntlet', result: `The final dash! Umbral soars alongside you!` },
+                    { id: 'B', text: '🛡️ "I\'ll hold them off. Get to the Archive!"', outcome: 'sacrifice', affinity: 15, combat: 'holdline', result: `A hero's sacrifice. You buy time for Umbral.` },
+                    { id: 'C', text: '🏃 "Give me the message. I\'m faster."', outcome: 'solo', affinity: 10, combat: 'solorun', result: `Umbral hesitates, then passes it. 'Don't fail me.'` },
+                    { id: 'D', text: '💀 *Steal the message and flee*', outcome: 'steal', affinity: -50, combat: 'escape', result: `You betray Umbral and flee with the secret.`, betrayal: true, questFail: true }
+                ],
+                combatConfig: {
+                    gauntlet: { survivalTurns: 6, ally: 'umbral_ally', advancing: true },
+                    holdline: { survivalTurns: 5, endless: true },
+                    solorun: { survivalTurns: 4, solo: true, fast: true },
+                    escape: { survivalTurns: 3, solo: true, escape: true }
+                },
+                endings: {
+                    together: `The Keeper - an ancient being of pure light - accepts the message. 'Balance,' it whispers. 'Not destruction. The shadow realm will be... reformed.' Umbral's form shimmers. 'I will be reborn in the new shadow. And I will remember you, friend.'`,
+                    sacrifice: `From the void, Umbral's voice reaches you: 'It is done. I am... changing. But I left you something. Look up.' A single black feather falls, warm with gratitude.`,
+                    solo: `The Keeper takes the message from your trembling hands. 'The messenger could not complete its duty. But you did.' Behind you, Umbral's form fades peacefully.`,
+                    steal: `You emerge from the void with the message. The secret of ending shadow kind is yours. Umbral is gone - consumed by the hunters. The knowledge burns in your mind.`
+                }
+            }
+        },
+        rewards: {
+            legendary: { companion: true, item: 'shadowmessenger_quill', xp: 200, coins: 400 },
+            rare: { companion: true, item: 'ravens_secret', xp: 150, coins: 300 },
+            common: { companion: false, xp: 100, coins: 150, memory: true },
+            failed: { companion: false, item: 'forbidden_knowledge', xp: 50, coins: 100, darkMark: true }
+        },
+        rewardThresholds: { legendary: { minAffinity: 40, umbralSurvived: true }, rare: { minAffinity: 20 }, common: { minAffinity: 0 } }
+    }
+};
+
+// Quest enemy definitions for combat encounters
+const QUEST_ENEMIES = {
+    // Shadow enemies
+    shadow_wisp: { name: 'Shadow Wisp', type: 'Shadow', baseHp: 40, baseAtk: 12, baseDef: 5, baseSpd: 14, baseInt: 8, img: 'Wild_Encounters/Wild_ShadowWisp.png' },
+    shadow_hunter: { name: 'Shadow Hunter', type: 'Shadow', baseHp: 80, baseAtk: 18, baseDef: 10, baseSpd: 12, baseInt: 10, img: 'Wild_Encounters/Wild_ShadowHunter.png' },
+    shadow_assassin: { name: 'Shadow Assassin', type: 'Shadow', baseHp: 60, baseAtk: 22, baseDef: 6, baseSpd: 18, baseInt: 12, img: 'Wild_Encounters/Wild_ShadowAssassin.png' },
+
+    // Phoenix quest enemies
+    phoenix_chick_young: { name: 'Phoenix Chick', type: 'Fire', baseHp: 70, baseAtk: 16, baseDef: 8, baseSpd: 14, baseInt: 14, img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png', canHeal: true },
+    phoenix_young_full: { name: 'Young Phoenix', type: 'Fire', baseHp: 120, baseAtk: 22, baseDef: 12, baseSpd: 16, baseInt: 18, img: 'Quest_Creatures/Quest_YoungPhoenix.png', canHeal: true },
+
+    // Earth Spirit quest enemies
+    corrupted_elemental: { name: 'Corrupted Elemental', type: 'Earth', baseHp: 50, baseAtk: 14, baseDef: 12, baseSpd: 8, baseInt: 6, img: 'Wild_Encounters/Wild_CorruptedElemental.png' },
+    corruption_spawn: { name: 'Corruption Spawn', type: 'Void', baseHp: 35, baseAtk: 16, baseDef: 4, baseSpd: 10, baseInt: 4, img: 'Wild_Encounters/Wild_CorruptionSpawn.png' },
+    terranis_weak: { name: 'Terranis (Weakened)', type: 'Earth', baseHp: 100, baseAtk: 14, baseDef: 18, baseSpd: 6, baseInt: 12, img: 'Quest_Creatures/Quest_SealedEarthSpirit.png', somber: true },
+    terranis_corrupted: { name: 'Corrupted Terranis', type: 'Void', baseHp: 150, baseAtk: 24, baseDef: 14, baseSpd: 8, baseInt: 8, img: 'Quest_Creatures/Quest_CorruptedTerranis.png' },
+    earth_construct: { name: 'Earth Construct', type: 'Earth', baseHp: 60, baseAtk: 12, baseDef: 16, baseSpd: 6, baseInt: 4, img: 'Wild_Encounters/Wild_EarthConstruct.png' },
+
+    // Whale quest enemies
+    ice_wolf: { name: 'Ice Wolf', type: 'Ice', baseHp: 55, baseAtk: 16, baseDef: 8, baseSpd: 14, baseInt: 6, img: 'Wild_Encounters/Wild_IceWolf.png' },
+    whale_hunter: { name: 'Whale Hunter', type: 'Shadow', baseHp: 70, baseAtk: 18, baseDef: 10, baseSpd: 12, baseInt: 10, img: 'Wild_Encounters/Wild_WhaleHunter.png' }
+};
+
+// Quest ally definitions for protective battles
+const QUEST_ALLIES = {
+    phoenix_chick_ally: { name: 'Phoenix Chick', type: 'Fire', baseHp: 80, baseAtk: 14, baseDef: 8, baseSpd: 12, baseInt: 14, img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png', moves: { atk: 'Ember Peck', spec: 'Flame Burst' } },
+    terranis_ally: { name: 'Terranis', type: 'Earth', baseHp: 150, baseAtk: 18, baseDef: 20, baseSpd: 6, baseInt: 14, img: 'Quest_Creatures/Quest_SealedEarthSpirit.png', moves: { atk: 'Stone Strike', spec: 'Earthquake' } },
+    aria_ally: { name: 'Aria', type: 'Water', baseHp: 200, baseAtk: 12, baseDef: 14, baseSpd: 8, baseInt: 18, img: 'Quest_Creatures/Quest_TheLostWhale.png', moves: { atk: 'Tail Slam', spec: 'Sonic Wave' } },
+    umbral_ally: { name: 'Umbral', type: 'Shadow', baseHp: 60, baseAtk: 16, baseDef: 6, baseSpd: 18, baseInt: 16, img: 'Quest_Creatures/Quest_TheMessengerRaven.png', moves: { atk: 'Shadow Peck', spec: 'Dark Feathers' } }
+};
+
+// Quest items earned from completing quests
+const QUEST_ITEMS = {
+    // Consumables
+    phoenix_ember: { name: 'Phoenix Ember', type: 'consumable', desc: 'Restores 25% HP to one creature', effect: { heal: 0.25 } },
+    ancient_runestone: { name: 'Ancient Runestone', type: 'key', desc: 'A key item for the Earth Spirit quest' },
+    purified_core: { name: 'Purified Core', type: 'key', desc: 'Proof of purifying the corruption' },
+
+    // Legendary items
+    phoenix_feather_amulet: { name: 'Phoenix Feather Amulet', type: 'legendary', slot: 'charm', desc: 'Auto-revives holder once per battle at 50% HP', effect: { autoRevive: true, revivePercent: 0.5 } },
+    earthbound_seal: { name: 'Earthbound Seal', type: 'legendary', slot: 'charm', desc: 'Grants 30% damage shield for 3 turns (once per battle)', effect: { damageShield: 0.3, shieldTurns: 3 } },
+    deepwater_pearl: { name: 'Deepwater Pearl', type: 'legendary', slot: 'charm', desc: 'Restore 50 Focus when HP drops below 25% (once per battle)', effect: { focusRestore: 50, triggerPercent: 0.25 } },
+    shadowmessenger_quill: { name: 'Shadowmessenger Quill', type: 'legendary', slot: 'trinket', desc: 'Grants an extra turn once per battle', effect: { extraTurn: true } },
+
+    // Rare items
+    ember_heart_charm: { name: 'Ember Heart Charm', type: 'rare', slot: 'charm', desc: '+20% fire damage dealt', effect: { fireDamage: 0.2 } },
+    stone_heart_amulet: { name: 'Stone Heart Amulet', type: 'rare', slot: 'charm', desc: '+15% DEF', effect: { defBonus: 0.15 } },
+    aurora_shard: { name: 'Aurora Shard', type: 'rare', slot: 'trinket', desc: '+15% Ice damage', effect: { iceDamage: 0.15 } },
+    ravens_secret: { name: "Raven's Secret", type: 'rare', slot: 'trinket', desc: '+15% critical hit chance', effect: { critBonus: 0.15 } },
+
+    // Failed quest items
+    forbidden_knowledge: { name: 'Forbidden Knowledge', type: 'cursed', slot: 'trinket', desc: '+10% damage dealt, but -10% healing received', effect: { damageBonus: 0.1, healingPenalty: -0.1 } }
+};
+
 // XP TABLE - Redesigned for proper pacing
 // Chapter 1 target: Levels 1-22 (can reach 24-25 with grinding)
 // Chapter 2 target: Levels 23-35
@@ -8741,6 +9131,73 @@ function getCurrentChapter(){
     if(state.defeated.includes('nightmare_p1')) return 3; // After Phase 1
     if(state.defeated.includes('nightmare_p0')) return 2; // After Phase 0
     return 1;
+}
+
+// v54.16: Get quest progress for current chapter
+function getChapterQuestProgress(chapter){
+    if(!state.quests) return { total: 0, completed: 0, available: [], status: 'none' };
+
+    const ch = chapter || getCurrentChapter();
+    const progress = { total: 0, completed: 0, available: [], inProgress: [], failed: [] };
+
+    // Check each quest for stages in this chapter
+    Object.keys(ALLY_QUESTS).forEach(questId => {
+        const questDef = ALLY_QUESTS[questId];
+        const quest = state.quests[questId];
+
+        // Find stages available in this chapter
+        questDef.stageChapters.forEach((stageCh, idx) => {
+            if(stageCh === ch){
+                progress.total++;
+                const stageNum = idx + 1;
+
+                if(quest.status === 'failed'){
+                    progress.failed.push({ questId, stage: stageNum, name: questDef.name });
+                } else if(quest.stage > stageNum || quest.status === 'completed'){
+                    progress.completed++;
+                } else if(quest.stage === stageNum && quest.status === 'active'){
+                    progress.inProgress.push({ questId, stage: stageNum, name: questDef.name });
+                } else if(quest.stage === stageNum && quest.status === 'not_started'){
+                    progress.available.push({ questId, stage: stageNum, name: questDef.name });
+                }
+            }
+        });
+    });
+
+    return progress;
+}
+
+// v54.16: Check if all chapter quest requirements are met
+function isChapterQuestsComplete(chapter){
+    const progress = getChapterQuestProgress(chapter);
+    // Consider complete if all available quest stages are done (excluding failed quests)
+    return progress.completed >= progress.total - progress.failed.length;
+}
+
+// v54.16: Get quest status summary for UI
+function getQuestStatusSummary(){
+    if(!state.quests) return [];
+
+    const summary = [];
+    Object.keys(ALLY_QUESTS).forEach(questId => {
+        const questDef = ALLY_QUESTS[questId];
+        const quest = state.quests[questId];
+
+        summary.push({
+            id: questId,
+            name: questDef.name,
+            creature: questDef.creature,
+            element: questDef.element,
+            img: questDef.img,
+            stage: quest.stage,
+            totalStages: questDef.totalStages,
+            status: quest.status,
+            affinity: quest.affinity,
+            nextRegions: quest.status === 'active' ? questDef.regions[quest.stage] : null
+        });
+    });
+
+    return summary;
 }
 
 // ============================================
@@ -9025,6 +9482,9 @@ function migrateShopSystem(){
 
     // v54.7: Always correct forced natures (for Mythical creatures like Rúnvíg)
     correctForcedNatures();
+
+    // v54.16: Initialize quest system for new and existing saves
+    migrateToV54_16_Quests();
 }
 
 // v54.7: Ensure creatures with forcedNature always have the correct nature
@@ -9142,6 +9602,707 @@ function migrateToV54_3_Natures(){
     state.migratedV54_3_Natures = true;
     save();
     console.log('✅ V54.3 Natures migration complete');
+}
+
+// ============================================
+// v54.16: ALLY QUEST SYSTEM MIGRATION
+// ============================================
+
+function migrateToV54_16_Quests(){
+    // Skip if already migrated
+    if(state.migratedV54_16_Quests) return;
+
+    console.log('🔄 Running V54.16 Quest System migration...');
+
+    // Initialize quest tracking for all quest creatures
+    if(!state.quests || Object.keys(state.quests).length === 0){
+        state.quests = {};
+        Object.keys(ALLY_QUESTS).forEach(questId => {
+            state.quests[questId] = {
+                stage: 1,                  // Current stage (1-4 for long, 1-3 for medium)
+                status: 'not_started',     // not_started, active, completed, failed
+                affinity: 0,               // -100 to +100
+                choices: [],               // Record of choices made ["A", "B", "C"]
+                trialResults: [],          // Combat outcomes [true, false, true]
+                stageOutcomes: [],         // Narrative paths ["trust", "redemption"]
+                encounterCount: 0,         // Times encountered
+                lastEncounter: 0           // Adventure count at last encounter
+            };
+        });
+        console.log('✅ Initialized quest tracking for:', Object.keys(state.quests));
+    }
+
+    // Initialize quest companions tracking
+    if(!state.questCompanions){
+        state.questCompanions = {};
+        console.log('✅ Initialized quest companions tracking');
+    }
+
+    // Initialize quest items inventory
+    if(!state.questItems){
+        state.questItems = {};
+        console.log('✅ Initialized quest items inventory');
+    }
+
+    // Mark migration complete
+    state.migratedV54_16_Quests = true;
+    save();
+    console.log('✅ V54.16 Quest System migration complete');
+}
+
+// Helper: Get quest encounter chance with escalation and catch-up mechanics
+function getQuestEncounterChance(questId, region){
+    const quest = state.quests[questId];
+    if(!quest || quest.status === 'completed' || quest.status === 'failed') return 0;
+
+    const questDef = ALLY_QUESTS[questId];
+    const currentStage = quest.stage;
+
+    // Check if quest can appear in this region
+    const validRegions = questDef.regions[currentStage];
+    if(!validRegions) return 0;
+    if(!validRegions.includes(region) && !validRegions.includes('any')) return 0;
+
+    // Check if stage is available for current chapter
+    const requiredChapter = questDef.stageChapters[currentStage - 1];
+    if(requiredChapter > state.chapter) return 0;
+
+    // Base chance (longer quests have slightly higher chance)
+    let chance = questDef.totalStages === 4 ? 0.10 : 0.08;
+
+    // Escalate based on adventures since last encounter
+    const adventuresSince = state.adventureCount - (quest.lastEncounter || 0);
+    chance += adventuresSince * 0.02; // +2% per adventure
+
+    // Catch-up bonus: If player is behind expected stage for their chapter
+    const expectedStage = Math.min(currentStage + (state.chapter - 1), questDef.totalStages);
+    const stagesBehind = Math.max(0, expectedStage - currentStage);
+    chance += stagesBehind * 0.20; // +20% per stage behind
+
+    // Cap at 95%
+    return Math.min(chance, 0.95);
+}
+
+// Helper: Check if any quest should trigger
+function checkForQuestEncounter(region){
+    const questIds = Object.keys(ALLY_QUESTS);
+
+    // Shuffle quest order to prevent bias
+    for(let i = questIds.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [questIds[i], questIds[j]] = [questIds[j], questIds[i]];
+    }
+
+    for(const questId of questIds){
+        const chance = getQuestEncounterChance(questId, region);
+        if(chance > 0 && Math.random() < chance){
+            return questId;
+        }
+    }
+    return null;
+}
+
+// Helper: Get current region from chapter
+function getRegionFromChapter(chapter){
+    const regions = {1: 'forest', 2: 'volcano', 3: 'ice', 4: 'void', 5: 'void'};
+    return regions[chapter] || 'forest';
+}
+
+// Helper: Calculate scaled quest XP based on party level
+function getScaledQuestXP(baseXP){
+    const party = getActiveStudents().filter(s => s.cid);
+    if(party.length === 0) return baseXP;
+    const avgLevel = party.reduce((sum, s) => sum + getLv(s.xp), 0) / party.length;
+    return Math.floor(baseXP * (1 + avgLevel / 10));
+}
+
+// Helper: Calculate scaled quest coins based on party level
+function getScaledQuestCoins(baseCoins){
+    const party = getActiveStudents().filter(s => s.cid);
+    if(party.length === 0) return baseCoins;
+    const avgLevel = party.reduce((sum, s) => sum + getLv(s.xp), 0) / party.length;
+    return Math.floor(baseCoins * (1 + avgLevel / 15));
+}
+
+// Helper: Calculate final quest reward tier
+function calculateQuestRewardTier(questId){
+    const quest = state.quests[questId];
+    const questDef = ALLY_QUESTS[questId];
+
+    // Count combat failures
+    const failures = quest.trialResults.filter(r => r === false).length;
+
+    // Check for betrayal
+    const betrayed = quest.stageOutcomes.includes('betrayal') || quest.stageOutcomes.includes('betray');
+
+    // Determine tier
+    const thresholds = questDef.rewardThresholds;
+
+    if(betrayed || quest.affinity < 0){
+        return 'failed';
+    }
+
+    // Check legendary requirements
+    if(thresholds.legendary){
+        const meetsAffinity = quest.affinity >= thresholds.legendary.minAffinity;
+        const meetsFailures = failures <= (thresholds.legendary.maxFailures || 0);
+        const noBetrayal = !thresholds.legendary.noBetrayal || !betrayed;
+        if(meetsAffinity && meetsFailures && noBetrayal){
+            return 'legendary';
+        }
+    }
+
+    // Check rare requirements
+    if(thresholds.rare){
+        const meetsAffinity = quest.affinity >= thresholds.rare.minAffinity;
+        const meetsFailures = failures <= (thresholds.rare.maxFailures || 1);
+        if(meetsAffinity && meetsFailures){
+            return 'rare';
+        }
+    }
+
+    // Default to common
+    return 'common';
+}
+
+// ============================================
+// QUEST ENCOUNTER UI
+// ============================================
+
+// Main quest encounter function - shows intro and choices
+function startQuestEncounter(questId){
+    const quest = state.quests[questId];
+    const questDef = ALLY_QUESTS[questId];
+    const stage = quest.stage;
+    const stageDef = questDef.stages[stage];
+
+    // Update quest tracking
+    quest.encounterCount++;
+    quest.lastEncounter = state.adventureCount;
+    if(quest.status === 'not_started'){
+        quest.status = 'active';
+    }
+    save();
+
+    // Determine which intro to show based on previous choices/outcomes
+    let intro = stageDef.introTrust || stageDef.intro;
+    let choices = stageDef.choices;
+
+    // Check for alternative paths based on previous stage outcomes
+    if(stage > 1){
+        const lastOutcome = quest.stageOutcomes[quest.stageOutcomes.length - 1] || '';
+
+        // Redemption path check (negative affinity or bad outcomes)
+        if(quest.affinity < 0 && stageDef.introRedemption){
+            intro = stageDef.introRedemption;
+            choices = stageDef.choicesRedemption || stageDef.choices;
+        }
+        // Damaged path (for Earth Spirit Stage 2)
+        else if(lastOutcome === 'damage' && stageDef.introDamaged){
+            intro = stageDef.introDamaged;
+            choices = stageDef.choicesDamaged || stageDef.choices;
+        }
+        // Connected path (for Whale Stage 2 - sang back)
+        else if(lastOutcome === 'connect' && stageDef.introConnected){
+            intro = stageDef.introConnected;
+        }
+        // Basic/wary path
+        else if(lastOutcome === 'suspicious' && stageDef.introWary){
+            intro = stageDef.introWary;
+            choices = stageDef.choicesWary || stageDef.choices;
+        }
+        // Victory path (for final stages)
+        else if(quest.affinity >= 30 && stageDef.introVictory){
+            intro = stageDef.introVictory;
+            choices = stageDef.choicesVictory || stageDef.choices;
+        }
+        // Bittersweet path
+        else if(quest.affinity >= 10 && stageDef.introBittersweet){
+            intro = stageDef.introBittersweet;
+            choices = stageDef.choicesBonded || stageDef.choicesVictory || stageDef.choices;
+        }
+        // Grief path
+        else if(quest.affinity < 10 && stageDef.introGrief){
+            intro = stageDef.introGrief;
+            choices = stageDef.choicesGrief || stageDef.choices;
+        }
+        // Betrayal path
+        else if(quest.stageOutcomes.includes('betrayal') && stageDef.introBetrayal){
+            intro = stageDef.introBetrayal;
+            choices = stageDef.choicesBetrayal || stageDef.choices;
+        }
+    }
+
+    // Store current encounter data for choice handling
+    window._currentQuestEncounter = {
+        questId: questId,
+        stage: stage,
+        choices: choices
+    };
+
+    // Show the quest encounter overlay
+    showQuestEncounterOverlay(questDef, stageDef, intro, choices);
+}
+
+// Show the quest encounter UI with intro and choices
+function showQuestEncounterOverlay(questDef, stageDef, intro, choices){
+    // Build choice buttons HTML
+    let choicesHtml = '<div class="quest-choices" style="display:flex;flex-direction:column;gap:12px;margin-top:20px;">';
+    choices.forEach((choice, idx) => {
+        const affinityClass = choice.affinity >= 10 ? 'good' : choice.affinity >= 0 ? 'neutral' : 'bad';
+        const combatIndicator = choice.combat ? ' ⚔️' : '';
+        choicesHtml += `
+            <button class="quest-choice-btn ${affinityClass}" onclick="handleQuestChoice(${idx})"
+                style="padding:12px 16px;background:linear-gradient(135deg,rgba(30,30,40,0.95),rgba(20,20,30,0.95));
+                border:2px solid ${choice.affinity >= 10 ? '#4ade80' : choice.affinity >= 0 ? '#fbbf24' : '#f87171'};
+                border-radius:8px;color:#fff;font-size:1rem;text-align:left;cursor:pointer;
+                transition:transform 0.2s,box-shadow 0.2s;">
+                <span style="font-weight:bold;">${choice.id}.</span> ${choice.text}${combatIndicator}
+            </button>
+        `;
+    });
+    choicesHtml += '</div>';
+
+    // Format intro text with line breaks
+    const formattedIntro = intro.replace(/\n/g, '<br>');
+
+    // Create the overlay content
+    const overlayContent = `
+        <div style="text-align:center;">
+            <div style="font-family:'Uncial Antiqua',cursive;font-size:0.9rem;color:#fbbf24;margin-bottom:5px;">
+                ✨ QUEST ENCOUNTER ✨
+            </div>
+            <h2 style="color:#c084fc;font-family:'Uncial Antiqua',cursive;font-size:1.4rem;margin:0;">
+                ${questDef.name}
+            </h2>
+            <div style="color:#888;font-size:0.85rem;margin-bottom:15px;">
+                Stage ${window._currentQuestEncounter.stage}: ${stageDef.name}
+            </div>
+            <div style="margin:15px auto;width:180px;height:180px;border-radius:50%;overflow:hidden;
+                border:3px solid #c084fc;box-shadow:0 0 30px rgba(192,132,252,0.5);">
+                <img src="${G}/${questDef.img}" style="width:100%;height:100%;object-fit:cover;"
+                    onerror="this.style.opacity='0.3'">
+            </div>
+            <p style="color:#ddd;margin:15px 0;line-height:1.7;text-align:left;padding:0 10px;font-size:0.95rem;">
+                ${formattedIntro}
+            </p>
+            ${choicesHtml}
+        </div>
+    `;
+
+    // Show using the event overlay system
+    document.querySelector('#eventOverlay .overlay-content').innerHTML = overlayContent;
+    document.getElementById('eventOverlay').classList.add('active');
+}
+
+// Handle player's choice in quest encounter
+function handleQuestChoice(choiceIndex){
+    const encounter = window._currentQuestEncounter;
+    if(!encounter) return;
+
+    const choice = encounter.choices[choiceIndex];
+    const quest = state.quests[encounter.questId];
+    const questDef = ALLY_QUESTS[encounter.questId];
+    const stageDef = questDef.stages[encounter.stage];
+
+    // Record the choice
+    quest.choices.push(choice.id);
+    quest.affinity += choice.affinity;
+    quest.stageOutcomes.push(choice.outcome);
+
+    // Check for quest failure
+    if(choice.questFail){
+        quest.status = 'failed';
+        save();
+        showQuestOutcome(encounter.questId, choice, true);
+        return;
+    }
+
+    // Check if this choice triggers combat
+    if(choice.combat){
+        // Close current overlay
+        closeOverlay('event');
+
+        // Store combat callback for after battle
+        window._questCombatCallback = {
+            questId: encounter.questId,
+            choice: choice,
+            stage: encounter.stage
+        };
+
+        // Start the quest combat
+        startQuestCombat(encounter.questId, choice.combat, stageDef.combatConfig[choice.combat]);
+        return;
+    }
+
+    // No combat - show outcome directly
+    save();
+    showQuestOutcome(encounter.questId, choice, false);
+}
+
+// Show the outcome of a quest choice
+function showQuestOutcome(questId, choice, isFailed){
+    const quest = state.quests[questId];
+    const questDef = ALLY_QUESTS[questId];
+    const stageDef = questDef.stages[quest.stage];
+
+    // Calculate and grant rewards
+    let rewardText = '';
+    let stageComplete = true;
+
+    if(isFailed){
+        rewardText = '<div style="color:#f87171;margin-top:15px;">❌ Quest Failed</div>';
+    } else {
+        // Determine reward based on outcome
+        const rewards = stageDef.rewards;
+        let rewardKey = 'good';
+
+        if(choice.affinity < 0) rewardKey = 'bad';
+        else if(choice.affinity < 10) rewardKey = 'neutral';
+        else if(choice.outcome === 'redemption') rewardKey = 'redemption';
+
+        const reward = rewards[rewardKey] || rewards.good || rewards.neutral || {};
+
+        if(reward.xp){
+            const scaledXP = getScaledQuestXP(reward.xp);
+            // Grant XP to all party members
+            getActiveStudents().filter(s => s.cid).forEach(s => {
+                s.xp += scaledXP;
+            });
+            rewardText += `<div style="color:#4ade80;">+${scaledXP} XP to party</div>`;
+        }
+
+        if(reward.coins){
+            const scaledCoins = getScaledQuestCoins(reward.coins);
+            getActiveStudents().filter(s => s.cid).forEach(s => {
+                s.coins += Math.floor(scaledCoins / getPartySize());
+            });
+            rewardText += `<div style="color:#fbbf24;">+${scaledCoins} coins</div>`;
+        }
+
+        if(reward.item && QUEST_ITEMS[reward.item]){
+            state.questItems[reward.item] = (state.questItems[reward.item] || 0) + 1;
+            rewardText += `<div style="color:#c084fc;">📦 Received: ${QUEST_ITEMS[reward.item].name}</div>`;
+        }
+    }
+
+    // Check if this was the final stage
+    const isLastStage = quest.stage >= questDef.totalStages;
+    let completionText = '';
+
+    if(isLastStage && !isFailed){
+        quest.status = 'completed';
+        const tier = calculateQuestRewardTier(questId);
+        const finalReward = questDef.rewards[tier];
+
+        completionText = `
+            <div style="margin-top:20px;padding:15px;background:rgba(192,132,252,0.2);border-radius:10px;border:2px solid #c084fc;">
+                <div style="font-family:'Uncial Antiqua',cursive;color:#c084fc;font-size:1.2rem;margin-bottom:10px;">
+                    🎉 QUEST COMPLETE! 🎉
+                </div>
+                <div style="color:#fbbf24;font-size:1rem;margin-bottom:10px;">
+                    Reward Tier: ${tier.toUpperCase()}
+                </div>
+                ${finalReward.companion ? `<div style="color:#4ade80;">🏠 ${questDef.creature} joins your Home Base!</div>` : ''}
+                ${finalReward.item ? `<div style="color:#c084fc;">✨ ${QUEST_ITEMS[finalReward.item].name}</div>` : ''}
+                <div style="color:#4ade80;">+${getScaledQuestXP(finalReward.xp)} XP</div>
+                <div style="color:#fbbf24;">+${getScaledQuestCoins(finalReward.coins)} coins</div>
+            </div>
+        `;
+
+        // Apply final rewards
+        const scaledFinalXP = getScaledQuestXP(finalReward.xp);
+        const scaledFinalCoins = getScaledQuestCoins(finalReward.coins);
+        getActiveStudents().filter(s => s.cid).forEach(s => {
+            s.xp += scaledFinalXP;
+            s.coins += Math.floor(scaledFinalCoins / getPartySize());
+        });
+
+        if(finalReward.companion){
+            state.questCompanions[questId] = {
+                unlocked: true,
+                tier: tier,
+                affinity: quest.affinity
+            };
+        }
+
+        if(finalReward.item){
+            state.questItems[finalReward.item] = (state.questItems[finalReward.item] || 0) + 1;
+        }
+    } else if(!isFailed){
+        // Advance to next stage
+        quest.stage++;
+        completionText = `
+            <div style="margin-top:15px;color:#888;font-style:italic;">
+                Stage ${quest.stage - 1} complete. The story continues...
+            </div>
+            <div style="margin-top:10px;padding:10px;background:rgba(100,100,100,0.2);border-radius:8px;">
+                <div style="color:#fbbf24;">Affinity: ${quest.affinity > 0 ? '+' : ''}${quest.affinity}</div>
+                <div style="color:#888;font-size:0.85rem;">Next stage available in: ${questDef.regions[quest.stage]?.join(', ') || 'any region'}</div>
+            </div>
+        `;
+    }
+
+    save();
+
+    // Show outcome overlay
+    const outcomeHtml = `
+        <div style="text-align:center;">
+            <h2 style="color:#c084fc;font-family:'Uncial Antiqua',cursive;font-size:1.3rem;">
+                ${isFailed ? '💔 Outcome' : '✨ Outcome'}
+            </h2>
+            <p style="color:#ddd;margin:15px 0;line-height:1.7;padding:0 10px;">
+                ${choice.result}
+            </p>
+            ${rewardText}
+            ${completionText}
+            <button class="btn btn-primary" onclick="closeOverlay('event');renderMain();"
+                style="margin-top:20px;padding:12px 24px;">
+                Continue
+            </button>
+        </div>
+    `;
+
+    document.querySelector('#eventOverlay .overlay-content').innerHTML = outcomeHtml;
+    window._currentQuestEncounter = null;
+}
+
+// Start quest-specific combat
+function startQuestCombat(questId, combatType, config){
+    const questDef = ALLY_QUESTS[questId];
+    const quest = state.quests[questId];
+    const avgLv = getAvgLevel();
+
+    // Build enemies array
+    let enemies = [];
+
+    if(config.enemies){
+        config.enemies.forEach(enemyId => {
+            const enemyDef = QUEST_ENEMIES[enemyId];
+            if(enemyDef){
+                const scaledEnemy = scaleQuestEnemy(enemyDef, avgLv);
+                enemies.push(scaledEnemy);
+            }
+        });
+    } else if(config.enemy){
+        // Single enemy (duel, mercy)
+        const enemyDef = QUEST_ENEMIES[config.enemy];
+        if(enemyDef){
+            const scaledEnemy = scaleQuestEnemy(enemyDef, avgLv);
+            enemies.push(scaledEnemy);
+        }
+    }
+
+    if(enemies.length === 0){
+        // Fallback - create a default shadow enemy
+        enemies.push({
+            name: 'Shadow Creature',
+            type: 'Shadow',
+            hp: 50 + avgLv * 5,
+            maxHp: 50 + avgLv * 5,
+            atk: 10 + avgLv,
+            def: 5 + Math.floor(avgLv / 2),
+            spd: 10 + Math.floor(avgLv / 2),
+            int: 8,
+            lv: avgLv,
+            img: 'Wild_Encounters/Wild_ShadowWisp.png',
+            bg: 'Backgrounds_DarkForest.png'
+        });
+    }
+
+    // Mark primary enemy
+    const primaryEnemy = enemies[0];
+    primaryEnemy.isQuestEnemy = true;
+    primaryEnemy.questId = questId;
+    primaryEnemy.combatType = combatType;
+    primaryEnemy.questConfig = config;
+    primaryEnemy.bg = getQuestBackground(questDef.element);
+
+    // Set up special combat conditions
+    if(config.survivalTurns){
+        primaryEnemy.survivalTurns = config.survivalTurns;
+        primaryEnemy.turnsRemaining = config.survivalTurns;
+    }
+
+    if(config.yieldAtPercent !== undefined){
+        primaryEnemy.yieldAtPercent = config.yieldAtPercent;
+        primaryEnemy.failIfKilled = config.failIfKilled || false;
+    }
+
+    // Build quest ally for protective battles
+    let questAlly = null;
+    if(config.ally && QUEST_ALLIES[config.ally]){
+        const allyDef = QUEST_ALLIES[config.ally];
+        questAlly = scaleQuestAlly(allyDef, avgLv);
+        questAlly.isQuestAlly = true;
+        questAlly.allyId = config.ally;
+        questAlly.maxDamagePercent = config.allyDamageLimit || 50;
+        questAlly.startingHp = questAlly.hp;
+        questAlly.damageTaken = 0;
+    }
+
+    // Store quest combat metadata
+    window._questCombatMeta = {
+        questId: questId,
+        combatType: combatType,
+        config: config,
+        ally: questAlly,
+        turnsElapsed: 0
+    };
+
+    // Start the battle
+    if(enemies.length > 1){
+        startBattleWith(primaryEnemy, 'quest', enemies.slice(1));
+    } else {
+        startBattleWith(primaryEnemy, 'quest');
+    }
+
+    // Add quest ally to battle after setup
+    if(questAlly && state.battle){
+        state.battle.questAlly = questAlly;
+        state.battle.isQuestBattle = true;
+        state.battle.questCombatType = combatType;
+        state.battle.survivalTurns = config.survivalTurns || 0;
+        state.battle.turnsElapsed = 0;
+        // Rebuild turn order to include ally
+        buildTurnOrder();
+    }
+}
+
+// Scale quest ally stats based on party level
+function scaleQuestAlly(allyDef, avgLv){
+    const scaledHp = Math.floor(allyDef.baseHp * (1 + avgLv * 0.12));
+    const scaledAtk = Math.floor(allyDef.baseAtk * (1 + avgLv * 0.08));
+    const scaledDef = Math.floor(allyDef.baseDef * (1 + avgLv * 0.06));
+    const scaledSpd = Math.floor(allyDef.baseSpd * (1 + avgLv * 0.03));
+    const scaledInt = Math.floor(allyDef.baseInt * (1 + avgLv * 0.02));
+
+    return {
+        name: allyDef.name,
+        type: allyDef.type,
+        hp: scaledHp,
+        maxHp: scaledHp,
+        atk: scaledAtk,
+        def: scaledDef,
+        spd: scaledSpd,
+        int: scaledInt,
+        lv: avgLv,
+        img: allyDef.img,
+        moves: allyDef.moves,
+        focus: 50,
+        focusMax: 100,
+        cooldown: 0
+    };
+}
+
+// Scale quest enemy stats based on party level
+function scaleQuestEnemy(enemyDef, avgLv){
+    const partySize = getPartySize();
+    const scaling = PARTY_SCALING[Math.min(partySize, 10)] || PARTY_SCALING[1];
+
+    const scaledHp = Math.floor(enemyDef.baseHp * (1 + avgLv * 0.15) * scaling.hpMult);
+    const scaledAtk = Math.floor(enemyDef.baseAtk * (1 + avgLv * 0.08) * scaling.atkMult);
+    const scaledDef = Math.floor(enemyDef.baseDef * (1 + avgLv * 0.05) * scaling.defMult);
+    const scaledSpd = Math.floor(enemyDef.baseSpd * (1 + avgLv * 0.03));
+    const scaledInt = Math.floor(enemyDef.baseInt * (1 + avgLv * 0.02));
+
+    return {
+        name: enemyDef.name,
+        type: enemyDef.type,
+        hp: scaledHp,
+        maxHp: scaledHp,
+        atk: scaledAtk,
+        def: scaledDef,
+        spd: scaledSpd,
+        int: scaledInt,
+        lv: avgLv,
+        img: enemyDef.img,
+        canHeal: enemyDef.canHeal || false,
+        somber: enemyDef.somber || false
+    };
+}
+
+// Get appropriate background for quest element
+function getQuestBackground(element){
+    const backgrounds = {
+        'Fire': 'Backgrounds_VolcanoArena.png',
+        'Earth': 'Backgrounds_DarkForest.png',
+        'Water': 'Backgrounds_Frozen Cave.png',
+        'Ice': 'Backgrounds_Frozen Cave.png',
+        'Shadow': 'Backgrounds_CosmicVoid.png',
+        'Void': 'Backgrounds_CosmicVoid.png'
+    };
+    return backgrounds[element] || 'Backgrounds_DarkForest.png';
+}
+
+// Handle quest combat completion (called from endBattle)
+function handleQuestCombatEnd(victory){
+    const callback = window._questCombatCallback;
+    if(!callback) return false;
+
+    const quest = state.quests[callback.questId];
+    const questDef = ALLY_QUESTS[callback.questId];
+    const choice = callback.choice;
+    const meta = window._questCombatMeta;
+
+    // Record combat result
+    quest.trialResults.push(victory);
+
+    // Clear callbacks
+    window._questCombatCallback = null;
+    window._questCombatMeta = null;
+
+    // Check for special conditions
+    const config = questDef.stages[callback.stage].combatConfig[choice.combat];
+    let questFailed = false;
+
+    // v54.16: Duel with failIfKilled - check if enemy was killed instead of yielding
+    if(config && config.failIfKilled && victory){
+        // If victory was through killing (enemy HP = 0) instead of yield
+        // Check if the enemy actually died (no yield message in log)
+        const hadYield = state.log && state.log.some(l => l.t === 'yield');
+        if(!hadYield){
+            // Enemy was killed, not yielded - quest fails!
+            questFailed = true;
+            quest.status = 'failed';
+            quest.stageOutcomes.push('killed_ally');
+            state.log.push({t:'quest', m:`💔 You killed ${questDef.creature}... The bond is broken forever.`});
+        }
+    }
+
+    // v54.16: Protective battle - check if ally survived
+    if(config && config.ally && meta && meta.ally){
+        if(meta.ally.hp <= 0){
+            // Ally died - loss affects affinity and outcome
+            quest.affinity -= 15;
+            quest.stageOutcomes.push('ally_died');
+        }
+    }
+
+    // v54.16: Combat loss handling
+    if(!victory && !questFailed){
+        // Combat loss - record but don't necessarily fail quest
+        quest.stageOutcomes.push('combat_loss');
+        quest.affinity -= 5; // Small affinity penalty for losing
+
+        // Some combat types don't fail quest on loss
+        if(choice.combat === 'trial' || choice.combat === 'trial_duel'){
+            // Trial battles - losing is okay, just affects rewards
+            questFailed = false;
+        } else if(config && config.survivalTurns){
+            // Survival - if didn't survive, still continue
+            questFailed = false;
+        }
+    }
+
+    save();
+
+    // Show outcome after short delay
+    setTimeout(() => {
+        showQuestOutcome(callback.questId, choice, questFailed);
+    }, 500);
+
+    return true;
 }
 
 // ============================================
@@ -12175,7 +13336,67 @@ function renderAdventure(m){
             <button class="challenge-btn" onclick="completeChallenge()">Challenge Complete</button>
         </div>`;
     }
-    
+
+    // v54.16: Quest progress indicator
+    if(state.quests){
+        const questProgress = getChapterQuestProgress(ch);
+        if(questProgress.total > 0){
+            html+=`<div class="quest-progress-box" style="margin:15px auto;padding:12px;background:rgba(192,132,252,0.1);border:1px solid rgba(192,132,252,0.3);border-radius:10px;max-width:400px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:#c084fc;font-size:0.9rem;font-weight:bold;">📜 Chapter ${ch} Quests</span>
+                    <span style="color:#888;font-size:0.75rem;">${questProgress.completed}/${questProgress.total} complete</span>
+                </div>`;
+
+            // Show in-progress quests
+            if(questProgress.inProgress.length > 0){
+                questProgress.inProgress.forEach(q => {
+                    const questDef = ALLY_QUESTS[q.questId];
+                    const regions = questDef.regions[state.quests[q.questId].stage] || [];
+                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(251,191,36,0.1);border-radius:6px;margin-bottom:4px;">
+                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #fbbf24;" onerror="this.style.opacity='0.3'">
+                        <div style="flex:1;">
+                            <div style="color:#fbbf24;font-size:0.75rem;font-weight:bold;">${q.name}</div>
+                            <div style="color:#888;font-size:0.65rem;">Stage ${q.stage} - Look in: ${regions.join(', ') || 'any region'}</div>
+                        </div>
+                        <span style="color:#fbbf24;font-size:0.7rem;">⏳ Active</span>
+                    </div>`;
+                });
+            }
+
+            // Show available quests (not started)
+            if(questProgress.available.length > 0){
+                questProgress.available.forEach(q => {
+                    const questDef = ALLY_QUESTS[q.questId];
+                    const regions = questDef.regions[1] || [];
+                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(74,222,128,0.1);border-radius:6px;margin-bottom:4px;">
+                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #4ade80;opacity:0.7;" onerror="this.style.opacity='0.3'">
+                        <div style="flex:1;">
+                            <div style="color:#4ade80;font-size:0.75rem;font-weight:bold;">${q.name}</div>
+                            <div style="color:#888;font-size:0.65rem;">Find in: ${regions.join(', ') || 'any region'}</div>
+                        </div>
+                        <span style="color:#4ade80;font-size:0.7rem;">✨ New</span>
+                    </div>`;
+                });
+            }
+
+            // Show failed quests
+            if(questProgress.failed.length > 0){
+                questProgress.failed.forEach(q => {
+                    const questDef = ALLY_QUESTS[q.questId];
+                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(248,113,113,0.1);border-radius:6px;margin-bottom:4px;opacity:0.6;">
+                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #f87171;opacity:0.5;" onerror="this.style.opacity='0.3'">
+                        <div style="flex:1;">
+                            <div style="color:#f87171;font-size:0.75rem;">${q.name}</div>
+                        </div>
+                        <span style="color:#f87171;font-size:0.7rem;">❌ Failed</span>
+                    </div>`;
+                });
+            }
+
+            html+=`</div>`;
+        }
+    }
+
     // Adventure button
     html+=`<button class="adventure-btn" ${canAdventure?`onclick="startAdventure()"`:'disabled'}>
         ⚔️ Begin Adventure
@@ -12781,10 +14002,18 @@ function completeChallenge(){
 function startAdventure(){
     initAudio();
     state.adventureCount++;
-    
+
     const avgLv = getAvgLevel();
     const ch = getCurrentChapter();
     const chData = CHAPTERS[ch];
+
+    // v54.16: Check for quest encounters first (before regular events)
+    const region = getRegionFromChapter(ch);
+    const triggeredQuest = checkForQuestEncounter(region);
+    if(triggeredQuest){
+        startQuestEncounter(triggeredQuest);
+        return;
+    }
     
     // Calculate boss encounter chance based on level vs chapter expectations
     const bossChanceInfo = calculateBossChance(avgLv, ch);
@@ -14552,8 +15781,18 @@ function buildTurnOrder(){
         if(e.hp>0) battleQueue.push({type:'enemy',idx:i,spd:e.spd});
     });
 
+    // v54.16: Add quest ally if present (protective battles)
+    if(b.questAlly && b.questAlly.hp > 0){
+        battleQueue.push({type:'ally', idx:0, spd:b.questAlly.spd});
+    }
+
     battleQueue.sort((a,b)=>b.spd-a.spd);
     turnIdx=0;
+
+    // v54.16: Increment survival turn counter each round
+    if(b.isQuestBattle && b.survivalTurns > 0){
+        b.turnsElapsed = (b.turnsElapsed || 0) + 1;
+    }
 }
 
 function getAliveEnemies(){
@@ -14605,6 +15844,33 @@ function nextTurn(){
     const aliveEnemies = getAliveEnemies();
     if(aliveEnemies.length === 0){setTimeout(()=>endBattle(true),500);return}
     if(!b.team.some(m=>m.curHp>0)){setTimeout(()=>endBattle(false),500);return}
+
+    // v54.16: Quest-specific win/lose conditions
+    if(b.isQuestBattle){
+        // SURVIVAL: Check if survival turns completed
+        if(b.survivalTurns > 0 && b.turnsElapsed >= b.survivalTurns){
+            state.log.push({t:'quest', m:`⏰ Survived ${b.survivalTurns} turns!`});
+            setTimeout(()=>endBattle(true),500);
+            return;
+        }
+
+        // PROTECTIVE: Check if ally took too much damage
+        if(b.questAlly && b.questAlly.maxDamagePercent){
+            const damageTaken = b.questAlly.startingHp - b.questAlly.hp;
+            const damagePercent = (damageTaken / b.questAlly.startingHp) * 100;
+            if(damagePercent > b.questAlly.maxDamagePercent){
+                state.log.push({t:'quest', m:`💔 ${b.questAlly.name} took too much damage!`});
+                setTimeout(()=>endBattle(false),500);
+                return;
+            }
+            // Also check if ally KO'd
+            if(b.questAlly.hp <= 0){
+                state.log.push({t:'quest', m:`💀 ${b.questAlly.name} was defeated!`});
+                setTimeout(()=>endBattle(false),500);
+                return;
+            }
+        }
+    }
     
     if(turnIdx>=battleQueue.length){
         console.log('Turn order exhausted, rebuilding...');
@@ -14651,11 +15917,73 @@ function nextTurn(){
     
     processing=false;
     renderMain();
-    
+
     if(cur?.type==='enemy'){
         processing=true;
         setTimeout(enemyAction,800);
     }
+
+    // v54.16: Handle quest ally turns
+    if(cur?.type==='ally'){
+        processing=true;
+        setTimeout(questAllyAction,800);
+    }
+}
+
+// v54.16: Quest ally AI action
+function questAllyAction(){
+    if(!state.battle || !state.battle.questAlly) return;
+    const b = state.battle;
+    const ally = b.questAlly;
+    const aliveEnemies = getAliveEnemies();
+
+    // If no enemies left, advance turn
+    if(aliveEnemies.length === 0){
+        turnIdx++;
+        processing = false;
+        nextTurn();
+        return;
+    }
+
+    // Select random alive enemy to attack
+    const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+    const targetIdx = b.enemies.indexOf(target);
+
+    // Calculate damage (basic attack formula)
+    const baseDmg = Math.max(1, ally.atk - target.def * 0.2);
+    const dmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.2));
+
+    // Apply damage
+    target.hp = Math.max(0, target.hp - dmg);
+
+    state.log.push({t:'ally', m:`🛡️ ${ally.name} attacks ${target.name} for ${dmg} damage!`});
+
+    // Fire projectile animation
+    const allyEl = document.getElementById('questAllyArena');
+    const enemyEl = document.getElementById(`enemy${targetIdx}`);
+    if(allyEl && enemyEl){
+        fireProjectile(allyEl, enemyEl, 'Light');
+    }
+
+    // Check for yield mechanic (duel battles)
+    if(target.yieldAtPercent !== undefined){
+        const hpPercent = (target.hp / target.maxHp) * 100;
+        if(hpPercent <= target.yieldAtPercent){
+            state.log.push({t:'yield', m:`⚔️ ${target.name} yields!`});
+            setTimeout(()=>endBattle(true),500);
+            return;
+        }
+    }
+
+    // Check if target defeated
+    if(target.hp <= 0){
+        state.log.push({t:'ko', m:`💥 ${target.name} defeated!`});
+    }
+
+    turnIdx++;
+    processing = false;
+    renderMain();
+    setTimeout(nextTurn, 600);
 }
 
 function renderBattle(m){
@@ -14685,11 +16013,49 @@ function renderBattle(m){
     
     let html=`<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/${b.enemy.bg||'Backgrounds_DarkForest.png'}')">`;
     
-    // Header
+    // Header - v54.16: Show quest battle type
+    let battleTypeLabel = enemy.isBoss ? '⚔️ BOSS BATTLE' : '🗡️ Wild Encounter';
+    if(b.isQuestBattle){
+        const typeLabels = {
+            'protective': '🛡️ PROTECT ALLY',
+            'swarm': '🌊 SWARM BATTLE',
+            'duel': '⚔️ DUEL',
+            'trial': '🏆 TRIAL COMBAT',
+            'mercy': '💚 MERCY BATTLE'
+        };
+        battleTypeLabel = typeLabels[b.questCombatType] || '📜 QUEST BATTLE';
+    }
     html+=`<div class="battle-header">
-        <div class="battle-type">${enemy.isBoss?'⚔️ BOSS BATTLE':'🗡️ Wild Encounter'}</div>
+        <div class="battle-type">${battleTypeLabel}</div>
         ${processing ? `<button onclick="processing=false;nextTurn();renderMain();" style="background:#f87171;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;">⚠️ Unstuck</button>` : ''}
     </div>`;
+
+    // v54.16: Quest battle indicators
+    if(b.isQuestBattle){
+        html+=`<div class="quest-battle-indicators" style="display:flex;gap:12px;justify-content:center;margin:4px 0;font-size:0.75rem;">`;
+
+        // Survival turns remaining
+        if(b.survivalTurns > 0){
+            const turnsLeft = Math.max(0, b.survivalTurns - (b.turnsElapsed || 0));
+            html+=`<div style="background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;color:#fbbf24;">
+                ⏰ Survive: ${turnsLeft} turns
+            </div>`;
+        }
+
+        // Ally HP tracker
+        if(b.questAlly){
+            const allyHpPct = Math.floor((b.questAlly.hp / b.questAlly.maxHp) * 100);
+            const damageTaken = b.questAlly.startingHp - b.questAlly.hp;
+            const damagePct = Math.floor((damageTaken / b.questAlly.startingHp) * 100);
+            const maxDmg = b.questAlly.maxDamagePercent || 50;
+            const hpColor = damagePct > maxDmg * 0.7 ? '#f87171' : damagePct > maxDmg * 0.4 ? '#fbbf24' : '#4ade80';
+            html+=`<div style="background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;color:${hpColor};">
+                🛡️ ${b.questAlly.name}: ${allyHpPct}% HP (Max damage: ${maxDmg}%)
+            </div>`;
+        }
+
+        html+=`</div>`;
+    }
     
     // ============================================
     // V43: TURN ORDER TRACKER - Top center (v54.1: Added names)
@@ -14698,26 +16064,29 @@ function renderBattle(m){
     const upcomingTurns = battleQueue.slice(turnIdx, Math.min(turnIdx + 7, battleQueue.length));
     upcomingTurns.forEach((turn, offset) => {
         const isActive = offset === 0;
-        const isKO = turn.type === 'player' ?
-            b.team[turn.idx].curHp <= 0 :
-            b.enemies[turn.idx].hp <= 0;
+        let isKO = false;
+        let imgSrc = '';
+        let turnName = '';
+
+        // v54.16: Handle ally type in turn order
+        if(turn.type === 'player'){
+            isKO = b.team[turn.idx].curHp <= 0;
+            imgSrc = getImg(b.team[turn.idx].cid, b.team[turn.idx].lv);
+            turnName = b.team[turn.idx].name || 'Hero';
+        } else if(turn.type === 'enemy'){
+            isKO = b.enemies[turn.idx].hp <= 0;
+            imgSrc = `${G}/${b.enemies[turn.idx].img}`;
+            turnName = b.enemies[turn.idx].name || 'Enemy';
+        } else if(turn.type === 'ally' && b.questAlly){
+            isKO = b.questAlly.hp <= 0;
+            imgSrc = `${G}/${b.questAlly.img}`;
+            turnName = b.questAlly.name || 'Ally';
+        }
 
         let portraitClass = `turn-order-portrait ${turn.type}`;
         if(isActive) portraitClass += ' active';
         if(isKO) portraitClass += ' ko';
 
-        const imgSrc = turn.type === 'player' ?
-            getImg(b.team[turn.idx].cid, b.team[turn.idx].lv) :
-            `${G}/${b.enemies[turn.idx].img}`;
-
-        // v54.1: Get name for turn order display
-        let turnName = '';
-        if(turn.type === 'player'){
-            const member = b.team[turn.idx];
-            turnName = member.name || 'Hero';
-        } else {
-            turnName = b.enemies[turn.idx].name || 'Enemy';
-        }
         // Truncate long names
         const displayName = turnName.length > 8 ? turnName.substring(0, 7) + '…' : turnName;
 
@@ -14796,7 +16165,29 @@ function renderBattle(m){
         html+=`</div>`;
     });
     html+=`</div>`;
-    
+
+    // v54.16: Quest Ally Display (between player party and enemies)
+    if(b.questAlly && b.questAlly.hp > 0){
+        const ally = b.questAlly;
+        const allyHpPct = (ally.hp / ally.maxHp) * 100;
+        const isAllyTurn = cur?.type === 'ally';
+
+        html+=`<div class="quest-ally-arena" id="questAllyArena" style="display:flex;flex-direction:column;align-items:center;margin:0 15px;">
+            ${isAllyTurn ? '<span class="active-arrow" style="color:#4ade80;">▼</span>' : ''}
+            <div class="arena-frame evo2" style="border-color:#4ade80;box-shadow:0 0 12px rgba(74,222,128,0.4);">
+                <img src="${G}/${ally.img}" onerror="this.style.opacity='0.3'" style="width:60px;height:60px;object-fit:contain;">
+            </div>
+            <div style="text-align:center;margin-top:4px;">
+                <div style="font-size:0.65rem;color:#4ade80;font-weight:bold;">${ally.name}</div>
+                <div class="creature-bars-minimal" style="width:50px;">
+                    <div class="minimal-bar hp-minimal">
+                        <div class="minimal-bar-fill hp-fill-minimal" style="width:${allyHpPct}%;background:linear-gradient(90deg,#4ade80,#22c55e);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
     // RIGHT - Enemy Side with staggered columns (like players)
     const allEnemies = b.enemies || [enemy];
     const aliveEnemies = allEnemies.filter(e => e.hp > 0);
@@ -15257,6 +16648,17 @@ function doAction(a){
                 // Add to battle log
                 addLog(`${m.name||'Hero'} used ${moveName}! ${d} damage${isCrit?' (CRIT!)':''}`, 'dmg');
 
+                // v54.16: Check for duel yield mechanic
+                if(targetEnemy.yieldAtPercent !== undefined){
+                    const hpPercent = (targetEnemy.hp / targetEnemy.maxHp) * 100;
+                    if(hpPercent <= targetEnemy.yieldAtPercent){
+                        state.log.push({t:'yield', m:`⚔️ ${targetEnemy.name} yields!`});
+                        processing = false;
+                        setTimeout(()=>endBattle(true),500);
+                        return;
+                    }
+                }
+
                 // CRITICAL: Clear processing flag before advancing turn
                 processing = false;
 
@@ -15499,6 +16901,15 @@ function doAction(a){
 
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! Hit ${aliveEnemies.length} enemies for ${totalDamage} total damage!`, 'spec');
 
+                        // v54.16: Check for yield mechanic on any AOE target
+                        const yieldingEnemy = aliveEnemies.find(e => e.yieldAtPercent !== undefined && (e.hp / e.maxHp) * 100 <= e.yieldAtPercent);
+                        if(yieldingEnemy){
+                            state.log.push({t:'yield', m:`⚔️ ${yieldingEnemy.name} yields!`});
+                            processing = false;
+                            setTimeout(()=>endBattle(true),500);
+                            return;
+                        }
+
                         processing = false;
 
                         // v54.14: Boss summon/heal moved to boss's turn - removed checkBossMinionSummon() call here
@@ -15594,6 +17005,17 @@ function doAction(a){
 
                         showFloatingDamage(impactEnemyEl, d, 'crit');
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! ${d} damage!`, 'spec');
+
+                        // v54.16: Check for duel yield mechanic
+                        if(targetEnemy.yieldAtPercent !== undefined){
+                            const hpPercent = (targetEnemy.hp / targetEnemy.maxHp) * 100;
+                            if(hpPercent <= targetEnemy.yieldAtPercent){
+                                state.log.push({t:'yield', m:`⚔️ ${targetEnemy.name} yields!`});
+                                processing = false;
+                                setTimeout(()=>endBattle(true),500);
+                                return;
+                            }
+                        }
 
                         processing = false;
 
@@ -18815,14 +20237,29 @@ function enemyAction(){
     }
 
     // 9. BASIC ATTACK - Default fallback (already set)
-    
+
+    // v54.16: QUEST ALLY TARGETING - In protective battles, enemies may target the ally
+    let attackingAlly = false;
+    if(b.questAlly && b.questAlly.hp > 0 && (actionType === 'basic' || actionType === 'special')){
+        // 40% chance to target ally in protective battles
+        if(Math.random() < 0.4){
+            attackingAlly = true;
+        }
+    }
+
     // Choose target for attacks
     const targetMember = alive[Math.floor(Math.random()*alive.length)];
     const targetMemberIdx = b.team.indexOf(targetMember);
-    
+
     // ============================================
     // EXECUTE ACTION
     // ============================================
+
+    // v54.16: Handle attack on quest ally
+    if(attackingAlly && (actionType === 'basic' || actionType === 'special')){
+        executeEnemyAttackOnAlly(enemy, enemyIdx, enemyEl, thisActionId);
+        return;
+    }
 
     if(actionType === 'heal'){
         // HEAL ACTION
@@ -19167,6 +20604,80 @@ function enemyAction(){
     }, 500); // SLOWER - was 400
 }
 
+// v54.16: Enemy attack on quest ally (protective battles)
+function executeEnemyAttackOnAlly(enemy, enemyIdx, enemyEl, thisActionId){
+    const b = state.battle;
+    const ally = b.questAlly;
+
+    if(!ally || ally.hp <= 0){
+        // Ally dead, fallback to normal attack
+        turnIdx++;
+        processing = false;
+        renderMain();
+        setTimeout(nextTurn, 600);
+        return;
+    }
+
+    // Calculate damage
+    let baseDmg = enemy.atk;
+    let defReduction = ally.def * 0.2;
+    let d = Math.max(5, baseDmg - defReduction);
+    d = Math.floor(d * (0.9 + Math.random() * 0.2));
+
+    // Get attack name
+    const atkName = enemy.moves?.atk?.n || enemy.basicAttack?.n || 'Attack';
+
+    // Telegraph - show ally is targeted
+    const allyEl = document.getElementById('questAllyArena');
+    if(allyEl) allyEl.classList.add('targeted');
+
+    setTimeout(() => {
+        if(allyEl) allyEl.classList.remove('targeted');
+
+        // Check action ID
+        if(thisActionId !== currentActionId){
+            console.warn('Enemy ally attack skipped - action ID mismatch');
+            return;
+        }
+
+        // Enemy dash animation
+        const freshEnemyEl = document.getElementById('enemyImg'+enemyIdx);
+        if(freshEnemyEl){
+            freshEnemyEl.classList.add('anim-dash-left');
+            setTimeout(() => freshEnemyEl.classList.remove('anim-dash-left'), 250);
+        }
+
+        // Fire projectile at ally
+        const freshAllyEl = document.getElementById('questAllyArena');
+        const element = enemy.type?.toLowerCase() || 'shadow';
+        fireProjectile(freshEnemyEl, freshAllyEl, element);
+
+        // Apply damage after projectile
+        setTimeout(() => {
+            if(thisActionId !== currentActionId) return;
+
+            playSound('hit');
+
+            ally.hp = Math.max(0, ally.hp - d);
+
+            // Show damage effects
+            if(freshAllyEl){
+                showImpactEffect(freshAllyEl, false, element);
+                freshAllyEl.classList.add('anim-hit-shake', 'anim-hit-flash');
+                setTimeout(() => freshAllyEl.classList.remove('anim-hit-shake', 'anim-hit-flash'), 400);
+                showFloatingDamage(freshAllyEl, d, 'damage');
+            }
+
+            addLog(`💥 ${enemy.name} attacks ${ally.name}! ${d} damage!`, 'dmg');
+
+            processing = false;
+            turnIdx++;
+            renderMain();
+            setTimeout(nextTurn, 600);
+        }, 350);
+    }, 400);
+}
+
 // Enemy heal action
 // v54.15: Added INT scaling for enemy healing
 function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
@@ -19236,6 +20747,14 @@ function endBattle(won){
                 debugLog('COMBAT', `${student.name} exits battle | HP: ${student.curHp}/${member.maxHp} | Focus: ${student.curFocus}`);
             }
         });
+    }
+
+    // v54.16: Check if this was a quest combat - handle it separately
+    if(window._questCombatCallback){
+        state.battle = null;
+        save();
+        handleQuestCombatEnd(won);
+        return; // Quest combat handles its own rewards and UI
     }
 
     // Calculate total rewards from all enemies
