@@ -9271,6 +9271,233 @@ const QUEST_ITEMS = {
     forbidden_knowledge: { name: 'Forbidden Knowledge', type: 'cursed', slot: 'trinket', desc: '+10% damage dealt, but -10% healing received', effect: { damageBonus: 0.1, healingPenalty: -0.1 } }
 };
 
+// ============================================
+// v54.16: QUEST EQUIPMENT EFFECTS SYSTEM
+// ============================================
+// Equipment items from quests provide passive and triggered effects in battle
+
+/**
+ * Get all owned quest equipment items and their effects
+ * @returns {Array} Array of equipment objects with {id, name, type, effect}
+ */
+function getActiveQuestEquipment(){
+    const equipment = [];
+    const items = state.questItems || {};
+
+    Object.entries(items).forEach(([id, count]) => {
+        if(count > 0 && QUEST_ITEMS[id]){
+            const item = QUEST_ITEMS[id];
+            // Only include equipment types (legendary, rare, cursed)
+            if(item.type === 'legendary' || item.type === 'rare' || item.type === 'cursed'){
+                equipment.push({ id, ...item });
+            }
+        }
+    });
+
+    return equipment;
+}
+
+/**
+ * Calculate damage bonus from quest equipment
+ * @param {string} attackElement - The element of the attack
+ * @param {object} battleState - Current battle state (for tracking used items)
+ * @returns {number} Damage multiplier bonus (e.g., 0.2 for +20%)
+ */
+function getQuestEquipmentDamageBonus(attackElement, battleState){
+    const equipment = getActiveQuestEquipment();
+    let bonus = 0;
+
+    equipment.forEach(item => {
+        if(!item.effect) return;
+
+        // Element-specific damage bonuses
+        if(item.effect.fireDamage && attackElement === 'Fire'){
+            bonus += item.effect.fireDamage;
+        }
+        if(item.effect.iceDamage && (attackElement === 'Ice' || attackElement === 'Water')){
+            bonus += item.effect.iceDamage;
+        }
+
+        // General damage bonus (cursed item)
+        if(item.effect.damageBonus){
+            bonus += item.effect.damageBonus;
+        }
+    });
+
+    return bonus;
+}
+
+/**
+ * Calculate DEF bonus from quest equipment
+ * @returns {number} DEF multiplier bonus (e.g., 0.15 for +15%)
+ */
+function getQuestEquipmentDefBonus(){
+    const equipment = getActiveQuestEquipment();
+    let bonus = 0;
+
+    equipment.forEach(item => {
+        if(item.effect?.defBonus){
+            bonus += item.effect.defBonus;
+        }
+    });
+
+    return bonus;
+}
+
+/**
+ * Calculate crit chance bonus from quest equipment
+ * @returns {number} Crit chance bonus (e.g., 0.15 for +15%)
+ */
+function getQuestEquipmentCritBonus(){
+    const equipment = getActiveQuestEquipment();
+    let bonus = 0;
+
+    equipment.forEach(item => {
+        if(item.effect?.critBonus){
+            bonus += item.effect.critBonus;
+        }
+    });
+
+    return bonus;
+}
+
+/**
+ * Calculate healing penalty from cursed quest equipment
+ * @returns {number} Healing multiplier (e.g., -0.1 for -10% healing)
+ */
+function getQuestEquipmentHealingModifier(){
+    const equipment = getActiveQuestEquipment();
+    let modifier = 0;
+
+    equipment.forEach(item => {
+        if(item.effect?.healingPenalty){
+            modifier += item.effect.healingPenalty;
+        }
+    });
+
+    return modifier;
+}
+
+/**
+ * Check if auto-revive should trigger and apply it
+ * @param {object} member - The party member who would die
+ * @param {object} battleState - Current battle state
+ * @returns {boolean} True if auto-revive triggered
+ */
+function checkQuestAutoRevive(member, battleState){
+    if(!battleState.questEquipment) return false;
+    if(battleState.questEquipment.autoReviveUsed) return false;
+
+    const equipment = getActiveQuestEquipment();
+    const reviveItem = equipment.find(item => item.effect?.autoRevive);
+
+    if(reviveItem){
+        // Revive at specified percentage (default 50%)
+        const revivePercent = reviveItem.effect.revivePercent || 0.5;
+        member.curHp = Math.floor(member.maxHp * revivePercent);
+        battleState.questEquipment.autoReviveUsed = true;
+
+        // Log the revive
+        addLog(`✨ ${reviveItem.name} activates! ${member.name || 'Hero'} is revived at ${Math.floor(revivePercent * 100)}% HP!`, 'heal');
+        playSound('heal');
+
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if focus restore should trigger (low HP threshold)
+ * @param {object} member - The party member
+ * @param {object} battleState - Current battle state
+ * @returns {boolean} True if focus restore triggered
+ */
+function checkQuestFocusRestore(member, battleState){
+    if(!battleState.questEquipment) return false;
+    if(battleState.questEquipment.focusRestoreUsed) return false;
+
+    const equipment = getActiveQuestEquipment();
+    const focusItem = equipment.find(item => item.effect?.focusRestore);
+
+    if(focusItem){
+        const triggerPercent = focusItem.effect.triggerPercent || 0.25;
+        const hpPercent = member.curHp / member.maxHp;
+
+        if(hpPercent <= triggerPercent && hpPercent > 0){
+            const focusAmount = focusItem.effect.focusRestore || 50;
+            member.focus = Math.min(member.focusMax, member.focus + focusAmount);
+            battleState.questEquipment.focusRestoreUsed = true;
+
+            addLog(`💎 ${focusItem.name} activates! ${member.name || 'Hero'} gains +${focusAmount} Focus!`, 'spec');
+            playSound('powerup');
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Initialize quest equipment tracking for a battle
+ * @param {object} battleState - The battle state object
+ */
+function initQuestEquipmentForBattle(battleState){
+    const equipment = getActiveQuestEquipment();
+
+    battleState.questEquipment = {
+        items: equipment,
+        autoReviveUsed: false,
+        focusRestoreUsed: false,
+        damageShieldUsed: false,
+        extraTurnUsed: false,
+        damageShieldActive: false,
+        damageShieldTurns: 0
+    };
+
+    // Check for damage shield and apply at battle start
+    const shieldItem = equipment.find(item => item.effect?.damageShield);
+    if(shieldItem){
+        battleState.questEquipment.damageShieldActive = true;
+        battleState.questEquipment.damageShieldTurns = shieldItem.effect.shieldTurns || 3;
+        battleState.questEquipment.damageShieldPercent = shieldItem.effect.damageShield || 0.3;
+        addLog(`🛡️ ${shieldItem.name} activates! Party has ${Math.floor(battleState.questEquipment.damageShieldPercent * 100)}% damage reduction for ${battleState.questEquipment.damageShieldTurns} turns!`, 'def');
+    }
+
+    // Log active equipment
+    if(equipment.length > 0){
+        console.log('Quest Equipment Active:', equipment.map(e => e.name).join(', '));
+    }
+}
+
+/**
+ * Get damage shield reduction if active
+ * @param {object} battleState - Current battle state
+ * @returns {number} Damage reduction multiplier (e.g., 0.3 for 30% reduction)
+ */
+function getQuestDamageShieldReduction(battleState){
+    if(!battleState.questEquipment) return 0;
+    if(!battleState.questEquipment.damageShieldActive) return 0;
+
+    return battleState.questEquipment.damageShieldPercent || 0;
+}
+
+/**
+ * Decrement damage shield turns (call at end of each round)
+ * @param {object} battleState - Current battle state
+ */
+function decrementDamageShield(battleState){
+    if(!battleState.questEquipment) return;
+    if(!battleState.questEquipment.damageShieldActive) return;
+
+    battleState.questEquipment.damageShieldTurns--;
+    if(battleState.questEquipment.damageShieldTurns <= 0){
+        battleState.questEquipment.damageShieldActive = false;
+        addLog(`🛡️ Damage shield has faded.`, 'info');
+    }
+}
+
 // XP TABLE - Redesigned for proper pacing
 // Chapter 1 target: Levels 1-22 (can reach 24-25 with grinding)
 // Chapter 2 target: Levels 23-35
@@ -16466,7 +16693,10 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
         isMultiEnemy: allEnemies.length > 1
     };
     state.log=[];
-    
+
+    // v54.16: Initialize quest equipment effects for this battle
+    initQuestEquipmentForBattle(state.battle);
+
     buildTurnOrder();
     currentScreen='battle';
     renderNav();
@@ -16517,6 +16747,9 @@ function buildTurnOrder(){
     if(b.isQuestBattle && b.survivalTurns > 0){
         b.turnsElapsed = (b.turnsElapsed || 0) + 1;
     }
+
+    // v54.16: Decrement quest equipment damage shield at start of each round
+    decrementDamageShield(b);
 }
 
 function getAliveEnemies(){
@@ -17254,10 +17487,16 @@ function doAction(a){
         const damageBuff = getBuffValue(m, 'damage_buff');
         if(damageBuff > 0) d = Math.floor(d * (1 + damageBuff));
 
+        // v54.16: Apply quest equipment damage bonus (element-specific + general)
+        const questDmgBonus = getQuestEquipmentDamageBonus(element, b);
+        if(questDmgBonus > 0) d = Math.floor(d * (1 + questDmgBonus));
+
         // BALANCED CRIT: 5% base + 0.1% per level (max ~10% at lv50)
         // v54.6: Add crit_buff from shop items
+        // v54.16: Add quest equipment crit bonus
         const critBuff = getBuffValue(m, 'crit_buff');
-        const critChance = Math.min(0.25, 0.05 + (m.lv * 0.001) + critBuff);
+        const questCritBonus = getQuestEquipmentCritBonus();
+        const critChance = Math.min(0.40, 0.05 + (m.lv * 0.001) + critBuff + questCritBonus);
         const isCrit = Math.random() < critChance;
         if(isCrit) d = Math.floor(d * 1.5);
         
@@ -17590,6 +17829,11 @@ function doAction(a){
                             let defReduction = enemy.def * 0.25;
                             let d = Math.floor((baseDmg * bonusMult * aoeMult - defReduction) * (.85 + Math.random() * .3));
                             d = Math.max(10, d);
+
+                            // v54.16: Apply quest equipment damage bonus (element-specific + general)
+                            const questDmgBonus = getQuestEquipmentDamageBonus(element, b);
+                            if(questDmgBonus > 0) d = Math.floor(d * (1 + questDmgBonus));
+
                             totalDamage += d;
 
                             // Apply damage
@@ -17663,6 +17907,10 @@ function doAction(a){
                     let defReduction = targetEnemy.def * 0.25;
                     let d = Math.floor((baseDmg * bonusMult - defReduction) * (.85 + Math.random() * .3));
                     d = Math.max(10, d);
+
+                    // v54.16: Apply quest equipment damage bonus (element-specific + general)
+                    const questDmgBonus = getQuestEquipmentDamageBonus(element, b);
+                    if(questDmgBonus > 0) d = Math.floor(d * (1 + questDmgBonus));
 
                     // Show action banner
                     showActionBanner(m.name||'Hero', moveName, d, 'special', true);
@@ -20754,7 +21002,10 @@ function executeHeal(healerIdx, targetIdx, healAmount){
     // +25% healing when target is below 30% HP (critically wounded)
     const isEmergency = target.curHp < target.maxHp * 0.3;
     const emergencyBonus = isEmergency ? 1.25 : 1.0;
-    const finalHealAmount = Math.floor(healAmount * emergencyBonus);
+
+    // v54.16: Apply quest equipment healing modifier (can be negative for cursed items)
+    const healingModifier = getQuestEquipmentHealingModifier();
+    const finalHealAmount = Math.floor(healAmount * emergencyBonus * (1 + healingModifier));
 
     // HEALER ANIMATION
     const healerEl = document.getElementById('c' + healerIdx);
@@ -21101,9 +21352,22 @@ function enemyAction(){
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.5);
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
-                    const d = dmgResult.damage;
+                    let d = dmgResult.damage;
+                    // v54.16: Apply quest equipment damage shield
+                    const shieldReduction = getQuestDamageShieldReduction(b);
+                    if(shieldReduction > 0){
+                        d = Math.floor(d * (1 - shieldReduction));
+                    }
                     debugLog('DAMAGE', `AOE Hit | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Base: ${baseDmg} | Final: ${d} | Target HP: ${t.curHp}/${t.maxHp}`);
                     t.curHp = Math.max(0, t.curHp - d);
+                    // v54.16: Check quest equipment triggers
+                    if(t.curHp <= 0){
+                        if(checkQuestAutoRevive(t, b)){
+                            // Auto-revive triggered, creature survives
+                        }
+                    } else {
+                        checkQuestFocusRestore(t, b);
+                    }
 
                     const idx = b.team.indexOf(t);
                     const targetEl = document.getElementById('c'+idx);
@@ -21187,9 +21451,23 @@ function enemyAction(){
                     if(t.def) baseDmg = Math.floor(baseDmg * 0.55);
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
-                    const d = dmgResult.damage;
+                    let d = dmgResult.damage;
+                    // v54.16: Apply quest equipment damage shield
+                    const shieldReduction = getQuestDamageShieldReduction(b);
+                    if(shieldReduction > 0){
+                        d = Math.floor(d * (1 - shieldReduction));
+                    }
                     debugLog('DAMAGE', `SPECIAL | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Power: ${spec.power} | Base: ${baseDmg} | Final: ${d}`);
                     t.curHp = Math.max(0, t.curHp - d);
+
+                    // v54.16: Check quest equipment triggers
+                    if(t.curHp <= 0){
+                        if(checkQuestAutoRevive(t, b)){
+                            // Auto-revive triggered
+                        }
+                    } else {
+                        checkQuestFocusRestore(t, b);
+                    }
 
                     enemy.specialCooldown = spec.cooldown || 3;
 
@@ -21275,9 +21553,23 @@ function enemyAction(){
                     if(t.def){ baseDmg = Math.floor(baseDmg * 0.5); addLog(`${t.name||'Hero'} blocks!`,'def'); }
                     // v54.1: Apply boss/wild damage adjustment
                     const dmgResult = adjustEnemyDamage(baseDmg, enemy, t);
-                    const d = dmgResult.damage;
+                    let d = dmgResult.damage;
+                    // v54.16: Apply quest equipment damage shield
+                    const shieldReduction = getQuestDamageShieldReduction(b);
+                    if(shieldReduction > 0){
+                        d = Math.floor(d * (1 - shieldReduction));
+                    }
                     debugLog('DAMAGE', `BASIC ATK | ${enemy.name} → ${t.name} | ATK: ${enemy.atk} | Base: ${baseDmg} | Final: ${d} | HP: ${t.curHp}/${t.maxHp}`);
                     t.curHp = Math.max(0, t.curHp - d);
+
+                    // v54.16: Check quest equipment triggers
+                    if(t.curHp <= 0){
+                        if(checkQuestAutoRevive(t, b)){
+                            // Auto-revive triggered
+                        }
+                    } else {
+                        checkQuestFocusRestore(t, b);
+                    }
 
                     // v54.8: Get fresh elements for visual feedback
                     const impactArena = document.getElementById('arenaC'+idx);
