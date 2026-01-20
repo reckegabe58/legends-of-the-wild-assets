@@ -10057,10 +10057,31 @@ function startQuestCombat(questId, combatType, config){
         primaryEnemy.turnsRemaining = config.survivalTurns;
     }
 
-    if(config.yieldAtPercent){
+    if(config.yieldAtPercent !== undefined){
         primaryEnemy.yieldAtPercent = config.yieldAtPercent;
         primaryEnemy.failIfKilled = config.failIfKilled || false;
     }
+
+    // Build quest ally for protective battles
+    let questAlly = null;
+    if(config.ally && QUEST_ALLIES[config.ally]){
+        const allyDef = QUEST_ALLIES[config.ally];
+        questAlly = scaleQuestAlly(allyDef, avgLv);
+        questAlly.isQuestAlly = true;
+        questAlly.allyId = config.ally;
+        questAlly.maxDamagePercent = config.allyDamageLimit || 50;
+        questAlly.startingHp = questAlly.hp;
+        questAlly.damageTaken = 0;
+    }
+
+    // Store quest combat metadata
+    window._questCombatMeta = {
+        questId: questId,
+        combatType: combatType,
+        config: config,
+        ally: questAlly,
+        turnsElapsed: 0
+    };
 
     // Start the battle
     if(enemies.length > 1){
@@ -10068,6 +10089,43 @@ function startQuestCombat(questId, combatType, config){
     } else {
         startBattleWith(primaryEnemy, 'quest');
     }
+
+    // Add quest ally to battle after setup
+    if(questAlly && state.battle){
+        state.battle.questAlly = questAlly;
+        state.battle.isQuestBattle = true;
+        state.battle.questCombatType = combatType;
+        state.battle.survivalTurns = config.survivalTurns || 0;
+        state.battle.turnsElapsed = 0;
+        // Rebuild turn order to include ally
+        buildTurnOrder();
+    }
+}
+
+// Scale quest ally stats based on party level
+function scaleQuestAlly(allyDef, avgLv){
+    const scaledHp = Math.floor(allyDef.baseHp * (1 + avgLv * 0.12));
+    const scaledAtk = Math.floor(allyDef.baseAtk * (1 + avgLv * 0.08));
+    const scaledDef = Math.floor(allyDef.baseDef * (1 + avgLv * 0.06));
+    const scaledSpd = Math.floor(allyDef.baseSpd * (1 + avgLv * 0.03));
+    const scaledInt = Math.floor(allyDef.baseInt * (1 + avgLv * 0.02));
+
+    return {
+        name: allyDef.name,
+        type: allyDef.type,
+        hp: scaledHp,
+        maxHp: scaledHp,
+        atk: scaledAtk,
+        def: scaledDef,
+        spd: scaledSpd,
+        int: scaledInt,
+        lv: avgLv,
+        img: allyDef.img,
+        moves: allyDef.moves,
+        focus: 50,
+        focusMax: 100,
+        cooldown: 0
+    };
 }
 
 // Scale quest enemy stats based on party level
