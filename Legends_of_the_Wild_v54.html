@@ -654,7 +654,115 @@ body{
     background:linear-gradient(135deg,rgba(127,96,174,.9),rgba(177,144,232,.9))
 }
 .quest-choice-btn .combat-indicator{
-    color:#fbbf24;font-size:0.85rem;margin-left:8px
+    color:#fbbf24;font-size:0.85rem;margin-left:8px;
+    animation:combatPulse 1.5s ease-in-out infinite
+}
+@keyframes combatPulse{
+    0%,100%{opacity:1;text-shadow:0 0 5px rgba(251,191,36,.3)}
+    50%{opacity:0.7;text-shadow:0 0 15px rgba(251,191,36,.8)}
+}
+
+/* Quest Scene Entrance Animations */
+.quest-scene{
+    animation:questSceneEnter .6s ease-out forwards
+}
+@keyframes questSceneEnter{
+    0%{opacity:0;transform:scale(1.1)}
+    100%{opacity:1;transform:scale(1)}
+}
+.quest-scene.closing{
+    animation:questSceneExit .4s ease-in forwards
+}
+@keyframes questSceneExit{
+    0%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(0.95)}
+}
+.quest-scene-content{
+    animation:questContentSlide .6s ease-out .2s both
+}
+@keyframes questContentSlide{
+    0%{opacity:0;transform:translateY(30px)}
+    100%{opacity:1;transform:translateY(0)}
+}
+.quest-scene-title{
+    animation:questTitleGlow 3s ease-in-out infinite
+}
+@keyframes questTitleGlow{
+    0%,100%{text-shadow:0 2px 10px rgba(0,0,0,.8),0 0 20px rgba(255,215,0,.2)}
+    50%{text-shadow:0 2px 10px rgba(0,0,0,.8),0 0 40px rgba(255,215,0,.5)}
+}
+.quest-scene-creature{
+    animation:questCreatureEnter .8s ease-out .3s both
+}
+@keyframes questCreatureEnter{
+    0%{opacity:0;transform:scale(0.5) translateY(50px)}
+    60%{transform:scale(1.1) translateY(-10px)}
+    100%{opacity:1;transform:scale(1) translateY(0)}
+}
+.quest-choice-btn{
+    animation:choiceSlideIn .5s ease-out both;
+    position:relative;overflow:hidden
+}
+.quest-choice-btn:nth-child(1){animation-delay:.5s}
+.quest-choice-btn:nth-child(2){animation-delay:.6s}
+.quest-choice-btn:nth-child(3){animation-delay:.7s}
+.quest-choice-btn:nth-child(4){animation-delay:.8s}
+@keyframes choiceSlideIn{
+    0%{opacity:0;transform:translateX(-30px)}
+    100%{opacity:1;transform:translateX(0)}
+}
+/* Shimmer effect on choice buttons */
+.quest-choice-btn::after{
+    content:'';position:absolute;top:0;left:-100%;
+    width:50%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+    transition:left .5s ease
+}
+.quest-choice-btn:hover::after{
+    left:100%
+}
+
+/* Magic sparkle particles for quest scene */
+.quest-sparkle{
+    position:absolute;width:6px;height:6px;
+    background:radial-gradient(circle,#ffd700 0%,transparent 70%);
+    border-radius:50%;pointer-events:none;
+    animation:sparkleFloat 3s ease-in-out infinite
+}
+@keyframes sparkleFloat{
+    0%,100%{opacity:0;transform:translateY(0) scale(0)}
+    20%{opacity:1;transform:translateY(-20px) scale(1)}
+    80%{opacity:1;transform:translateY(-80px) scale(0.8)}
+    100%{opacity:0;transform:translateY(-100px) scale(0)}
+}
+
+/* Quest outcome celebration animation */
+.quest-complete-burst{
+    animation:completeBurst .8s ease-out forwards
+}
+@keyframes completeBurst{
+    0%{transform:scale(0);opacity:0}
+    50%{transform:scale(1.2);opacity:1}
+    100%{transform:scale(1);opacity:1}
+}
+
+/* Confetti celebration for quest completion */
+@keyframes confettiFall{
+    0%{top:-20px;opacity:1;transform:rotate(0deg) translateX(0)}
+    25%{transform:rotate(90deg) translateX(20px)}
+    50%{transform:rotate(180deg) translateX(-20px)}
+    75%{transform:rotate(270deg) translateX(10px)}
+    100%{top:110vh;opacity:0;transform:rotate(360deg) translateX(0)}
+}
+
+/* Enemy frame for quest battles - slightly larger for emphasis */
+.enemy-frame.quest{width:200px;height:200px}
+.enemy-frame.quest img{
+    animation:questEnemyPulse 2s ease-in-out infinite
+}
+@keyframes questEnemyPulse{
+    0%,100%{filter:brightness(1) drop-shadow(0 0 10px rgba(192,132,252,.3))}
+    50%{filter:brightness(1.1) drop-shadow(0 0 20px rgba(192,132,252,.6))}
 }
 
 /* ============================================
@@ -10139,12 +10247,41 @@ function showQuestEncounterOverlay(questDef, stageDef, intro, choices){
 
     // Add quest scene to body
     document.body.insertAdjacentHTML('beforeend', questSceneHtml);
+
+    // Add magical sparkle particles for atmosphere
+    addQuestSparkles();
 }
 
-// Close quest scene (called after choice is made)
+// Add floating sparkle particles to quest scene for magical effect
+function addQuestSparkles(){
+    const scene = document.getElementById('questScene');
+    if(!scene) return;
+
+    // Create 15-20 sparkles at random positions
+    const numSparkles = 15 + Math.floor(Math.random() * 6);
+    for(let i = 0; i < numSparkles; i++){
+        const sparkle = document.createElement('div');
+        sparkle.className = 'quest-sparkle';
+        sparkle.style.left = Math.random() * 100 + '%';
+        sparkle.style.top = (50 + Math.random() * 50) + '%';
+        sparkle.style.animationDelay = (Math.random() * 3) + 's';
+        sparkle.style.animationDuration = (2.5 + Math.random() * 1.5) + 's';
+
+        // Vary sparkle colors based on element
+        const colors = ['#ffd700', '#c084fc', '#7dd3fc', '#4ade80', '#f87171'];
+        sparkle.style.background = `radial-gradient(circle, ${colors[Math.floor(Math.random() * colors.length)]} 0%, transparent 70%)`;
+
+        scene.appendChild(sparkle);
+    }
+}
+
+// Close quest scene with animation (called after choice is made)
 function closeQuestScene(){
     const scene = document.getElementById('questScene');
-    if(scene) scene.remove();
+    if(scene){
+        scene.classList.add('closing');
+        setTimeout(() => scene.remove(), 400);
+    }
 }
 
 // Handle player's choice in quest encounter
@@ -10318,7 +10455,50 @@ function showQuestOutcome(questId, choice, isFailed){
     `;
 
     document.querySelector('#eventOverlay .overlay-content').innerHTML = outcomeHtml;
+    document.getElementById('eventOverlay').classList.add('active');
     window._currentQuestEncounter = null;
+
+    // Trigger celebration confetti for completed quests!
+    if(isLastStage && !isFailed){
+        triggerQuestCelebration();
+    }
+}
+
+// Trigger celebration confetti for quest completion
+function triggerQuestCelebration(){
+    const overlay = document.getElementById('eventOverlay');
+    if(!overlay) return;
+
+    // Create confetti container
+    const confettiContainer = document.createElement('div');
+    confettiContainer.className = 'confetti-container';
+    confettiContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2001;overflow:hidden';
+    overlay.appendChild(confettiContainer);
+
+    // Create 50 confetti pieces
+    const colors = ['#ffd700', '#c084fc', '#4ade80', '#f87171', '#60a5fa', '#fbbf24', '#f472b6'];
+    for(let i = 0; i < 50; i++){
+        const confetti = document.createElement('div');
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = 8 + Math.random() * 8;
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.5;
+        const duration = 2 + Math.random() * 1;
+        const rotation = Math.random() * 360;
+
+        confetti.style.cssText = `
+            position:absolute;top:-20px;left:${left}%;
+            width:${size}px;height:${size}px;
+            background:${color};
+            transform:rotate(${rotation}deg);
+            animation:confettiFall ${duration}s ease-out ${delay}s forwards;
+            border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+        `;
+        confettiContainer.appendChild(confetti);
+    }
+
+    // Remove confetti after animation
+    setTimeout(() => confettiContainer.remove(), 4000);
 }
 
 // Start quest-specific combat
@@ -16546,9 +16726,11 @@ function renderBattle(m){
     const canSpec=hasSpec&&activeMember.cooldown===0;
     const buttonsDisabled = !isPlayer || processing;
     
-    // Boss size class
+    // Boss/Quest size class
     let sizeClass = 'wild';
-    if(enemy.isBoss){
+    if(b.isQuestBattle){
+        sizeClass = 'quest'; // Quest battles use special quest size
+    } else if(enemy.isBoss){
         if(enemy.tier === 4 || enemy.isCreator) sizeClass = 'nightmare';
         else if(enemy.tier === 3) sizeClass = 'tier3';
         else if(enemy.tier === 2) sizeClass = 'tier2';
