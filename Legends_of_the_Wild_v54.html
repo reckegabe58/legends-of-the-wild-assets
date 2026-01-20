@@ -509,6 +509,82 @@ body{
 .homebase-info{font-size:.75rem}
 .homebase-stats{display:flex;justify-content:center;gap:12px;color:#888}
 
+/* ============================================
+   HOME BASE - COMPANION SECTION (v54.16 Wave 5)
+   ============================================ */
+
+/* Section Dividers */
+.homebase-section-title{
+    font-family:'Cinzel',serif;font-size:1rem;color:var(--gold-lt);
+    text-align:center;margin:20px 0 15px;padding-bottom:8px;
+    border-bottom:1px solid rgba(255,215,0,.2);
+    display:flex;align-items:center;justify-content:center;gap:10px
+}
+.homebase-section-title::before,.homebase-section-title::after{
+    content:'';flex:1;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,215,0,.3),transparent)
+}
+
+/* Companion Card */
+.companion-card{
+    background:linear-gradient(160deg,#252230,#1c1a24);
+    border:2px solid var(--card-accent);border-radius:16px;padding:14px;
+    transition:all .3s ease;text-align:center;position:relative;overflow:hidden;
+    box-shadow:0 4px 20px var(--card-accent-glow)
+}
+.companion-card::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 0%,var(--card-accent-glow) 0%,transparent 60%);
+    opacity:0.4;pointer-events:none
+}
+.companion-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 8px 30px var(--card-accent-glow);
+    border-color:var(--card-accent-lt)
+}
+
+/* Companion Creature Image */
+.companion-creature{
+    width:90px;height:90px;margin:0 auto 12px;border-radius:50%;
+    background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 25px var(--card-accent-glow);border:2px solid var(--card-accent);
+    position:relative;z-index:1
+}
+.companion-creature img{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+
+/* Companion Name & Element */
+.companion-name{font-family:'Cinzel',serif;font-size:0.95rem;color:var(--card-accent-lt);font-weight:600;margin-bottom:4px;position:relative;z-index:1}
+.companion-element{font-size:0.75rem;color:var(--card-accent);margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:4px;position:relative;z-index:1}
+
+/* Tier Badges */
+.tier-badge{display:inline-block;padding:4px 12px;border-radius:12px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;position:relative;z-index:1}
+.tier-legendary{
+    background:linear-gradient(135deg,#ffd700,#b8860b);color:#1a1400;
+    border:1px solid #ffd700;box-shadow:0 0 15px rgba(255,215,0,.5),inset 0 1px 0 rgba(255,255,255,.3);
+    animation:legendaryPulse 2s ease-in-out infinite
+}
+.tier-rare{background:linear-gradient(135deg,#c0c0c0,#808080);color:#1a1a1a;border:1px solid #c0c0c0;box-shadow:0 0 10px rgba(192,192,192,.4)}
+.tier-common{background:linear-gradient(135deg,#cd7f32,#8b4513);color:#fff;border:1px solid #cd7f32;box-shadow:0 0 8px rgba(205,127,50,.3)}
+@keyframes legendaryPulse{
+    0%,100%{box-shadow:0 0 15px rgba(255,215,0,.5),inset 0 1px 0 rgba(255,255,255,.3)}
+    50%{box-shadow:0 0 25px rgba(255,215,0,.7),inset 0 1px 0 rgba(255,255,255,.4)}
+}
+
+/* Affinity Display */
+.affinity-display{margin-top:8px;position:relative;z-index:1}
+.affinity-label{font-size:0.7rem;color:#888;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
+.affinity-bar{width:100%;height:8px;background:rgba(0,0,0,.5);border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.affinity-fill{height:100%;border-radius:4px;transition:width 0.5s ease}
+.affinity-fill.legendary{background:linear-gradient(90deg,#ffd700,#ffec8b)}
+.affinity-fill.rare{background:linear-gradient(90deg,#c0c0c0,#e8e8e8)}
+.affinity-fill.common{background:linear-gradient(90deg,#cd7f32,#daa06d)}
+.affinity-value{font-size:0.75rem;color:var(--gold);margin-top:4px;font-weight:600}
+
+/* Empty Companions State */
+.no-companions{text-align:center;padding:30px;color:var(--txt-dim);background:rgba(0,0,0,.2);border-radius:12px;border:1px dashed rgba(192,132,252,.3)}
+.no-companions h4{color:#c084fc;margin-bottom:8px;font-family:'Cinzel',serif;font-size:0.95rem}
+.no-companions p{font-size:0.8rem;color:#888;line-height:1.5}
+
 /* Adventure */
 .adventure-container{min-height:60vh;background:linear-gradient(160deg,#252230,#1c1a24);border-radius:20px;overflow:hidden;position:relative}
 .story-box{background:rgba(0,0,0,.2);border:2px solid var(--gold);border-radius:14px;padding:20px;margin:16px;position:relative}
@@ -9650,6 +9726,48 @@ function migrateToV54_16_Quests(){
     console.log('✅ V54.16 Quest System migration complete');
 }
 
+// ============================================
+// HOME BASE COMPANION HELPERS (v54.16 Wave 5)
+// ============================================
+
+/**
+ * Get all unlocked quest companions from state
+ * @returns {Array} Array of companion objects with {id, unlocked, tier, affinity}
+ */
+function getUnlockedCompanions(){
+    if(!state.questCompanions) return [];
+
+    return Object.entries(state.questCompanions)
+        .filter(([id, data]) => data.unlocked)
+        .map(([id, data]) => ({
+            id: id,
+            unlocked: data.unlocked,
+            tier: data.tier || 'common',
+            affinity: data.affinity || 0
+        }))
+        .sort((a, b) => {
+            // Sort by tier (legendary > rare > common), then by affinity
+            const tierOrder = { legendary: 3, rare: 2, common: 1 };
+            const tierDiff = (tierOrder[b.tier] || 0) - (tierOrder[a.tier] || 0);
+            if(tierDiff !== 0) return tierDiff;
+            return b.affinity - a.affinity;
+        });
+}
+
+/**
+ * Get display label for companion tier
+ * @param {string} tier - 'legendary', 'rare', or 'common'
+ * @returns {string} Formatted tier label with icon
+ */
+function getTierLabel(tier){
+    const labels = {
+        legendary: '⭐ Legendary',
+        rare: '💎 Rare',
+        common: '🌿 Common'
+    };
+    return labels[tier] || tier;
+}
+
 // Helper: Get quest encounter chance with escalation and catch-up mechanics
 function getQuestEncounterChance(questId, region){
     const quest = state.quests[questId];
@@ -13510,41 +13628,89 @@ function useBattleItem(itemId, targetIdx){
 }
 
 function renderHomeBase(m){
-    const absent=getAbsentStudents();
-    let html=`<h2 class="section-title">🏠 Home Base (Absent Students)</h2>`;
-    html+=`<p style="text-align:center;color:#888;margin-bottom:15px;font-size:.8rem">Students here are safe but won't join adventures. Use Teacher panel to manage attendance.</p>`;
-    
-    if(!absent.length){
-        html+=`<div class="no-students"><h3>Everyone is Present!</h3><p>All students are on the active team.</p></div>`;
-        m.innerHTML=html;return;
-    }
-    
-    html+=`<div class="homebase-grid">`;
-    absent.forEach(s=>{
-        const lv=getLv(s.xp),c=s.cid?CREATURES[s.cid]:null;
-        const evoIdx=s.cid?getEvo(s.cid,lv):0;
-        const evoName=c&&c.names?c.names[evoIdx]:c?c.name:'No Creature';
-        const theme=c?getCardTheme(c.type):{bg1:'#252230',bg2:'#1c1a24',accent:'#666',accentLt:'#888',glow:'rgba(100,100,100,.2)'};
-        
-        html+=`<div class="homebase-card" style="--card-accent:${theme.accent};--card-accent-lt:${theme.accentLt};--card-accent-glow:${theme.glow}">
-            <div class="homebase-header">
-                <span class="homebase-name">${s.name||'Unnamed'}</span>
-                <span class="homebase-level">Lv ${lv}</span>
-            </div>
-            <div class="homebase-creature">
-                ${c?`<img src="${getImg(s.cid,lv)}" alt="${evoName}">`:'<div class="homebase-empty">?</div>'}
-            </div>
-            <div class="homebase-info">
-                ${c?`<div class="homebase-evo-name">${evoName}</div>`:'<div class="homebase-evo-name" style="color:#666">No Creature</div>'}
-                <div class="homebase-stats">
-                    <span>${s.xp} XP</span>
-                    <span>${s.coins||0} Gold</span>
-                </div>
-            </div>
+    const absent = getAbsentStudents();
+    const companions = getUnlockedCompanions();
+
+    let html = `<h2 class="section-title">🏠 Home Base</h2>`;
+    html += `<p style="text-align:center;color:#888;margin-bottom:15px;font-size:.8rem">Your sanctuary - where companions rest and absent students await.</p>`;
+
+    // ========== COMPANIONS SECTION ==========
+    html += `<div class="homebase-section-title"><span>🐾 Quest Companions</span></div>`;
+
+    if(companions.length === 0){
+        html += `<div class="no-companions">
+            <h4>No Companions Yet</h4>
+            <p>Complete ally quests during adventures to unlock<br>loyal companions for your Home Base!</p>
         </div>`;
-    });
-    html+=`</div>`;
-    m.innerHTML=html;
+    } else {
+        html += `<div class="homebase-grid">`;
+        companions.forEach(comp => {
+            const questDef = ALLY_QUESTS[comp.id];
+            if(!questDef) return; // Skip if quest definition not found
+
+            const theme = getCardTheme(questDef.element);
+            const elementEmoji = ELEMENT_EMOJI[questDef.element.toLowerCase()] || '⚫';
+            const affinityPercent = Math.min(100, Math.max(0, ((comp.affinity + 100) / 200) * 100)); // Scale -100 to +100 => 0% to 100%
+
+            html += `<div class="companion-card" style="--card-accent:${theme.accent};--card-accent-lt:${theme.accentLt};--card-accent-glow:${theme.glow}">
+                <div class="companion-creature">
+                    <img src="${questDef.img}" alt="${questDef.creature}">
+                </div>
+                <div class="companion-name">${questDef.creature}</div>
+                <div class="companion-element">
+                    <span>${elementEmoji}</span>
+                    <span>${questDef.element}</span>
+                </div>
+                <div class="tier-badge tier-${comp.tier}">${getTierLabel(comp.tier)}</div>
+                <div class="affinity-display">
+                    <div class="affinity-label">
+                        <span>💜 Affinity</span>
+                    </div>
+                    <div class="affinity-bar">
+                        <div class="affinity-fill ${comp.tier}" style="width:${affinityPercent}%"></div>
+                    </div>
+                    <div class="affinity-value">${comp.affinity > 0 ? '+' : ''}${comp.affinity}</div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // ========== ABSENT STUDENTS SECTION ==========
+    html += `<div class="homebase-section-title" style="margin-top:30px"><span>📚 Absent Students</span></div>`;
+
+    if(!absent.length){
+        html += `<div class="no-students"><h3>Everyone is Present!</h3><p>All students are on the active team.</p></div>`;
+    } else {
+        html += `<p style="text-align:center;color:#666;margin-bottom:15px;font-size:.75rem">Students here are safe but won't join adventures. Use Teacher panel to manage attendance.</p>`;
+        html += `<div class="homebase-grid">`;
+        absent.forEach(s => {
+            const lv = getLv(s.xp), c = s.cid ? CREATURES[s.cid] : null;
+            const evoIdx = s.cid ? getEvo(s.cid, lv) : 0;
+            const evoName = c && c.names ? c.names[evoIdx] : c ? c.name : 'No Creature';
+            const theme = c ? getCardTheme(c.type) : {bg1:'#252230',bg2:'#1c1a24',accent:'#666',accentLt:'#888',glow:'rgba(100,100,100,.2)'};
+
+            html += `<div class="homebase-card" style="--card-accent:${theme.accent};--card-accent-lt:${theme.accentLt};--card-accent-glow:${theme.glow}">
+                <div class="homebase-header">
+                    <span class="homebase-name">${s.name || 'Unnamed'}</span>
+                    <span class="homebase-level">Lv ${lv}</span>
+                </div>
+                <div class="homebase-creature">
+                    ${c ? `<img src="${getImg(s.cid, lv)}" alt="${evoName}">` : '<div class="homebase-empty">?</div>'}
+                </div>
+                <div class="homebase-info">
+                    ${c ? `<div class="homebase-evo-name">${evoName}</div>` : '<div class="homebase-evo-name" style="color:#666">No Creature</div>'}
+                    <div class="homebase-stats">
+                        <span>${s.xp} XP</span>
+                        <span>${s.coins || 0} Gold</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    m.innerHTML = html;
 }
 
 // RENDER: ADVENTURE
