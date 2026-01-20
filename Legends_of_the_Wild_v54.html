@@ -585,6 +585,142 @@ body{
 .no-companions h4{color:#c084fc;margin-bottom:8px;font-family:'Cinzel',serif;font-size:0.95rem}
 .no-companions p{font-size:0.8rem;color:#888;line-height:1.5}
 
+/* ============================================
+   QUEST ENCOUNTER SCENE (v54.16 Wave 5)
+   Fullscreen immersive quest display
+   ============================================ */
+
+.quest-scene{
+    position:fixed;inset:0;z-index:1000;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background-size:cover;background-position:center;
+    padding:20px;box-sizing:border-box
+}
+.quest-scene::before{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.8) 100%);
+    pointer-events:none
+}
+.quest-scene-content{
+    position:relative;z-index:1;
+    display:flex;flex-direction:column;align-items:center;
+    max-width:600px;width:100%;text-align:center
+}
+.quest-scene-title{
+    font-family:'Uncial Antiqua',cursive;font-size:1.5rem;
+    color:var(--gold-lt);margin-bottom:5px;
+    text-shadow:0 2px 10px rgba(0,0,0,.8)
+}
+.quest-scene-stage{
+    font-family:'Cinzel',serif;font-size:0.9rem;
+    color:#c084fc;margin-bottom:20px;
+    text-shadow:0 2px 8px rgba(0,0,0,.8)
+}
+.quest-scene-creature{
+    width:280px;height:280px;margin:0 auto 20px;
+    display:flex;align-items:center;justify-content:center;
+    filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))
+}
+.quest-scene-creature img{
+    max-width:100%;max-height:100%;object-fit:contain;
+    animation:questCreatureFloat 3s ease-in-out infinite
+}
+@keyframes questCreatureFloat{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-10px)}
+}
+.quest-scene-story{
+    background:rgba(0,0,0,.6);border:1px solid rgba(255,215,0,.3);
+    border-radius:12px;padding:20px;margin-bottom:20px;
+    font-size:0.95rem;line-height:1.7;color:var(--txt);
+    text-shadow:0 1px 3px rgba(0,0,0,.5);max-height:200px;overflow-y:auto
+}
+.quest-scene-choices{
+    display:flex;flex-direction:column;gap:10px;width:100%
+}
+.quest-choice-btn{
+    display:block;width:100%;padding:14px 20px;
+    font-family:'Cinzel',serif;font-size:0.95rem;font-weight:600;
+    background:linear-gradient(135deg,rgba(107,76,154,.8),rgba(157,124,212,.8));
+    border:2px solid var(--gold);color:#fff;
+    border-radius:10px;cursor:pointer;
+    transition:all .25s ease;text-align:left;
+    box-shadow:0 4px 15px rgba(0,0,0,.4)
+}
+.quest-choice-btn:hover{
+    transform:translateY(-3px);
+    box-shadow:0 8px 25px rgba(157,124,212,.5);
+    border-color:var(--gold-lt);
+    background:linear-gradient(135deg,rgba(127,96,174,.9),rgba(177,144,232,.9))
+}
+.quest-choice-btn .combat-indicator{
+    color:#fbbf24;font-size:0.85rem;margin-left:8px
+}
+
+/* ============================================
+   UNIVERSAL HOVER EFFECTS (v54.16 Wave 5)
+   Apply consistent hover to all clickable elements
+   ============================================ */
+
+/* Base button hover enhancement */
+.btn,.shop-item,.nav-btn,.creature-card,.inventory-item{
+    transition:all .25s ease
+}
+.btn:hover:not(:disabled),.shop-item:hover,.nav-btn:hover:not(.active){
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(0,0,0,.3)
+}
+
+/* Navigation tabs */
+.nav-btn{
+    transition:all .25s ease
+}
+.nav-btn:hover:not(.active){
+    transform:translateY(-2px);
+    background:linear-gradient(135deg,rgba(107,76,154,.6),rgba(157,124,212,.6))
+}
+
+/* Shop items */
+.shop-item{
+    transition:all .25s ease
+}
+.shop-item:hover{
+    transform:translateY(-3px);
+    box-shadow:0 8px 25px rgba(0,0,0,.4);
+    border-color:var(--gold)
+}
+
+/* Creature cards */
+.creature-card:hover{
+    transform:translateY(-4px) scale(1.02);
+    box-shadow:0 10px 30px var(--card-accent-glow)
+}
+
+/* Inventory items */
+.inventory-item:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(0,0,0,.3);
+    border-color:var(--gold)
+}
+
+/* Adventure button enhanced */
+.adventure-btn{
+    transition:all .25s ease
+}
+.adventure-btn:hover:not(:disabled){
+    transform:translateY(-3px) scale(1.02);
+    box-shadow:0 10px 35px rgba(157,124,212,.5)
+}
+
+/* Challenge/Boss buttons */
+.challenge-btn{
+    transition:all .25s ease
+}
+.challenge-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(74,222,128,.4)
+}
+
 /* Adventure */
 .adventure-container{min-height:60vh;background:linear-gradient(160deg,#252230,#1c1a24);border-radius:20px;overflow:hidden;position:relative}
 .story-box{background:rgba(0,0,0,.2);border:2px solid var(--gold);border-radius:14px;padding:20px;margin:16px;position:relative}
@@ -8055,7 +8191,7 @@ const WILD_ENCOUNTERS = {
     forest: [
         {
             id:'twig_gremlin',name:'Twig Gremlin',type:'Nature',
-            base:{hp:45,atk:18,def:12,spd:16},
+            base:{hp:45,atk:18,def:12,spd:16,int:18},
             img:'Wild_Encounters/Forest/TwigGremlin.png',
             moves:{
                 atk:{n:'Branch Whip',p:1.0,e:'nature'},
@@ -8066,7 +8202,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'mushroom_hopper',name:'Mushroom Hopper',type:'Poison',
-            base:{hp:40,atk:15,def:14,spd:20},
+            base:{hp:40,atk:15,def:14,spd:20,int:10},
             img:'Wild_Encounters/Forest/MushroomHopper.png',
             moves:{
                 atk:{n:'Spore Tackle',p:1.0,e:'poison'},
@@ -8077,7 +8213,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'forest_shade',name:'Forest Shade',type:'Shadow',
-            base:{hp:50,atk:20,def:10,spd:18},
+            base:{hp:50,atk:20,def:10,spd:18,int:18},
             img:'Wild_Encounters/Forest/ForestShade.png',
             moves:{
                 atk:{n:'Shadow Claw',p:1.0,e:'shadow'},
@@ -8088,7 +8224,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'feral_boarling',name:'Feral Boarling',type:'Earth',
-            base:{hp:55,atk:22,def:16,spd:12},
+            base:{hp:55,atk:22,def:16,spd:12,int:10},
             img:'Wild_Encounters/Forest/FeralBoarling.png',
             moves:{
                 atk:{n:'Tusk Charge',p:1.1,e:'earth'},
@@ -8099,7 +8235,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'thorn_sprite',name:'Thorn Sprite',type:'Nature',
-            base:{hp:35,atk:24,def:8,spd:22},
+            base:{hp:35,atk:24,def:8,spd:22,int:18},
             img:'Wild_Encounters/Forest/ThornSprite.png',
             moves:{
                 atk:{n:'Needle Shot',p:1.0,e:'nature'},
@@ -8112,7 +8248,7 @@ const WILD_ENCOUNTERS = {
     volcano: [
         {
             id:'ember_rat',name:'Ember Rat',type:'Fire',
-            base:{hp:40,atk:20,def:10,spd:22},
+            base:{hp:40,atk:20,def:10,spd:22,int:12},
             img:'Wild_Encounters/Volcano/EmberRat.png',
             moves:{
                 atk:{n:'Flame Bite',p:1.0,e:'fire'},
@@ -8123,7 +8259,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'magma_crab',name:'Magma Crab',type:'Fire',
-            base:{hp:55,atk:18,def:20,spd:10},
+            base:{hp:55,atk:18,def:20,spd:10,int:12},
             img:'Wild_Encounters/Volcano/MagmaCrab.png',
             moves:{
                 atk:{n:'Lava Pinch',p:1.0,e:'fire'},
@@ -8134,7 +8270,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'ash_wraith',name:'Ash Wraith',type:'Fire',
-            base:{hp:45,atk:24,def:8,spd:18},
+            base:{hp:45,atk:24,def:8,spd:18,int:14},
             img:'Wild_Encounters/Volcano/AshWraith.png',
             moves:{
                 atk:{n:'Cinder Strike',p:1.0,e:'fire'},
@@ -8145,7 +8281,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'lava_slug',name:'Lava Slug',type:'Fire',
-            base:{hp:60,atk:16,def:18,spd:8},
+            base:{hp:60,atk:16,def:18,spd:8,int:10},
             img:'Wild_Encounters/Volcano/LavaSlug.png',
             moves:{
                 atk:{n:'Molten Trail',p:1.0,e:'fire'},
@@ -8156,7 +8292,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'cinder_bat',name:'Cinder Bat',type:'Fire',
-            base:{hp:35,atk:22,def:8,spd:24},
+            base:{hp:35,atk:22,def:8,spd:24,int:12},
             img:'Wild_Encounters/Volcano/CinderBat.png',
             moves:{
                 atk:{n:'Wing Scorch',p:1.0,e:'fire'},
@@ -8169,7 +8305,7 @@ const WILD_ENCOUNTERS = {
     ice: [
         {
             id:'frost_mite',name:'Frost Mite',type:'Ice',
-            base:{hp:38,atk:16,def:14,spd:20},
+            base:{hp:38,atk:16,def:14,spd:20,int:16},
             img:'Wild_Encounters/IceRegion/FrostMite.png',
             moves:{
                 atk:{n:'Ice Nibble',p:1.0,e:'ice'},
@@ -8180,7 +8316,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'snow_goon',name:'Snow Goon',type:'Ice',
-            base:{hp:50,atk:18,def:16,spd:12},
+            base:{hp:50,atk:18,def:16,spd:12,int:14},
             img:'Wild_Encounters/IceRegion/SnowGoon.png',
             moves:{
                 atk:{n:'Snow Slam',p:1.0,e:'ice'},
@@ -8191,7 +8327,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'ice_wisp',name:'Ice Wisp',type:'Ice',
-            base:{hp:35,atk:22,def:8,spd:24},
+            base:{hp:35,atk:22,def:8,spd:24,int:18},
             img:'Wild_Encounters/IceRegion/IceWisp.png',
             moves:{
                 atk:{n:'Frost Bolt',p:1.0,e:'ice'},
@@ -8202,7 +8338,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'frozen_hound',name:'Frozen Hound',type:'Ice',
-            base:{hp:52,atk:24,def:14,spd:18},
+            base:{hp:52,atk:24,def:14,spd:18,int:14},
             img:'Wild_Encounters/IceRegion/FrozenHound.png',
             moves:{
                 atk:{n:'Icicle Fang',p:1.1,e:'ice'},
@@ -8213,7 +8349,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'glacier_beetle',name:'Glacier Beetle',type:'Ice',
-            base:{hp:48,atk:16,def:22,spd:10},
+            base:{hp:48,atk:16,def:22,spd:10,int:12},
             img:'Wild_Encounters/IceRegion/GlacierBeetle.png',
             moves:{
                 atk:{n:'Frost Horn',p:1.0,e:'ice'},
@@ -8226,7 +8362,7 @@ const WILD_ENCOUNTERS = {
     void: [
         {
             id:'void_mite',name:'Void Mite',type:'Void',
-            base:{hp:42,atk:20,def:10,spd:22},
+            base:{hp:42,atk:20,def:10,spd:22,int:20},
             img:'Wild_Encounters/VoidRegion/VoidMite.png',
             moves:{
                 atk:{n:'Null Bite',p:1.0,e:'void'},
@@ -8237,7 +8373,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'nightmare_wisp',name:'Nightmare Wisp',type:'Void',
-            base:{hp:38,atk:24,def:8,spd:20},
+            base:{hp:38,atk:24,def:8,spd:20,int:22},
             img:'Wild_Encounters/VoidRegion/NightmareWisp.png',
             moves:{
                 atk:{n:'Fear Touch',p:1.0,e:'void'},
@@ -8248,7 +8384,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'shadow_tendril',name:'Shadow Tendril',type:'Void',
-            base:{hp:55,atk:22,def:14,spd:14},
+            base:{hp:55,atk:22,def:14,spd:14,int:18},
             img:'Wild_Encounters/VoidRegion/ShadowTendril.png',
             moves:{
                 atk:{n:'Tendril Lash',p:1.0,e:'void'},
@@ -8259,7 +8395,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'void_crawler',name:'Void Crawler',type:'Void',
-            base:{hp:48,atk:20,def:16,spd:16},
+            base:{hp:48,atk:20,def:16,spd:16,int:20},
             img:'Wild_Encounters/VoidRegion/VoidCrawler.png',
             moves:{
                 atk:{n:'Dimension Slash',p:1.0,e:'void'},
@@ -8270,7 +8406,7 @@ const WILD_ENCOUNTERS = {
         },
         {
             id:'cosmic_leech',name:'Cosmic Leech',type:'Void',
-            base:{hp:44,atk:18,def:12,spd:18},
+            base:{hp:44,atk:18,def:12,spd:18,int:22},
             img:'Wild_Encounters/VoidRegion/CosmicLeech.png',
             moves:{
                 atk:{n:'Energy Drain',p:1.0,e:'void'},
@@ -8286,31 +8422,31 @@ const WILD_ENCOUNTERS = {
 // MINIONS (NEW!)
 // ============================================
 const MINIONS = {
-    slime_puddle:{name:'Slime Puddle',type:'Poison',base:{hp:40,atk:12,def:8,spd:6},img:'Minions/SlimePuddle.png'},
-    sludge_spawn:{name:'Sludge Spawn',type:'Poison',base:{hp:50,atk:15,def:10,spd:8},img:'Minions/SludgeSpawn.png'},
-    fire_head_spawn:{name:'Fire Head',type:'Fire',base:{hp:45,atk:18,def:6,spd:14},img:'Minions/FireHeadSpawn.png'},
-    ember_serpent:{name:'Ember Serpent',type:'Fire',base:{hp:40,atk:20,def:8,spd:16},img:'Minions/EmberSerpent.png'},
-    ice_shard_elemental:{name:'Ice Shard',type:'Ice',base:{hp:50,atk:14,def:16,spd:10},img:'Minions/IceShardElemental.png'},
-    frozen_servant:{name:'Frozen Servant',type:'Ice',base:{hp:55,atk:16,def:14,spd:8},img:'Minions/FrozenServant.png'},
-    shadow_fragment:{name:'Shadow Fragment',type:'Shadow',base:{hp:35,atk:18,def:6,spd:20},img:'Minions/ShadowFragment.png'},
-    dark_echo:{name:'Dark Echo',type:'Shadow',base:{hp:40,atk:16,def:8,spd:18},img:'Minions/DarkEcho.png'},
-    storm_eel:{name:'Storm Eel',type:'Water',base:{hp:42,atk:20,def:8,spd:22},img:'Minions/StormEel.png'},
-    thunder_jellyfish:{name:'Thunder Jellyfish',type:'Lightning',base:{hp:38,atk:22,def:6,spd:16},img:'Minions/ThunderJellyfish.png'},
-    corrupted_shard:{name:'Corrupted Shard',type:'Void',base:{hp:48,atk:16,def:14,spd:12},img:'Minions/CorruptedShard.png'},
-    chaos_imp:{name:'Chaos Imp',type:'Chaos',base:{hp:35,atk:22,def:6,spd:24},img:'Minions/ChaosImp.png'},
-    reality_glitch:{name:'Reality Glitch',type:'Chaos',base:{hp:40,atk:20,def:8,spd:20},img:'Minions/RealityGlitch.png'},
-    void_dragonling:{name:'Void Dragonling',type:'Void',base:{hp:50,atk:22,def:12,spd:18},img:'Minions/VoidDragonling.png'},
-    dark_flame:{name:'Dark Flame',type:'Void',base:{hp:38,atk:26,def:6,spd:20},img:'Minions/DarkFlame.png'},
-    stone_golemite:{name:'Stone Golemite',type:'Earth',base:{hp:60,atk:14,def:20,spd:6},img:'Minions/StoneGolemite.png'},
-    earth_sprite:{name:'Earth Sprite',type:'Earth',base:{hp:45,atk:16,def:14,spd:12},img:'Minions/EarthSprite.png'},
-    shadow_child:{name:'Shadow Child',type:'Shadow',base:{hp:38,atk:18,def:8,spd:18},img:'Minions/ShadowChild.png'},
-    nightmare_doll:{name:'Nightmare Doll',type:'Shadow',base:{hp:42,atk:20,def:10,spd:14},img:'Minions/NightmareDoll.png'},
-    nightmare_spawn:{name:'Nightmare Spawn',type:'Void',base:{hp:55,atk:22,def:12,spd:16},img:'Minions/NightmareSpawn.png'},
-    terror_fragment:{name:'Terror Fragment',type:'Void',base:{hp:45,atk:24,def:8,spd:18},img:'Minions/TerrorFragment.png'},
-    dream_eater:{name:'Dream Eater',type:'Void',base:{hp:50,atk:20,def:10,spd:20},img:'Minions/DreamEater.png'},
-    creation_spark:{name:'Creation Spark',type:'Cosmic',base:{hp:60,atk:18,def:16,spd:22},img:'Minions/CreationSpark.png'},
-    code_fragment:{name:'Code Fragment',type:'Cosmic',base:{hp:55,atk:22,def:12,spd:20},img:'Minions/CodeFragment.png'},
-    memory_echo:{name:'Memory Echo',type:'Cosmic',base:{hp:50,atk:26,def:10,spd:18},img:'Minions/MemoryEcho.png'}
+    slime_puddle:{name:'Slime Puddle',type:'Poison',base:{hp:40,atk:12,def:8,spd:6,int:10},img:'Minions/SlimePuddle.png'},
+    sludge_spawn:{name:'Sludge Spawn',type:'Poison',base:{hp:50,atk:15,def:10,spd:8,int:10},img:'Minions/SludgeSpawn.png'},
+    fire_head_spawn:{name:'Fire Head',type:'Fire',base:{hp:45,atk:18,def:6,spd:14,int:12},img:'Minions/FireHeadSpawn.png'},
+    ember_serpent:{name:'Ember Serpent',type:'Fire',base:{hp:40,atk:20,def:8,spd:16,int:12},img:'Minions/EmberSerpent.png'},
+    ice_shard_elemental:{name:'Ice Shard',type:'Ice',base:{hp:50,atk:14,def:16,spd:10,int:16},img:'Minions/IceShardElemental.png'},
+    frozen_servant:{name:'Frozen Servant',type:'Ice',base:{hp:55,atk:16,def:14,spd:8,int:14},img:'Minions/FrozenServant.png'},
+    shadow_fragment:{name:'Shadow Fragment',type:'Shadow',base:{hp:35,atk:18,def:6,spd:20,int:18},img:'Minions/ShadowFragment.png'},
+    dark_echo:{name:'Dark Echo',type:'Shadow',base:{hp:40,atk:16,def:8,spd:18,int:18},img:'Minions/DarkEcho.png'},
+    storm_eel:{name:'Storm Eel',type:'Water',base:{hp:42,atk:20,def:8,spd:22,int:16},img:'Minions/StormEel.png'},
+    thunder_jellyfish:{name:'Thunder Jellyfish',type:'Lightning',base:{hp:38,atk:22,def:6,spd:16,int:14},img:'Minions/ThunderJellyfish.png'},
+    corrupted_shard:{name:'Corrupted Shard',type:'Void',base:{hp:48,atk:16,def:14,spd:12,int:20},img:'Minions/CorruptedShard.png'},
+    chaos_imp:{name:'Chaos Imp',type:'Chaos',base:{hp:35,atk:22,def:6,spd:24,int:14},img:'Minions/ChaosImp.png'},
+    reality_glitch:{name:'Reality Glitch',type:'Chaos',base:{hp:40,atk:20,def:8,spd:20,int:14},img:'Minions/RealityGlitch.png'},
+    void_dragonling:{name:'Void Dragonling',type:'Void',base:{hp:50,atk:22,def:12,spd:18,int:20},img:'Minions/VoidDragonling.png'},
+    dark_flame:{name:'Dark Flame',type:'Void',base:{hp:38,atk:26,def:6,spd:20,int:18},img:'Minions/DarkFlame.png'},
+    stone_golemite:{name:'Stone Golemite',type:'Earth',base:{hp:60,atk:14,def:20,spd:6,int:10},img:'Minions/StoneGolemite.png'},
+    earth_sprite:{name:'Earth Sprite',type:'Earth',base:{hp:45,atk:16,def:14,spd:12,int:12},img:'Minions/EarthSprite.png'},
+    shadow_child:{name:'Shadow Child',type:'Shadow',base:{hp:38,atk:18,def:8,spd:18,int:18},img:'Minions/ShadowChild.png'},
+    nightmare_doll:{name:'Nightmare Doll',type:'Shadow',base:{hp:42,atk:20,def:10,spd:14,int:16},img:'Minions/NightmareDoll.png'},
+    nightmare_spawn:{name:'Nightmare Spawn',type:'Void',base:{hp:55,atk:22,def:12,spd:16,int:20},img:'Minions/NightmareSpawn.png'},
+    terror_fragment:{name:'Terror Fragment',type:'Void',base:{hp:45,atk:24,def:8,spd:18,int:22},img:'Minions/TerrorFragment.png'},
+    dream_eater:{name:'Dream Eater',type:'Void',base:{hp:50,atk:20,def:10,spd:20,int:22},img:'Minions/DreamEater.png'},
+    creation_spark:{name:'Creation Spark',type:'Cosmic',base:{hp:60,atk:18,def:16,spd:22,int:20},img:'Minions/CreationSpark.png'},
+    code_fragment:{name:'Code Fragment',type:'Cosmic',base:{hp:55,atk:22,def:12,spd:20,int:22},img:'Minions/CodeFragment.png'},
+    memory_echo:{name:'Memory Echo',type:'Cosmic',base:{hp:50,atk:26,def:10,spd:18,int:24},img:'Minions/MemoryEcho.png'}
 };
 
 // Boss to Minion mapping
@@ -8338,32 +8474,32 @@ const BOSS_MINIONS = {
 // BOSSES - Organized by Tier with phase requirements
 const BOSSES={
 // TIER 1 - Must defeat ALL to unlock Nightmare Phase 0
-sludge_king:{name:"Sludge King",tier:1,lv:15,type:"Poison",weak:"Fire",hp:1000,atk:55,def:40,spd:28,xp:200,coins:40,img:"Bosses/Tier 1/Boss_TheSludgeKing.png",bg:"Backgrounds_DarkForest.png",atks:{s:["Toxic Slam","Poison Claw"],a:["Toxic Wave"]},intro:"The swamp bubbles violently... The Sludge King rises from the muck!"},
-wildfire_hydra:{name:"Wildfire Hydra",tier:1,lv:18,type:"Fire",weak:"Water",hp:1100,atk:65,def:35,spd:32,xp:225,coins:45,img:"Bosses/Tier 1/Boss_WildfireHydra.png",bg:"Backgrounds_VolcanoArena.png",atks:{s:["Fire Fang","Blaze Bite"],a:["Tri-Head Inferno"]},intro:"Three heads of flame emerge from the volcano's heart!"},
-frost_titan:{name:"Frost Titan",tier:1,lv:20,type:"Ice",weak:"Fire",hp:1200,atk:52,def:55,spd:24,xp:250,coins:50,img:"Bosses/Tier 1/Boss_FrostTitan.png",bg:"Backgrounds_Frozen Cave.png",atks:{s:["Frozen Fist","Ice Crush"],a:["Blizzard"]},intro:"The mountain trembles as the Frost Titan awakens!"},
-donut_man:{name:"Donut Man",tier:1,lv:17,type:"Chaos",weak:"None",hp:1050,atk:58,def:42,spd:35,xp:220,coins:55,img:"Bosses/Tier 1/Boss_TheDonutMan.png",bg:"Backgrounds_DesertRuins.png",atks:{s:["Sugar Rush","Glazed Fury"],a:["Frosting Flood"]},intro:"A sweet scent fills the air... but something is terribly wrong!"},
-speakerman:{name:"Speakerman",tier:1,lv:19,type:"Sound",weak:"Lightning",hp:1150,atk:62,def:45,spd:30,xp:240,coins:60,img:"Bosses/Tier 1/Boss_Speakerman.png",bg:"Backgrounds_StormSkyRealm.png",atks:{s:["Bass Drop","Sound Wave"],a:["Maximum Volume"]},intro:"BOOM! The air itself vibrates with sonic fury!"},
+sludge_king:{name:"Sludge King",tier:1,lv:15,type:"Poison",weak:"Fire",hp:1000,atk:55,def:40,spd:28,int:10,xp:200,coins:40,img:"Bosses/Tier 1/Boss_TheSludgeKing.png",bg:"Backgrounds_DarkForest.png",atks:{s:["Toxic Slam","Poison Claw"],a:["Toxic Wave"]},intro:"The swamp bubbles violently... The Sludge King rises from the muck!"},
+wildfire_hydra:{name:"Wildfire Hydra",tier:1,lv:18,type:"Fire",weak:"Water",hp:1100,atk:65,def:35,spd:32,int:14,xp:225,coins:45,img:"Bosses/Tier 1/Boss_WildfireHydra.png",bg:"Backgrounds_VolcanoArena.png",atks:{s:["Fire Fang","Blaze Bite"],a:["Tri-Head Inferno"]},intro:"Three heads of flame emerge from the volcano's heart!"},
+frost_titan:{name:"Frost Titan",tier:1,lv:20,type:"Ice",weak:"Fire",hp:1200,atk:52,def:55,spd:24,int:16,xp:250,coins:50,img:"Bosses/Tier 1/Boss_FrostTitan.png",bg:"Backgrounds_Frozen Cave.png",atks:{s:["Frozen Fist","Ice Crush"],a:["Blizzard"]},intro:"The mountain trembles as the Frost Titan awakens!"},
+donut_man:{name:"Donut Man",tier:1,lv:17,type:"Chaos",weak:"None",hp:1050,atk:58,def:42,spd:35,int:14,xp:220,coins:55,img:"Bosses/Tier 1/Boss_TheDonutMan.png",bg:"Backgrounds_DesertRuins.png",atks:{s:["Sugar Rush","Glazed Fury"],a:["Frosting Flood"]},intro:"A sweet scent fills the air... but something is terribly wrong!"},
+speakerman:{name:"Speakerman",tier:1,lv:19,type:"Sound",weak:"Lightning",hp:1150,atk:62,def:45,spd:30,int:14,xp:240,coins:60,img:"Bosses/Tier 1/Boss_Speakerman.png",bg:"Backgrounds_StormSkyRealm.png",atks:{s:["Bass Drop","Sound Wave"],a:["Maximum Volume"]},intro:"BOOM! The air itself vibrates with sonic fury!"},
 
 // TIER 2 - Must defeat ALL to unlock Nightmare Phase 1
-corrupted_guardian:{name:"Corrupted Guardian",tier:2,lv:28,type:"Holy",weak:"Light",hp:2200,atk:100,def:80,spd:36,xp:500,coins:100,img:"Bosses/Tier 2/Boss_TheCorruptedGuardian.png",bg:"Backgrounds_SacredTemple.png",atks:{s:["Corrupted Blade","Dark Smite"],a:["Unholy Nova"]},intro:"Once a protector of light, now consumed by darkness..."},
-shadow_colossus:{name:"Shadow Colossus",tier:2,lv:30,type:"Shadow",weak:"Light",hp:2000,atk:105,def:70,spd:32,xp:475,coins:90,img:"Bosses/Tier 2/Boss_TheShadowColossus.png",bg:"Backgrounds_DarkForest.png",atks:{s:["Shadow Crush","Dark Slam"],a:["Darkness Falls"]},intro:"A giant made of pure shadow blocks your path!"},
-storm_leviathan:{name:"Storm Leviathan",tier:2,lv:32,type:"Water",weak:"Earth",hp:2100,atk:110,def:65,spd:40,xp:525,coins:110,img:"Bosses/Tier 2/Boss_TheStormLeviathan.png",bg:"Backgrounds_OceanDepths.png",atks:{s:["Thunder Bite","Storm Fang"],a:["Tempest Fury"]},intro:"The seas rage as the Leviathan surfaces!"},
+corrupted_guardian:{name:"Corrupted Guardian",tier:2,lv:28,type:"Holy",weak:"Light",hp:2200,atk:100,def:80,spd:36,int:22,xp:500,coins:100,img:"Bosses/Tier 2/Boss_TheCorruptedGuardian.png",bg:"Backgrounds_SacredTemple.png",atks:{s:["Corrupted Blade","Dark Smite"],a:["Unholy Nova"]},intro:"Once a protector of light, now consumed by darkness..."},
+shadow_colossus:{name:"Shadow Colossus",tier:2,lv:30,type:"Shadow",weak:"Light",hp:2000,atk:105,def:70,spd:32,int:18,xp:475,coins:90,img:"Bosses/Tier 2/Boss_TheShadowColossus.png",bg:"Backgrounds_DarkForest.png",atks:{s:["Shadow Crush","Dark Slam"],a:["Darkness Falls"]},intro:"A giant made of pure shadow blocks your path!"},
+storm_leviathan:{name:"Storm Leviathan",tier:2,lv:32,type:"Water",weak:"Earth",hp:2100,atk:110,def:65,spd:40,int:16,xp:525,coins:110,img:"Bosses/Tier 2/Boss_TheStormLeviathan.png",bg:"Backgrounds_OceanDepths.png",atks:{s:["Thunder Bite","Storm Fang"],a:["Tempest Fury"]},intro:"The seas rage as the Leviathan surfaces!"},
 
 // TIER 3 - Must defeat ALL to unlock Nightmare Phase 2
-void_dragon:{name:"Void Dragon",tier:3,lv:40,type:"Void",weak:"Light",hp:3500,atk:160,def:110,spd:45,xp:1000,coins:200,img:"Bosses/Tier 3/Boss_TheVoidDragon.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Void Claw","Cosmic Bite"],a:["Event Horizon"]},intro:"Reality tears apart as the Void Dragon emerges!"},
-chaos_demon_king:{name:"Chaos Demon King",tier:3,lv:42,type:"Chaos",weak:"Ice",hp:3700,atk:170,def:100,spd:42,xp:1100,coins:220,img:"Bosses/Tier 3/Boss_TheChaosDemonKing.png",bg:"Backgrounds_VolcanoArena.png",atks:{s:["Hellfire Slash","Demon Claw"],a:["Armageddon"]},intro:"The ruler of chaos descends upon the world!"},
-ancient_behemoth:{name:"Ancient Behemoth",tier:3,lv:44,type:"Earth",weak:"Water",hp:4000,atk:150,def:150,spd:28,xp:1050,coins:210,img:"Bosses/Tier 3/Boss_TheAncientBehemoth.png",bg:"Backgrounds_DesertRuins.png",atks:{s:["Primordial Stomp","Titan Fist"],a:["Extinction"]},intro:"Ancient ruins crumble as the Behemoth awakens!"},
-shadow_matriarch:{name:"Shadow Matriarch",tier:3,lv:45,type:"Shadow",weak:"Light",hp:3300,atk:165,def:95,spd:38,xp:1000,coins:200,img:"Bosses/Tier 3/Boss_TheShadowMatriarch.png",bg:"Backgrounds_DarkForest.png",atks:{s:["Mind Shatter","Nightmare"],a:["Shadow Realm"]},intro:"The mother of shadows extends her dark embrace..."},
+void_dragon:{name:"Void Dragon",tier:3,lv:40,type:"Void",weak:"Light",hp:3500,atk:160,def:110,spd:45,int:22,xp:1000,coins:200,img:"Bosses/Tier 3/Boss_TheVoidDragon.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Void Claw","Cosmic Bite"],a:["Event Horizon"]},intro:"Reality tears apart as the Void Dragon emerges!"},
+chaos_demon_king:{name:"Chaos Demon King",tier:3,lv:42,type:"Chaos",weak:"Ice",hp:3700,atk:170,def:100,spd:42,int:16,xp:1100,coins:220,img:"Bosses/Tier 3/Boss_TheChaosDemonKing.png",bg:"Backgrounds_VolcanoArena.png",atks:{s:["Hellfire Slash","Demon Claw"],a:["Armageddon"]},intro:"The ruler of chaos descends upon the world!"},
+ancient_behemoth:{name:"Ancient Behemoth",tier:3,lv:44,type:"Earth",weak:"Water",hp:4000,atk:150,def:150,spd:28,int:10,xp:1050,coins:210,img:"Bosses/Tier 3/Boss_TheAncientBehemoth.png",bg:"Backgrounds_DesertRuins.png",atks:{s:["Primordial Stomp","Titan Fist"],a:["Extinction"]},intro:"Ancient ruins crumble as the Behemoth awakens!"},
+shadow_matriarch:{name:"Shadow Matriarch",tier:3,lv:45,type:"Shadow",weak:"Light",hp:3300,atk:165,def:95,spd:38,int:20,xp:1000,coins:200,img:"Bosses/Tier 3/Boss_TheShadowMatriarch.png",bg:"Backgrounds_DarkForest.png",atks:{s:["Mind Shatter","Nightmare"],a:["Shadow Realm"]},intro:"The mother of shadows extends her dark embrace..."},
 
 // NIGHTMARE PHASES - Story bosses that gate chapter progression
-nightmare_p0:{name:"The Eternal Nightmare",tier:4,lv:25,type:"Void",weak:"Light",hp:1800,atk:95,def:55,spd:38,xp:400,coins:150,phase:0,img:"Bosses/Special/EternalNightmare_Phase0.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Dream Slash","Fear Strike"],a:["Terror Wave"]},intro:"The darkness at the edge of reality stirs... The Eternal Nightmare awakens!"},
-nightmare_p1:{name:"Nightmare Unleashed",tier:4,lv:35,type:"Void",weak:"Light",hp:3000,atk:145,def:85,spd:42,xp:700,coins:200,phase:1,img:"Bosses/Special/EternalNightmare_Phase1.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Tentacle Lash","Void Grasp"],a:["Tentacle Storm"]},intro:"Tentacles of pure nightmare reach out from the void! The Nightmare grows stronger!"},
-nightmare_p2:{name:"Nightmare Ascendant",tier:4,lv:48,type:"Void",weak:"Light",hp:4500,atk:210,def:120,spd:48,xp:1500,coins:350,phase:2,img:"Bosses/Special/EternalNightmare_Phase2.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Eye Beam","Reality Tear"],a:["Thousand Eyes"]},intro:"A thousand eyes open in the darkness, all watching... The Nightmare reaches its true form!"},
-nightmare_p3:{name:"Nightmare Supreme",tier:4,lv:55,type:"Void",weak:"Light",hp:7000,atk:260,def:150,spd:52,xp:2500,coins:500,phase:3,img:"Bosses/Special/EternalNightmare_Phase3.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Rift Slash","Dimension Rend"],a:["Reality Collapse"]},intro:"Reality itself begins to crack and shatter! The Nightmare threatens to consume everything!"},
-nightmare_p4:{name:"APOCALYPSE",tier:4,lv:65,type:"Void",weak:"None",hp:12000,atk:350,def:200,spd:58,xp:5000,coins:1000,phase:4,img:"Bosses/Special/EternalNightmare_Phase4.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Oblivion Strike","End of Days"],a:["Reality Erase"]},intro:"THE END OF ALL THINGS HAS COME. The Eternal Nightmare reveals its ultimate form!"},
+nightmare_p0:{name:"The Eternal Nightmare",tier:4,lv:25,type:"Void",weak:"Light",hp:1800,atk:95,def:55,spd:38,int:22,xp:400,coins:150,phase:0,img:"Bosses/Special/EternalNightmare_Phase0.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Dream Slash","Fear Strike"],a:["Terror Wave"]},intro:"The darkness at the edge of reality stirs... The Eternal Nightmare awakens!"},
+nightmare_p1:{name:"Nightmare Unleashed",tier:4,lv:35,type:"Void",weak:"Light",hp:3000,atk:145,def:85,spd:42,int:22,xp:700,coins:200,phase:1,img:"Bosses/Special/EternalNightmare_Phase1.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Tentacle Lash","Void Grasp"],a:["Tentacle Storm"]},intro:"Tentacles of pure nightmare reach out from the void! The Nightmare grows stronger!"},
+nightmare_p2:{name:"Nightmare Ascendant",tier:4,lv:48,type:"Void",weak:"Light",hp:4500,atk:210,def:120,spd:48,int:23,xp:1500,coins:350,phase:2,img:"Bosses/Special/EternalNightmare_Phase2.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Eye Beam","Reality Tear"],a:["Thousand Eyes"]},intro:"A thousand eyes open in the darkness, all watching... The Nightmare reaches its true form!"},
+nightmare_p3:{name:"Nightmare Supreme",tier:4,lv:55,type:"Void",weak:"Light",hp:7000,atk:260,def:150,spd:52,int:24,xp:2500,coins:500,phase:3,img:"Bosses/Special/EternalNightmare_Phase3.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Rift Slash","Dimension Rend"],a:["Reality Collapse"]},intro:"Reality itself begins to crack and shatter! The Nightmare threatens to consume everything!"},
+nightmare_p4:{name:"APOCALYPSE",tier:4,lv:65,type:"Void",weak:"None",hp:12000,atk:350,def:200,spd:58,int:24,xp:5000,coins:1000,phase:4,img:"Bosses/Special/EternalNightmare_Phase4.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Oblivion Strike","End of Days"],a:["Reality Erase"]},intro:"THE END OF ALL THINGS HAS COME. The Eternal Nightmare reveals its ultimate form!"},
 
 // THE CREATOR - Ultimate Secret Boss (Post-Game)
-the_creator:{name:"THE CREATOR",tier:5,lv:100,type:"Cosmic",weak:"None",hp:60000,atk:550,def:350,spd:70,xp:99999,coins:99999,isCreator:true,img:"Bosses/Special/TheCreator_MrGabe.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Divine Judgment","Creation's Wrath","Reality Rewrite"],a:["Big Bang","Universe Reset"]},intro:"You dare challenge THE CREATOR? Mr. Gabe, architect of all reality, turns his gaze upon you. This is your final test, young Legends..."}
+the_creator:{name:"THE CREATOR",tier:5,lv:100,type:"Cosmic",weak:"None",hp:60000,atk:550,def:350,spd:70,int:30,xp:99999,coins:99999,isCreator:true,img:"Bosses/Special/TheCreator_MrGabe.png",bg:"Backgrounds_CosmicVoid.png",atks:{s:["Divine Judgment","Creation's Wrath","Reality Rewrite"],a:["Big Bang","Universe Reset"]},intro:"You dare challenge THE CREATOR? Mr. Gabe, architect of all reality, turns his gaze upon you. This is your final test, young Legends..."}
 };
 
 // Tier boss lists for easy reference
@@ -8651,7 +8787,7 @@ const ALLY_QUESTS = {
         element: 'Fire',
         img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png',
         totalStages: 4,
-        stageChapters: [1, 1, 2, 2], // Which chapter each stage unlocks in
+        stageChapters: [1, 2, 3, 4], // Stage 1=Ch1, Stage 2=Ch2, Stage 3=Ch3, Stage 4=Ch4
         regions: {
             1: ['volcano'],
             2: ['forest', 'volcano'],
@@ -8661,7 +8797,7 @@ const ALLY_QUESTS = {
         stages: {
             1: {
                 name: 'Embers in the Ash',
-                introTrust: `Among the cooling lava rocks, you hear a weak chirping. A small phoenix chick lies in the ash, one wing bent at an odd angle. Burn marks scar its feathers - not from lava, but from dark magic. It sees you and tries to flee, but collapses.`,
+                introTrust: `The volcano rumbles gently as you pick your way through fields of cooling lava rock. Steam rises in thin wisps around you, and the air smells of sulfur and ancient fire. Then you hear it - a weak, desperate chirping sound coming from behind a boulder. You hurry over and find a small phoenix chick lying in a pile of gray ash. Its golden feathers are dull and singed, and one wing hangs at a painful angle. But these aren't normal burns - dark purple marks streak across its body, the unmistakable touch of shadow magic. The little creature sees you approach and tries to scramble away, its tiny talons scraping against the rock. It only makes it a few steps before collapsing, exhausted and afraid. Its ember-bright eyes look up at you, filled with both fear and desperate hope.`,
                 choices: [
                     { id: 'A', text: '🩹 Slowly approach with food and water', outcome: 'trust', affinity: 15, combat: null, result: `The chick watches warily but accepts your offering. Trust begins to form between you.` },
                     { id: 'B', text: '💊 Use a healing item on it immediately', outcome: 'trust', affinity: 5, combat: null, result: `The sudden approach startles it. It pecks at you but calms when the pain eases.` },
@@ -8675,8 +8811,8 @@ const ALLY_QUESTS = {
             },
             2: {
                 name: 'The Healing Flame',
-                introTrust: `Weeks later, you spot familiar golden feathers in the underbrush. The phoenix chick has been following you! Its wing has healed somewhat, but it still can't fly. It chirps excitedly when it sees you.`,
-                introRedemption: `A weak flame flickers in the distance. The phoenix chick you abandoned lies in a hunters' trap, too weak to burn through the ropes. It sees you approach and flinches.`,
+                introTrust: `Several weeks have passed since you first helped the injured phoenix chick. You're walking through a sun-dappled forest when something catches your eye - a flash of familiar golden feathers in the underbrush! You push aside a fern and there it is: the phoenix chick, slightly bigger now and much healthier-looking. It's been following you this whole time! The little creature chirps with pure joy when you find it, hopping around your feet in excited circles. Its injured wing has healed quite a bit, though it still droops a little and can't carry the chick into the sky just yet. The phoenix looks up at you with trusting, hopeful eyes, its feathers glowing warmer than before. It seems to be asking: "Will you help me get stronger?"`,
+                introRedemption: `Night has fallen, and a weak orange glow catches your attention in the darkness. You follow it and your heart sinks - it's the phoenix chick you left behind, now caught in a hunter's cruel rope trap! The poor creature is wrapped in enchanted cords that glow faintly purple, draining its fire magic. Its flames are barely a flicker now, too weak to burn through the bindings. When the chick sees you approach, it flinches and tries to pull away, remembering how you abandoned it before. But it's too weak to move. Tears of liquid fire roll down its feathered cheeks as it watches you, unsure if you've come to help or to hurt it again.`,
                 choicesTrust: [
                     { id: 'A', text: '🕊️ Spend time helping it practice flying', outcome: 'bond', affinity: 20, combat: null, result: `Hours of patience. The chick makes small flights. A deep bond forms between you.` },
                     { id: 'B', text: '🌿 Find herbs to strengthen its wing', outcome: 'trust', affinity: 10, combat: null, result: `You search the forest for healing herbs. The chick waits loyally for your return.` },
@@ -8696,7 +8832,7 @@ const ALLY_QUESTS = {
             },
             3: {
                 name: 'Shadows of the Past',
-                introTrust: `The phoenix chick finds you in a panic, tugging at your clothes. It leads you to a cliff overlooking a dark canyon. Below, shadow creatures are attacking... other phoenixes! A small flock, trapped and outnumbered. The chick looks at you pleadingly.`,
+                introTrust: `You're setting up camp for the night when the phoenix chick bursts through the trees in a panic! It's chirping frantically and tugging at your sleeve with its beak, clearly trying to show you something urgent. You follow as fast as you can, climbing through rocky terrain until you reach the edge of a cliff. What you see below makes your blood run cold. In a deep canyon filled with swirling shadows, a small flock of phoenixes is under attack! There are five of them - a mother, a father, and three smaller chicks - surrounded by dozens of writhing shadow creatures. The dark monsters are the same kind that hurt your phoenix friend in the first place. The phoenixes' fire is flickering weakly against the overwhelming darkness. Your phoenix chick makes a desperate, pleading sound, and you realize with a start: these are its family! The chick looks at you with tear-filled eyes, silently begging you to help save them.`,
                 choices: [
                     { id: 'A', text: '⚔️ Charge in to help! The family needs us!', outcome: 'protect', affinity: 15, combat: 'protective', result: `You leap into battle alongside the chick! Together, you fight to save its family!` },
                     { id: 'B', text: '🎭 Create a distraction while they escape', outcome: 'distract', affinity: 10, combat: 'swarm', result: `Risky but clever. You draw the shadows away while the phoenixes flee.` },
@@ -8711,9 +8847,9 @@ const ALLY_QUESTS = {
             },
             4: {
                 name: 'A New Dawn',
-                introVictory: `The phoenix chick, now nearly grown, lands before you with elegant grace. Its feathers shimmer with renewed fire. Behind it, the elder phoenix watches. 'You saved our flock,' a voice echoes in your mind. 'My child wishes to stay with you. Will you accept this bond?'`,
-                introBittersweet: `The young phoenix finds you at camp, its flames tinged with blue - the color of mourning. But when it sees you, warmth returns. It has no flock now. But it has you. It nudges your hand, a question in its eyes.`,
-                introGrief: `You haven't seen the phoenix in weeks. Then one night, a weak flame appears at your campfire. The chick is thin, feathers dull. It came back despite everything. It has nowhere else to go.`,
+                introVictory: `The morning sun paints the sky in brilliant oranges and golds - phoenix colors. As you watch the sunrise, you hear the familiar sound of beating wings, but stronger now. The phoenix chick lands before you, and you barely recognize it! It has grown into a magnificent young phoenix, nearly as tall as you, with feathers that shimmer like liquid fire. Every movement sends sparks dancing through the air. Behind it, the elder phoenix - its parent - descends on massive wings that block out the sun. "Human child," a warm voice echoes directly in your mind, "you saved our family from the shadow. You nursed my youngest back to health when I could not protect them." The elder's eyes glow with ancient wisdom and deep gratitude. "My child has asked to stay with you, to be your companion and friend forever. This is the highest honor a phoenix can bestow. Will you accept this bond of fire and friendship?"`,
+                introBittersweet: `The sun sets in somber purple hues as the young phoenix finds you at your campsite. Its beautiful flames are tinged with blue - the phoenix color of mourning and loss. The battle to save its family didn't go as hoped, and the young phoenix carries that sorrow in every flicker of its fire. But the moment it sees your face, something changes. The blue fades, replaced by warm orange and gold. Its flames burn brighter. The phoenix may have lost its birth family, but it found something else - it found you. The creature approaches slowly and gently nudges your hand with its warm beak. In its eyes, you see a question: "You're my family now, aren't you? Can we stay together?" The bond between you has grown through hardship into something unbreakable.`,
+                introGrief: `Weeks have passed since you last saw the phoenix. You'd started to think it was gone forever, maybe captured, maybe... worse. Then one cold night, as you sit alone by your campfire, a weak orange glow appears in the darkness. The phoenix stumbles into the firelight, and your heart breaks at the sight. It's thin - too thin - with dull, ashy feathers that barely hold any flame. Dark circles ring its tired eyes. It came back to you, despite everything that happened between you, despite being abandoned and hurt. It came back because it has nowhere else to go, no one else to turn to. The phoenix collapses near the fire's warmth, looking up at you with eyes that hold no accusation, only exhaustion and a tiny, flickering spark of hope.`,
                 choicesVictory: [
                     { id: 'A', text: '💖 "I would be honored. Together, always."', outcome: 'bond', affinity: 25, combat: null, result: `The phoenix's flames surge with joy. A bond is sealed for eternity.` },
                     { id: 'B', text: '⚔️ "Prove your strength - one final duel!"', outcome: 'trial', affinity: 15, combat: 'trial_duel', result: `A warrior's bond! The phoenix accepts eagerly, flames blazing bright.` },
@@ -8745,7 +8881,7 @@ const ALLY_QUESTS = {
         element: 'Earth',
         img: 'Quest_Creatures/Quest_SealedEarthSpirit.png',
         totalStages: 3,
-        stageChapters: [1, 1, 2],
+        stageChapters: [1, 2, 3], // Stage 1=Ch1, Stage 2=Ch2, Stage 3=Ch3
         regions: {
             1: ['forest', 'ice'],
             2: ['forest', 'ice', 'void'],
@@ -8754,7 +8890,7 @@ const ALLY_QUESTS = {
         stages: {
             1: {
                 name: 'The Trembling Stone',
-                introTrust: `The ground shudders beneath your feet. In a clearing, you find a massive stone covered in ancient runes. Cracks spider across its surface, and a deep voice rumbles from within: 'Please... so long in darkness... help me...'`,
+                introTrust: `The forest floor suddenly begins to shake, and you grab onto a tree to keep your balance. Birds scatter from the branches above, crying out in alarm. As the trembling subsides, you notice something strange ahead: the trees have parted to reveal a hidden clearing you've never seen before. In the center stands an enormous stone, taller than a house and covered in glowing runes that pulse with faint green light. Ancient vines have grown over most of it, but you can see deep cracks spreading across its surface like a shattered mirror. Then you hear it - a voice, old and tired and coming from INSIDE the stone. "Please..." it rumbles, so deep you feel it in your chest. "So long... trapped in darkness... won't someone help me?" The runes flicker desperately. "I was sealed here centuries ago. I am Terranis, guardian of these lands. And I am running out of time."`,
                 choices: [
                     { id: 'A', text: '💬 Try to communicate - ask what happened', outcome: 'trust', affinity: 15, combat: null, result: `The spirit shares its tragic history. You learn of Terranis, guardian of these lands, sealed by fearful villagers.`, lore: true },
                     { id: 'B', text: '🔍 Examine the seal carefully', outcome: 'study', affinity: 10, combat: null, result: `Ancient magic. Powerful. But not evil. The spirit waits patiently as you study.` },
@@ -8768,8 +8904,8 @@ const ALLY_QUESTS = {
             },
             2: {
                 name: 'The Corruption Within',
-                introTrust: `You return to find the seal crumbling faster. Through the cracks, you see the spirit - once noble stone, now streaked with dark veins. 'The corruption spreads,' Terranis groans. 'Free me now, before I lose myself. Or... end me. Do not let me become a monster.'`,
-                introDamaged: `The seal is shattered. Terranis stands free - but wrong. Dark energy crackles across its form. 'Too... fast...' it growls. 'Can't... control...' It looks at you with fading recognition. 'Run... or fight... FIGHT ME!'`,
+                introTrust: `When you return to Terranis's clearing, your heart sinks. The seal is crumbling much faster than before - chunks of stone have fallen away, and the cracks glow an angry purple instead of peaceful green. Through the widening gaps, you can finally see Terranis itself: a massive creature of living stone and ancient wood, like a gentle giant made of the earth itself. But something is terribly wrong. Dark veins of corruption pulse across its rocky body, spreading like poison through its form. "You came back," Terranis says, and even its voice sounds strained with pain. "The corruption... it grows stronger every day. I can feel it trying to take over my mind, make me forget who I am." The spirit's eyes, like two glowing emeralds, meet yours with desperate intensity. "Please, you must free me now, while I can still control myself. Or... if it's too late..." The guardian's voice breaks. "End me. Don't let me become the monster they feared I always was."`,
+                introDamaged: `You rush back to the clearing, but you're too late. The seal has completely shattered, its pieces scattered across the ground like broken promises. Terranis stands in the center, finally free - but something is horribly wrong. The earth spirit's body crackles with dark purple energy, and its eyes flash between gentle green and furious red. "Too... fast..." it growls, its voice warping between the kind guardian you knew and something much darker. "Can't... control..." Its massive stone fists clench and unclench. For one moment, you see YOUR friend in there - Terranis looks at you with recognition and desperate sorrow. "Run," it begs. "Or fight me. FIGHT ME before I hurt someone!" Then the red takes over its eyes completely, and the corrupted guardian roars a challenge that shakes the trees.`,
                 choicesTrust: [
                     { id: 'A', text: '🔓 "I\'ll free you. I trust you."', outcome: 'free', affinity: 20, combat: null, result: `You break the seal properly. Terranis emerges, struggling but sane.` },
                     { id: 'B', text: '✨ "Let me purify the corruption first."', outcome: 'purify', affinity: 15, combat: 'trial', result: `A ritual of cleansing. Risky but could save Terranis fully.` },
@@ -8792,7 +8928,7 @@ const ALLY_QUESTS = {
             },
             3: {
                 name: 'Guardian Reborn',
-                introTrust: `Terranis has followed you, its form now stable - a magnificent guardian of living stone and ancient wood. 'You gave me a second chance,' it rumbles. 'I cannot repay this debt. But I can offer you my eternal friendship. Will you accept a guardian's oath?'`,
+                introTrust: `Months have passed, and Terranis has been traveling by your side, growing stronger with each passing day. The corruption that once plagued the guardian is gone, replaced by healthy green moss and flowers that bloom across its rocky surface. Terranis has transformed into something magnificent: a towering guardian of living stone covered in ancient patterns, with trees growing from its shoulders and a gentle waterfall cascading down its back. Wherever it walks, plants spring up in its footsteps and the land feels healthier. Today, Terranis asks you to stop in a beautiful meadow filled with wildflowers. "Young one," it rumbles, and its voice is warm now instead of pained. "You gave me something I never thought I would have again: a second chance at life. You believed in me when you could have run away or worse." The guardian kneels down to be closer to your height, its emerald eyes shining with emotion. "I cannot repay what you've done. But I can offer you something precious - my eternal friendship, and a guardian's oath. If you accept, I will be your companion and protector for as long as you need me. What do you say?"`,
                 choices: [
                     { id: 'A', text: '🤝 "I would be honored, Terranis."', outcome: 'accept', affinity: 25, combat: null, result: `The ground shakes as the oath is sealed. A bond of stone and soul.` },
                     { id: 'B', text: '⚔️ "Prove you\'re free of corruption - one final test!"', outcome: 'test', affinity: 15, combat: 'trial', result: `Terranis nods gravely. 'Test me. I will show you my true self.'` },
@@ -8819,7 +8955,7 @@ const ALLY_QUESTS = {
         element: 'Water',
         img: 'Quest_Creatures/Quest_TheLostWhale.png',
         totalStages: 4,
-        stageChapters: [1, 1, 2, 2],
+        stageChapters: [1, 2, 3, 4], // Stage 1=Ch1, Stage 2=Ch2, Stage 3=Ch3, Stage 4=Ch4
         regions: {
             1: ['ice'],
             2: ['ice'],
@@ -8829,7 +8965,7 @@ const ALLY_QUESTS = {
         stages: {
             1: {
                 name: 'Songs in the Ice',
-                introTrust: `A haunting melody echoes across the frozen wastes. You find the source: a massive creature half-buried in snow - a sky-whale calf, its crystalline fins cracked from the cold. It sings a mournful song, searching for an answer that doesn't come.`,
+                introTrust: `The frozen wasteland stretches endlessly before you, nothing but white snow and pale blue ice as far as the eye can see. The wind howls past, carrying flakes of snow that sting your face. Then you hear something that makes you stop in your tracks: a sound so beautiful and so sad that it makes your heart ache. It's like singing, but not quite - more like the northern lights themselves are crying out in melody. You follow the haunting sound over a ridge of ice, and what you find takes your breath away. Half-buried in a snowdrift is an enormous creature unlike anything you've ever seen: a sky-whale calf, its body shimmering with aurora colors of pink and blue and green. Its crystalline fins are cracked from the bitter cold, and its massive eyes are filled with tears that freeze as they fall. The young whale sings its mournful song over and over - and finally you understand. It's calling for its family, and no one is answering. The creature is alone, hurt, and lost in this frozen wilderness, calling out for help that never comes.`,
                 choices: [
                     { id: 'A', text: '🎵 Sing back - try to communicate', outcome: 'connect', affinity: 15, combat: null, result: `Your voice is small, but the whale's eyes brighten. Contact! You've made a connection.`, special: 'whale_song' },
                     { id: 'B', text: '🔥 Build a fire to warm it', outcome: 'care', affinity: 10, combat: null, result: `The whale shifts closer to the warmth, making grateful sounds.` },
@@ -8840,8 +8976,8 @@ const ALLY_QUESTS = {
             },
             2: {
                 name: 'The Frozen Path',
-                introConnected: `The whale, whom you've named Aria, shows you images in your mind: her pod flying through an aurora, a sudden storm, falling... She asks: 'Help find? Please help find family?' She's strong enough to move now, but not to fly.`,
-                introBasic: `You return to find the whale on its feet - or fins. It's survived, but looks lost. When it sees you, it makes hopeful sounds and gestures with its head toward the distant mountains. It wants to go somewhere.`,
+                introConnected: `Days of caring for the sky-whale have formed a bond between you, and you've given her a name: Aria, for her beautiful voice. She's grown strong enough to move now, floating beside you like a living aurora. One evening, as the real northern lights dance overhead, Aria touches her forehead to yours and suddenly you SEE. Images flood your mind: Aria flying with her pod - six magnificent sky-whales swimming through ribbons of green and purple light. You feel her joy, her love for her family. Then darkness. A terrible storm appears out of nowhere, with lightning that crackles with shadow magic. The pod scatters. Aria, the youngest, is struck and sent tumbling down, down, down to the frozen earth below. When the vision ends, Aria's eyes meet yours with desperate hope. "Help find?" she asks in thoughts rather than words. "Please, help find family?" She tries to flap her fins to fly, but they're still too damaged. She can float, but she cannot soar. The journey to find her family will have to be made on foot - together.`,
+                introBasic: `When you return to the frozen clearing, your heart lifts: the whale has survived! She's standing on her tail fins now, her body floating just above the snow. Her colors are brighter than before, shifting through gentle shades of blue and pink. But there's something sad in her eyes - a deep loneliness that hasn't faded. When she spots you approaching, her whole body lights up with joy. She makes excited chirping sounds and swims through the air to greet you, nuzzling against you with her cool, smooth skin. Then she floats back and gestures urgently with her head toward the distant mountains, where aurora lights dance on the horizon. She makes the gesture again and again, and you understand: she wants to go somewhere. She needs your help to get there. Her eyes plead with you. Will you help her find whatever - or whoever - she's looking for?`,
                 choices: [
                     { id: 'A', text: '🗺️ "I\'ll guide you. We\'ll find them together."', outcome: 'guide', affinity: 20, combat: null, result: `Aria trumpets with joy! The journey begins!` },
                     { id: 'B', text: '🔭 "Let me scout ahead for dangers first."', outcome: 'scout', affinity: 10, combat: 'swarm', result: `You venture into the ice fields. Aria waits anxiously.` },
@@ -8855,7 +8991,7 @@ const ALLY_QUESTS = {
             },
             3: {
                 name: 'The Frozen Spire',
-                introTrust: `You and Aria reach the Frozen Spire - a mountain of pure ice where the aurora touches the earth. Aria's song grows urgent. She senses something! But the path is guarded by creatures of living frost. And worse - hunters have followed the whale's song. They want Aria.`,
+                introTrust: `After weeks of travel across the frozen wastes, you and Aria finally see it: the Frozen Spire. It's a mountain of pure ice that seems to reach up and touch the sky itself, so tall its peak disappears into the swirling aurora above. The lights are brighter here than anywhere you've ever seen, painting everything in dancing colors of green and purple and gold. Aria's whole body trembles with excitement and hope - she sings out, and for the first time, other songs answer! Faint and far away, but unmistakably the voices of other sky-whales! "Family!" Aria cries in your mind. "They're HERE!" But your joy is cut short by a growling sound behind you. You turn to find the path blocked by creatures made of living frost - ice wolves with eyes like frozen stars, guardians of this sacred place. And worse - much worse - you spot humanoid figures in the shadows. Hunters. They've been tracking Aria's beautiful song, and now they've found their prize. "That whale will fetch a fortune," one hisses to the others. "Don't let the brat interfere." Aria presses against you in fear. Her family is so close, but danger has never been closer.`,
                 choices: [
                     { id: 'A', text: '⚔️ "Together, Aria. No one takes you!"', outcome: 'fight', affinity: 20, combat: 'protective', result: `Stand and fight! Aria joins the battle!` },
                     { id: 'B', text: '🛡️ "I\'ll hold them off - get to the Spire!"', outcome: 'sacrifice', affinity: 15, combat: 'swarm', result: `You buy time while Aria escapes. Heroic sacrifice.` },
@@ -8871,8 +9007,8 @@ const ALLY_QUESTS = {
             },
             4: {
                 name: 'Where Sky Meets Ice',
-                introBonded: `At the peak of the Frozen Spire, the aurora dances overhead. Aria sings, and this time, songs answer! Her pod descends from the sky - magnificent sky-whales of every color. Aria rushes to them, then stops, looking back at you. The elder whale's voice enters your mind: 'You saved our child. What would you ask of us?'`,
-                introBetrayal: `Aria's pod arrives, but she doesn't approach you. The elder whale's gaze is cold. 'We know what you considered. Our child told us everything.' There is no warmth here. Only judgment.`,
+                introBonded: `You stand at the very peak of the Frozen Spire, so high that clouds drift below you and the aurora fills the entire sky. It's the most beautiful thing you've ever seen - ribbons of light in every color imaginable, dancing and swirling like living magic. Aria lifts her head and sings one final time, pouring all her hope and longing into the melody. And this time... songs answer. Not one, but many, filling the sky with the most incredible chorus you've ever heard. Then you see them descending through the aurora: Aria's pod, six magnificent sky-whales in sizes ranging from huge to absolutely enormous. Their colors match the lights around them - one is deep purple, one shimmers gold, the largest glows with gentle green. Aria cries out with pure joy and rushes to meet them, nuzzling against them one by one as tears of happiness stream down her face. The reunion is so beautiful it makes your own eyes water. Then Aria stops and looks back at you, and the largest whale - an ancient creature covered in patterns that look like constellations - floats down to face you. "Human child," a voice echoes in your mind, deep and ancient and warm. "You saved our youngest when she was lost and alone. You walked beside her through danger when you could have turned away. What would you ask of us in return?"`,
+                introBetrayal: `Aria's pod descends from the aurora in a display of magnificent colors, but there is no joy in this reunion. When Aria joins her family, she doesn't look at you. The other whales form a protective circle around her, and the largest - an ancient whale covered in star-like patterns - floats forward with cold fury in its eyes. "Human." The word echoes in your mind like ice. "We know what you considered doing. We know you thought about handing our child to those hunters." The elder's voice drips with contempt. "Aria told us everything. She trusted you, and you thought about SELLING her." The other whales hum with anger. "Our child has asked us not to harm you. She is too kind for her own good. But know this: there is no forgiveness here. There is no friendship. You came so close to doing something unforgivable." The elder's ancient eyes bore into you. "Speak your piece and be gone."`,
                 choicesBonded: [
                     { id: 'A', text: '💙 "Only Aria\'s happiness. She should stay."', outcome: 'selfless', affinity: 25, combat: null, result: `Aria nuzzles you one last time, then joins her pod. But she'll visit.` },
                     { id: 'B', text: '🙏 "Could Aria visit me sometimes?"', outcome: 'request', affinity: 20, combat: null, result: `The elder nods. 'A bond like yours transcends distance.'` },
@@ -8901,7 +9037,7 @@ const ALLY_QUESTS = {
         element: 'Shadow',
         img: 'Quest_Creatures/Quest_TheMessengerRaven.png',
         totalStages: 3,
-        stageChapters: [1, 1, 2],
+        stageChapters: [1, 2, 3], // Stage 1=Ch1, Stage 2=Ch2, Stage 3=Ch3
         regions: {
             1: ['forest', 'volcano'],
             2: ['any'],
@@ -8910,7 +9046,7 @@ const ALLY_QUESTS = {
         stages: {
             1: {
                 name: "The Shadow's Message",
-                introTrust: `A raven crashes through the canopy, dark feathers trailing shadow. It clutches a sealed scroll in its talons. As you approach, it speaks in a rasping voice: 'Hunted... Must deliver... Will you... help?' Its eyes hold ancient intelligence.`,
+                introTrust: `You're walking through a dense forest when something crashes through the canopy above you! Branches snap and leaves scatter as a dark shape tumbles down, catching itself at the last moment on a low branch. It's a raven - but unlike any raven you've ever seen. This one is made of living shadow, its feathers trailing wisps of darkness like smoke. Its wings are torn and tattered, and silver blood drips from wounds across its body. Clutched tightly in its talons is an ornate scroll sealed with black wax. The raven's eyes - glowing purple orbs that pulse with ancient intelligence - lock onto yours. "Hunted..." it rasps, and you realize with a shock that it can SPEAK. Its voice is like wind through dead leaves. "The Sealed Ones... sent assassins. Must deliver... this message. The fate of the shadow realm..." The raven's wings droop with exhaustion. "Will you... help me? Please. There is no one else." Those wise, ancient eyes study you, weighing your soul. Whatever secret this scroll contains, others are willing to kill for it.`,
                 choices: [
                     { id: 'A', text: '❓ "Who\'s hunting you? Tell me everything."', outcome: 'trust', affinity: 15, combat: null, result: `The raven shares its burden. You learn of Umbral, last of the Shadow Messengers, and the dangerous truth it carries.`, lore: true },
                     { id: 'B', text: '📍 "Where does the message need to go?"', outcome: 'practical', affinity: 10, combat: null, result: `'The void between worlds. Too far for me now.' The destination is known.` },
@@ -8921,8 +9057,8 @@ const ALLY_QUESTS = {
             },
             2: {
                 name: 'Secrets and Hunters',
-                introTrust: `Umbral has recovered enough to travel, but dark figures move in the shadows. 'The Sealed Ones sent hunters,' Umbral warns. 'We must move quickly. But first - a choice. The message... there is another copy. I could give it to you. If I fall, you could complete the delivery. But reading it... changes things. Knowledge is never free.'`,
-                introWary: `You find Umbral fighting off shadow assassins! The raven is losing. 'If you want the message delivered,' it croaks, 'now is the time to prove yourself!'`,
+                introTrust: `Days have passed, and Umbral has recovered enough to travel with you. The shadow raven rides on your shoulder now, its weight surprisingly warm despite being made of darkness. You've grown to trust each other, sharing stories during the long journey. But tonight, as you set up camp, Umbral's feathers suddenly bristle with alarm. "We are being watched," the raven whispers. In the darkness beyond your campfire, you catch glimpses of movement - dark figures with blades that drink the light. "The Sealed Ones sent their hunters," Umbral explains grimly. "We must move at first light. But first... a choice." The raven produces a second scroll from somewhere within its shadowy form. "This is a copy of the message. If something happens to me, you could complete the delivery in my place." Umbral pauses. "But you would have to carry it unopened. The knowledge within... it changes those who learn it. Are you willing to bear this burden? To keep a secret you can never know?" Those ancient purple eyes search your face. "Or... do you wish to know what you're risking your life for?"`,
+                introWary: `A terrible sound cuts through the night - the clash of blade against shadow! You race toward the noise and find Umbral fighting desperately against three hooded assassins! The shadow raven ducks and weaves, but it's still weak from its earlier wounds. Silver blood splashes the ground. "They found me!" Umbral cries, barely dodging a slash that would have taken its head. One assassin laughs coldly. "Did you think you could run forever, little messenger? Give us the scroll and we might make your death quick." Umbral's eyes find yours with desperate hope. "If you want this message delivered," the raven croaks between parrying blows, "if you believe in what we're doing - NOW is the time to prove it!" The assassins turn to look at you. "Walk away, human," one hisses. "This doesn't concern you." But Umbral's eyes tell a different story. This concerns EVERYTHING.`,
                 choicesTrust: [
                     { id: 'A', text: '🤝 "Give me the copy. I won\'t read it."', outcome: 'promise', affinity: 20, combat: null, result: `Umbral's eyes glow. 'An honest soul. Rare.' Trust is sealed.` },
                     { id: 'B', text: '📖 "I want to know what I\'m carrying."', outcome: 'knowledge', affinity: 10, combat: null, result: `Umbral hesitates, then reveals: the message could seal the shadow realm forever.`, secret: true },
@@ -8942,7 +9078,7 @@ const ALLY_QUESTS = {
             },
             3: {
                 name: 'The Final Delivery',
-                introTrust: `The void between worlds stretches before you. Umbral is weak but determined. 'There,' it points with a wing. 'The Eternal Archive. The keeper waits.' But shadows mass behind you - an army of hunters. 'They cannot follow into the Archive. But we must reach the gates first.'`,
+                introTrust: `You stand at the edge of reality itself. Before you stretches the void between worlds - an endless expanse of swirling darkness dotted with distant stars that might be other universes. It's terrifying and beautiful at the same time, and it makes you feel very, very small. Umbral perches on your shoulder, weaker than ever but burning with determination. "There," the raven says, pointing with one tattered wing. In the distance, floating in the void like a castle made of starlight, you can see an impossible structure: the Eternal Archive, repository of all knowledge that ever was or ever will be. "The Keeper waits within. We're so close..." But then you hear it - the sound of many footsteps behind you. You turn and your blood runs cold. An army of hunters has finally caught up, dozens of dark-cloaked figures blocking any retreat. Their leader steps forward with a cruel smile. "End of the line, little messenger. Nowhere left to run." Umbral's feathers ruffle with defiance. "They cannot follow us into the Archive - their dark oaths forbid it. But we must reach the gates first." The raven looks at you with eyes full of trust and determination. "One final journey, my friend. Are you ready?"`,
                 choices: [
                     { id: 'A', text: '🤝 "Together. We finish this together."', outcome: 'together', affinity: 20, combat: 'gauntlet', result: `The final dash! Umbral soars alongside you!` },
                     { id: 'B', text: '🛡️ "I\'ll hold them off. Get to the Archive!"', outcome: 'sacrifice', affinity: 15, combat: 'holdline', result: `A hero's sacrifice. You buy time for Umbral.` },
@@ -8982,13 +9118,13 @@ const QUEST_ENEMIES = {
 
     // Phoenix quest enemies
     phoenix_chick_young: { name: 'Phoenix Chick', type: 'Fire', baseHp: 70, baseAtk: 16, baseDef: 8, baseSpd: 14, baseInt: 14, img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png', canHeal: true },
-    phoenix_young_full: { name: 'Young Phoenix', type: 'Fire', baseHp: 120, baseAtk: 22, baseDef: 12, baseSpd: 16, baseInt: 18, img: 'Quest_Creatures/Quest_YoungPhoenix.png', canHeal: true },
+    phoenix_young_full: { name: 'Young Phoenix', type: 'Fire', baseHp: 120, baseAtk: 22, baseDef: 12, baseSpd: 16, baseInt: 18, img: 'Quest_Creatures/Quest_InjuredPhoenixChick.png', canHeal: true },
 
     // Earth Spirit quest enemies
     corrupted_elemental: { name: 'Corrupted Elemental', type: 'Earth', baseHp: 50, baseAtk: 14, baseDef: 12, baseSpd: 8, baseInt: 6, img: 'Wild_Encounters/Wild_CorruptedElemental.png' },
     corruption_spawn: { name: 'Corruption Spawn', type: 'Void', baseHp: 35, baseAtk: 16, baseDef: 4, baseSpd: 10, baseInt: 4, img: 'Wild_Encounters/Wild_CorruptionSpawn.png' },
     terranis_weak: { name: 'Terranis (Weakened)', type: 'Earth', baseHp: 100, baseAtk: 14, baseDef: 18, baseSpd: 6, baseInt: 12, img: 'Quest_Creatures/Quest_SealedEarthSpirit.png', somber: true },
-    terranis_corrupted: { name: 'Corrupted Terranis', type: 'Void', baseHp: 150, baseAtk: 24, baseDef: 14, baseSpd: 8, baseInt: 8, img: 'Quest_Creatures/Quest_CorruptedTerranis.png' },
+    terranis_corrupted: { name: 'Corrupted Terranis', type: 'Void', baseHp: 150, baseAtk: 24, baseDef: 14, baseSpd: 8, baseInt: 8, img: 'Quest_Creatures/Quest_SealedEarthSpirit.png' },
     earth_construct: { name: 'Earth Construct', type: 'Earth', baseHp: 60, baseAtk: 12, baseDef: 16, baseSpd: 6, baseInt: 4, img: 'Wild_Encounters/Wild_EarthConstruct.png' },
 
     // Whale quest enemies
@@ -9962,19 +10098,17 @@ function startQuestEncounter(questId){
     showQuestEncounterOverlay(questDef, stageDef, intro, choices);
 }
 
-// Show the quest encounter UI with intro and choices
+// Show the quest encounter UI with intro and choices - Fullscreen immersive scene (v54.16 Wave 5)
 function showQuestEncounterOverlay(questDef, stageDef, intro, choices){
-    // Build choice buttons HTML
-    let choicesHtml = '<div class="quest-choices" style="display:flex;flex-direction:column;gap:12px;margin-top:20px;">';
+    // Get element-appropriate background
+    const bgImage = getQuestBackground(questDef.element);
+
+    // Build choice buttons HTML - all neutral colors, stacked vertically
+    let choicesHtml = '<div class="quest-scene-choices">';
     choices.forEach((choice, idx) => {
-        const affinityClass = choice.affinity >= 10 ? 'good' : choice.affinity >= 0 ? 'neutral' : 'bad';
-        const combatIndicator = choice.combat ? ' ⚔️' : '';
+        const combatIndicator = choice.combat ? '<span class="combat-indicator">⚔️ Combat</span>' : '';
         choicesHtml += `
-            <button class="quest-choice-btn ${affinityClass}" onclick="handleQuestChoice(${idx})"
-                style="padding:12px 16px;background:linear-gradient(135deg,rgba(30,30,40,0.95),rgba(20,20,30,0.95));
-                border:2px solid ${choice.affinity >= 10 ? '#4ade80' : choice.affinity >= 0 ? '#fbbf24' : '#f87171'};
-                border-radius:8px;color:#fff;font-size:1rem;text-align:left;cursor:pointer;
-                transition:transform 0.2s,box-shadow 0.2s;">
+            <button class="quest-choice-btn" onclick="handleQuestChoice(${idx})">
                 <span style="font-weight:bold;">${choice.id}.</span> ${choice.text}${combatIndicator}
             </button>
         `;
@@ -9984,33 +10118,33 @@ function showQuestEncounterOverlay(questDef, stageDef, intro, choices){
     // Format intro text with line breaks
     const formattedIntro = intro.replace(/\n/g, '<br>');
 
-    // Create the overlay content
-    const overlayContent = `
-        <div style="text-align:center;">
-            <div style="font-family:'Uncial Antiqua',cursive;font-size:0.9rem;color:#fbbf24;margin-bottom:5px;">
-                ✨ QUEST ENCOUNTER ✨
+    // Create fullscreen quest scene
+    const questSceneHtml = `
+        <div class="quest-scene" id="questScene" style="background-image:url('${G}/Backgrounds/${bgImage}');">
+            <div class="quest-scene-content">
+                <div class="quest-scene-title">${questDef.name}</div>
+                <div class="quest-scene-stage">Stage ${window._currentQuestEncounter.stage}: ${stageDef.name}</div>
+                <div class="quest-scene-creature">
+                    <img src="${G}/${questDef.img}" alt="${questDef.creature}" onerror="this.style.opacity='0.3'">
+                </div>
+                <div class="quest-scene-story">${formattedIntro}</div>
+                ${choicesHtml}
             </div>
-            <h2 style="color:#c084fc;font-family:'Uncial Antiqua',cursive;font-size:1.4rem;margin:0;">
-                ${questDef.name}
-            </h2>
-            <div style="color:#888;font-size:0.85rem;margin-bottom:15px;">
-                Stage ${window._currentQuestEncounter.stage}: ${stageDef.name}
-            </div>
-            <div style="margin:15px auto;width:180px;height:180px;border-radius:50%;overflow:hidden;
-                border:3px solid #c084fc;box-shadow:0 0 30px rgba(192,132,252,0.5);">
-                <img src="${G}/${questDef.img}" style="width:100%;height:100%;object-fit:cover;"
-                    onerror="this.style.opacity='0.3'">
-            </div>
-            <p style="color:#ddd;margin:15px 0;line-height:1.7;text-align:left;padding:0 10px;font-size:0.95rem;">
-                ${formattedIntro}
-            </p>
-            ${choicesHtml}
         </div>
     `;
 
-    // Show using the event overlay system
-    document.querySelector('#eventOverlay .overlay-content').innerHTML = overlayContent;
-    document.getElementById('eventOverlay').classList.add('active');
+    // Remove any existing quest scene
+    const existingScene = document.getElementById('questScene');
+    if(existingScene) existingScene.remove();
+
+    // Add quest scene to body
+    document.body.insertAdjacentHTML('beforeend', questSceneHtml);
+}
+
+// Close quest scene (called after choice is made)
+function closeQuestScene(){
+    const scene = document.getElementById('questScene');
+    if(scene) scene.remove();
 }
 
 // Handle player's choice in quest encounter
@@ -10031,6 +10165,7 @@ function handleQuestChoice(choiceIndex){
     // Check for quest failure
     if(choice.questFail){
         quest.status = 'failed';
+        closeQuestScene();
         save();
         showQuestOutcome(encounter.questId, choice, true);
         return;
@@ -10038,8 +10173,8 @@ function handleQuestChoice(choiceIndex){
 
     // Check if this choice triggers combat
     if(choice.combat){
-        // Close current overlay
-        closeOverlay('event');
+        // Close quest scene
+        closeQuestScene();
 
         // Store combat callback for after battle
         window._questCombatCallback = {
@@ -10053,7 +10188,8 @@ function handleQuestChoice(choiceIndex){
         return;
     }
 
-    // No combat - show outcome directly
+    // No combat - close quest scene and show outcome directly
+    closeQuestScene();
     save();
     showQuestOutcome(encounter.questId, choice, false);
 }
@@ -13756,17 +13892,19 @@ function renderAdventure(m){
         </div>`;
     }
 
-    // v54.16: Quest progress indicator
+    // v54.16: Quest progress indicator - Only show quests that have been started/seen
     if(state.quests){
         const questProgress = getChapterQuestProgress(ch);
-        if(questProgress.total > 0){
+        // Check if any quests have been started (in-progress or failed)
+        const startedQuests = questProgress.inProgress.length + questProgress.failed.length;
+        if(startedQuests > 0){
             html+=`<div class="quest-progress-box" style="margin:15px auto;padding:12px;background:rgba(192,132,252,0.1);border:1px solid rgba(192,132,252,0.3);border-radius:10px;max-width:400px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <span style="color:#c084fc;font-size:0.9rem;font-weight:bold;">📜 Chapter ${ch} Quests</span>
-                    <span style="color:#888;font-size:0.75rem;">${questProgress.completed}/${questProgress.total} complete</span>
+                    <span style="color:#c084fc;font-size:0.9rem;font-weight:bold;">📜 Quests</span>
+                    <span style="color:#888;font-size:0.75rem;">${questProgress.completed} completed</span>
                 </div>`;
 
-            // Show in-progress quests
+            // Show in-progress quests only
             if(questProgress.inProgress.length > 0){
                 questProgress.inProgress.forEach(q => {
                     const questDef = ALLY_QUESTS[q.questId];
@@ -13778,22 +13916,6 @@ function renderAdventure(m){
                             <div style="color:#888;font-size:0.65rem;">Stage ${q.stage} - Look in: ${regions.join(', ') || 'any region'}</div>
                         </div>
                         <span style="color:#fbbf24;font-size:0.7rem;">⏳ Active</span>
-                    </div>`;
-                });
-            }
-
-            // Show available quests (not started)
-            if(questProgress.available.length > 0){
-                questProgress.available.forEach(q => {
-                    const questDef = ALLY_QUESTS[q.questId];
-                    const regions = questDef.regions[1] || [];
-                    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(74,222,128,0.1);border-radius:6px;margin-bottom:4px;">
-                        <img src="${G}/${questDef.img}" style="width:28px;height:28px;border-radius:50%;border:2px solid #4ade80;opacity:0.7;" onerror="this.style.opacity='0.3'">
-                        <div style="flex:1;">
-                            <div style="color:#4ade80;font-size:0.75rem;font-weight:bold;">${q.name}</div>
-                            <div style="color:#888;font-size:0.65rem;">Find in: ${regions.join(', ') || 'any region'}</div>
-                        </div>
-                        <span style="color:#4ade80;font-size:0.7rem;">✨ New</span>
                     </div>`;
                 });
             }
@@ -14577,7 +14699,7 @@ function triggerSpecialBoss(special){
     
     showEventOverlay(title, narrative, special.type === 'creator' ? 'gold' : 'red', () => {
         startBattleWith(bossEnemy, special.type === 'creator' ? 'nightmare' : `tier${boss.tier}`);
-    });
+    }, null, 'Start Boss Battle');
 }
 
 // Create boss enemy object with optional scaling
@@ -14684,12 +14806,12 @@ function startBossEncounter(chapter){
     // Show remaining bosses in tier
     const remaining = getRemainingTierBosses(bossData.tier);
     const remainingText = remaining.length > 1 ? 
-        `\n\n📊 ${remaining.length - 1} more Tier ${bossData.tier} boss(es) remaining after this one.` : 
+        `\n\n⚔️ ${remaining.length - 1} more Tier ${bossData.tier} boss(es) remaining after this one.` : 
         remaining.length === 1 ? `\n\n⚡ This is the LAST Tier ${bossData.tier} boss! Defeat it to unlock the next Nightmare phase!` : '';
     
     showEventOverlay(`💀 BOSS BATTLE!`, `${approach}\n\n${bossData.intro}${remainingText}`, 'red', () => {
         startBattleWith(bossEnemy, 'tier' + bossData.tier);
-    });
+    }, null, 'Start Boss Battle');
 }
 
 // Spawn minions for boss battles
@@ -15384,7 +15506,7 @@ function startWildEncounter(avgLv,chapter){
         showEventOverlay(`💀💀 ${scaledBosses.length} BOSSES ATTACK!`, narrative, 'red', ()=>{
             // First boss is main, rest are additional enemies
             startBattleWith(scaledBosses[0], 'tier' + bossesToFight[0].tier, scaledBosses.slice(1));
-        });
+        }, null, 'Start Boss Battle');
         return;
     }
 
@@ -15494,7 +15616,7 @@ function startWildEncounter(avgLv,chapter){
 
                 showEventOverlay('⚡ MYTHICAL ELITE! ⚡', narratives[Math.floor(Math.random() * narratives.length)], 'gold', () => {
                     startBattleWith(runvigEnemy, 'tier3'); // Use tier3 size for epic feel
-                });
+                }, null, 'Begin Encounter');
                 return;
             }
         }
@@ -15541,7 +15663,7 @@ function startWildEncounter(avgLv,chapter){
         // v54.3: Fixed parameter order - callback before image
         showEventOverlay('💀 REVENGE ENCOUNTER!', narrative, 'red', ()=>{
             startBattleWith(scaledBoss, sizeClass);
-        }, bossToFight.img);
+        }, bossToFight.img, 'Start Boss Battle');
         return;
     }
     
@@ -15788,13 +15910,15 @@ function startWildEncounter(avgLv,chapter){
     addStoryLog(`⚔️ ${numEnemies > 1 ? 'Multiple enemies' : 'Wild ' + enemies[0].name} encountered!`,'battle');
     
     showEventOverlay(
-        numEnemies > 1 ? `⚔️ ${numEnemies} Enemies Attack!` : `⚔️ Wild Encounter!`, 
-        narrative + (numEnemies > 1 ? `\n\n• ${enemyList}` : ''), 
-        numEnemies > 2 ? 'red' : 'blue', 
+        numEnemies > 1 ? `⚔️ ${numEnemies} Enemies Attack!` : `⚔️ Wild Encounter!`,
+        narrative + (numEnemies > 1 ? `\n\n• ${enemyList}` : ''),
+        numEnemies > 2 ? 'red' : 'blue',
         () => {
             // For now, fight first enemy (multi-enemy battle system coming)
             startBattleWith(enemies[0], 'wild', enemies.slice(1));
-        }
+        },
+        null,
+        'Begin Encounter'
     );
 }
 
@@ -16097,25 +16221,26 @@ function showAllyEncounterResult(encounter, choice, rewardText){
     `;
 }
 
-function showEventOverlay(title,msg,color,onContinue,imgUrl){
+function showEventOverlay(title,msg,color,onContinue,imgUrl,buttonText){
     const colors={gold:'var(--gold)',purple:'var(--purple-lt)',green:'var(--green)',blue:'var(--blue)',red:'var(--red)'};
     const formattedMsg = msg.replace(/\\n/g, '<br>');
-    
+    const btnText = buttonText || 'Continue Adventure';
+
     // Store callback
     window._eventOverlayCallback = onContinue;
-    
+
     let imgHtml = '';
     if(imgUrl){
         imgHtml = `<div style="margin:15px auto;width:150px;height:150px;display:flex;align-items:center;justify-content:center">
             <img src="${imgUrl}" style="max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 0 30px ${colors[color]||'var(--gold)'})" onerror="this.style.display='none'">
         </div>`;
     }
-    
+
     document.querySelector('#eventOverlay .overlay-content').innerHTML=`
         <h2 style="color:${colors[color]||'var(--gold)'};font-family:'Uncial Antiqua',cursive;font-size:1.5rem;margin-bottom:15px">${title}</h2>
         ${imgHtml}
         <p style="color:#ccc;margin:15px 0;line-height:1.7;font-size:.95rem">${formattedMsg}</p>
-        <button class="btn btn-primary" onclick="closeEventAndContinue()" style="margin-top:10px;padding:12px 30px;font-size:1rem">Continue Adventure</button>
+        <button class="btn btn-primary" onclick="closeEventAndContinue()" style="margin-top:10px;padding:12px 30px;font-size:1rem">${btnText}</button>
     `;
     document.getElementById('eventOverlay').classList.add('active');
 }
