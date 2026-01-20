@@ -385,6 +385,9 @@ body{
 .mini-stat.atk .stat-label{color:#fbbf24}
 .mini-stat.def .stat-label{color:#60a5fa}
 .mini-stat.spd .stat-label{color:#4ade80}
+.mini-stat.int .stat-label{color:#c084fc} /* v54.15: INT stat - purple */
+.mini-stat.int .val{color:#c084fc} /* v54.15: INT value color */
+.mini-stat .stat-icon-emoji{font-size:.9rem} /* v54.15: Emoji icon styling */
 .mini-stat .val{font-family:'Cinzel',serif;font-size:.8rem;font-weight:600;color:var(--txt)}
 
 /* Evolution label under creature name */
@@ -7193,9 +7196,20 @@ function getPartyScaleFactor(){
 // FOCUS SYSTEM CONSTANTS (v54.1 Rebalancing)
 // ============================================
 const STARTING_FOCUS = 25;      // Reduced from 50 - prevents turn 1 special spam
-const FOCUS_REGEN_PER_TURN = 10; // Increased from 5 - rewards survival, enables more specials over time
 const MAX_FOCUS = 100;          // Maximum focus cap
 const BASE_SPECIAL_COST = 35;   // v54.6: Reduced from 50 - makes specials usable earlier in battle
+
+// v54.15: INT-based focus regeneration
+const BASE_FOCUS_REGEN = 5;       // Base focus regen (was flat 10)
+const INT_FOCUS_MODIFIER = 0.15;  // Each INT point adds 0.15 focus regen
+// INT 10 = 5 + 1.5 = 6 focus/turn
+// INT 20 = 5 + 3.0 = 8 focus/turn
+// INT 30 = 5 + 4.5 = 9 focus/turn
+
+// Helper function to calculate focus regen from INT
+function calculateFocusRegen(intStat) {
+    return Math.floor(BASE_FOCUS_REGEN + ((intStat || 10) * INT_FOCUS_MODIFIER));
+}
 
 // ============================================
 // NATURE SYSTEM (v54.3) - Creature Personalities
@@ -7205,39 +7219,45 @@ const BASE_SPECIAL_COST = 35;   // v54.6: Reduced from 50 - makes specials usabl
 // Natures are assigned randomly on creature creation/migration
 const NATURES = {
     // Balanced (no change)
-    hardy:   { hp: 0,   atk: 0,   def: 0,   spd: 0,   desc: "A balanced and straightforward creature" },
+    hardy:   { hp: 0,   atk: 0,   def: 0,   spd: 0,   int: 0,   desc: "A balanced and straightforward creature" },
 
     // ATK-Focused (Offensive)
-    adamant: { hp: -5,  atk: +10, def: 0,   spd: -5,  desc: "Fierce and aggressive, favors overwhelming offense" },
-    brave:   { hp: 0,   atk: +10, def: -5,  spd: -5,  desc: "Courageous attacker, slow but powerful" },
-    naughty: { hp: +5,  atk: +10, def: -10, spd: -5,  desc: "Reckless fighter with glass-cannon tendencies" },
-    lonely:  { hp: -10, atk: +15, def: -5,  spd: 0,   desc: "Maximum attack power, very risky" },
-    rash:    { hp: -5,  atk: +10, def: -5,  spd: 0,   desc: "Aggressive nature, throws caution to the wind" },
+    adamant: { hp: -5,  atk: +10, def: 0,   spd: -5,  int: 0,   desc: "Fierce and aggressive, favors overwhelming offense" },
+    brave:   { hp: 0,   atk: +10, def: -5,  spd: -5,  int: 0,   desc: "Courageous attacker, slow but powerful" },
+    naughty: { hp: +5,  atk: +10, def: -10, spd: -5,  int: 0,   desc: "Reckless fighter with glass-cannon tendencies" },
+    lonely:  { hp: -10, atk: +15, def: -5,  spd: 0,   int: 0,   desc: "Maximum attack power, very risky" },
+    rash:    { hp: -5,  atk: +10, def: -5,  spd: 0,   int: 0,   desc: "Aggressive nature, throws caution to the wind" },
 
     // DEF-Focused (Defensive)
-    bold:    { hp: +10, atk: -5,  def: +10, spd: -15, desc: "Sturdy creature that prioritizes defense" },
-    relaxed: { hp: +10, atk: 0,   def: +10, spd: -20, desc: "Maximum defense, extremely slow" },
-    impish:  { hp: +5,  atk: -10, def: +15, spd: -10, desc: "Defense specialist, weak attacks" },
-    lax:     { hp: +15, atk: -10, def: +5,  spd: -10, desc: "Bulky tank with HP and defense focus" },
+    bold:    { hp: +10, atk: -5,  def: +10, spd: -15, int: 0,   desc: "Sturdy creature that prioritizes defense" },
+    relaxed: { hp: +10, atk: 0,   def: +10, spd: -20, int: 0,   desc: "Maximum defense, extremely slow" },
+    impish:  { hp: +5,  atk: -10, def: +15, spd: -10, int: 0,   desc: "Defense specialist, weak attacks" },
+    lax:     { hp: +15, atk: -10, def: +5,  spd: -10, int: 0,   desc: "Bulky tank with HP and defense focus" },
 
     // SPD-Focused (Speedy)
-    timid:   { hp: -10, atk: -10, def: -5,  spd: +25, desc: "Nimble creature with blinding speed" },
-    hasty:   { hp: -5,  atk: 0,   def: -10, spd: +15, desc: "Fast but fragile, quick striker" },
-    jolly:   { hp: -5,  atk: -5,  def: 0,   spd: +10, desc: "Speedy and cheerful, well-rounded fast" },
-    naive:   { hp: 0,   atk: -5,  def: -5,  spd: +10, desc: "Simple speed boost, slight trade-offs" },
+    timid:   { hp: -10, atk: -10, def: -5,  spd: +25, int: 0,   desc: "Nimble creature with blinding speed" },
+    hasty:   { hp: -5,  atk: 0,   def: -10, spd: +15, int: 0,   desc: "Fast but fragile, quick striker" },
+    jolly:   { hp: -5,  atk: -5,  def: 0,   spd: +10, int: 0,   desc: "Speedy and cheerful, well-rounded fast" },
+    naive:   { hp: 0,   atk: -5,  def: -5,  spd: +10, int: 0,   desc: "Simple speed boost, slight trade-offs" },
 
     // HP-Focused (Bulky)
-    calm:    { hp: +15, atk: -10, def: +5,  spd: -10, desc: "Serene tank that outlasts opponents" },
-    careful: { hp: +15, atk: -5,  def: +5,  spd: -15, desc: "Cautious creature, maximum survivability" },
-    sassy:   { hp: +10, atk: -5,  def: +5,  spd: -10, desc: "Durable and stubborn, holds the line" },
+    calm:    { hp: +15, atk: -10, def: +5,  spd: -10, int: +5,  desc: "Serene tank that outlasts opponents, wise in battle" },
+    careful: { hp: +15, atk: -5,  def: +5,  spd: -15, int: 0,   desc: "Cautious creature, maximum survivability" },
+    sassy:   { hp: +10, atk: -5,  def: +5,  spd: -10, int: 0,   desc: "Durable and stubborn, holds the line" },
 
     // Mixed/Balanced variants
-    modest:  { hp: +5,  atk: +5,  def: -5,  spd: -5,  desc: "Slight offensive edge with some bulk" },
-    mild:    { hp: +5,  atk: 0,   def: -5,  spd: 0,   desc: "Gentle nature with minor HP boost" },
-    quiet:   { hp: +5,  atk: +5,  def: +5,  spd: -15, desc: "Strong but slow, patient fighter" },
+    modest:  { hp: +5,  atk: +5,  def: -5,  spd: -5,  int: +5,  desc: "Slight offensive edge with some bulk and wisdom" },
+    mild:    { hp: +5,  atk: 0,   def: -5,  spd: 0,   int: 0,   desc: "Gentle nature with minor HP boost" },
+    quiet:   { hp: +5,  atk: +5,  def: +5,  spd: -15, int: 0,   desc: "Strong but slow, patient fighter" },
+
+    // INT-Focused (v54.15 - Intelligence for healing and focus regen)
+    wise:      { hp: -5,  atk: -10, def: 0,   spd: 0,   int: +15, desc: "Deep wisdom enhances healing and focus recovery" },
+    sage:      { hp: -10, atk: -10, def: +5,  spd: -5,  int: +20, desc: "Maximum intelligence, masterful healer" },
+    clever:    { hp: 0,   atk: -5,  def: -5,  spd: +5,  int: +10, desc: "Quick-witted with enhanced focus regeneration" },
+    scholarly: { hp: +5,  atk: -15, def: +5,  spd: -10, int: +15, desc: "Studious nature, excellent support creature" },
 
     // GOD TOUCHED - Divine/Mythical Nature (Creator's Blessing)
-    godtouched: { hp: +20, atk: +15, def: +15, spd: +10, desc: "Blessed by the Creator - divine power flows through this creature" }
+    godtouched: { hp: +20, atk: +15, def: +15, spd: +10, int: +15, desc: "Blessed by the Creator - divine power flows through this creature" }
 };
 
 // Nature category helper
@@ -7246,6 +7266,7 @@ function getNatureCategory(nature) {
     const defensive = ['bold', 'relaxed', 'impish', 'lax'];
     const speedy = ['timid', 'hasty', 'jolly', 'naive'];
     const bulky = ['calm', 'careful', 'sassy'];
+    const intelligent = ['wise', 'sage', 'clever', 'scholarly'];  // v54.15: INT-focused
     const godtouched = ['godtouched'];
 
     if(godtouched.includes(nature)) return 'godtouched';
@@ -7253,6 +7274,7 @@ function getNatureCategory(nature) {
     if(defensive.includes(nature)) return 'defensive';
     if(speedy.includes(nature)) return 'speedy';
     if(bulky.includes(nature)) return 'bulky';
+    if(intelligent.includes(nature)) return 'intelligent';  // v54.15
     return 'balanced';
 }
 
@@ -7276,6 +7298,9 @@ function formatNatureEffects(nature) {
     if(mods.def < 0) effects.push(`<span class="stat-down">↓DEF</span>`);
     if(mods.spd > 0) effects.push(`<span class="stat-up">↑SPD</span>`);
     if(mods.spd < 0) effects.push(`<span class="stat-down">↓SPD</span>`);
+    // v54.15: INT stat display
+    if(mods.int > 0) effects.push(`<span class="stat-up">↑INT</span>`);
+    if(mods.int < 0) effects.push(`<span class="stat-down">↓INT</span>`);
 
     return effects.join(' ');
 }
@@ -7875,29 +7900,30 @@ const CLASSROOM_REWARDS = [
 
 // PLAYER CREATURES
 // PLAYER CREATURES WITH EVOLUTION NAMES
+// v54.15: Added INT stat to all creatures - affects healing power and focus regeneration
 const CREATURES={
-bone_serpent:{name:"Bone Serpent",type:"Shadow",evo:4,evAt:[18,28,40],base:{hp:90,atk:28,def:22,spd:18},grow:{hp:18,atk:5,def:4,spd:3},imgs:["BoneSerpent_Evo1.png","BoneSerpent_Evo2.png","BoneSerpent_Evo3.png","BoneSerpent_Evo4.png"],names:["Bone Hatchling","Skeletal Serpent","Bone Wyrm","Necro Leviathan"],canHeal:false,moves:{atk:[{n:"Bone Strike",lv:1,p:1,f:0},{n:"Shadow Fang",lv:8,p:1.2,f:0},{n:"Soul Reaper",lv:25,p:1.8,f:0}],def:[{n:"Bone Shield",lv:1,f:0}],spec:[{n:"Necrotic Blast",lv:12,p:2.2,f:35}]}},
-celestial_tiger:{name:"Celestial Tiger",type:"Light",evo:4,evAt:[18,28,40],base:{hp:85,atk:32,def:20,spd:22},grow:{hp:16,atk:6,def:4,spd:4},imgs:["CelestialTiger_Evo1.png","CelestialTiger_Evo2.png","CelestialTiger_Evo3.png","CelestialTiger_Evo4.png"],names:["Star Cub","Celestial Cat","Astral Tiger","Divine Tigris"],canHeal:true,moves:{atk:[{n:"Star Claw",lv:1,p:1,f:0},{n:"Nova Strike",lv:20,p:1.5,f:0}],def:[{n:"Starlight Guard",lv:1,f:0}],heal:[{n:"Healing Light",lv:10,p:.25,f:30}],spec:[{n:"Galaxy Crusher",lv:15,p:2.2,f:40}]}},
-coral_cluster:{name:"Coral Cluster",type:"Water",evo:4,evAt:[17,27,39],base:{hp:100,atk:20,def:30,spd:12},grow:{hp:20,atk:4,def:5,spd:2},imgs:["CoralCluster_Evo1.png","CoralCluster_Evo2.png","CoralCluster_Evo3.png","CoralCluster_Evo4.png"],names:["Coral Sprout","Reef Guardian","Coral Titan","Abyssal Fortress"],canHeal:true,moves:{atk:[{n:"Coral Bash",lv:1,p:1,f:0},{n:"Reef Slam",lv:20,p:1.5,f:0}],def:[{n:"Coral Armor",lv:1,f:0}],heal:[{n:"Tidal Mend",lv:10,p:.25,f:30}],spec:[{n:"Tsunami",lv:15,p:2.2,f:40}]}},
-crystal_golem:{name:"Crystal Golem",type:"Earth",evo:4,evAt:[17,27,39],base:{hp:95,atk:25,def:32,spd:10},grow:{hp:19,atk:5,def:6,spd:2},imgs:["CrystalGolem_Evo1.png","CrystalGolem_Evo2.png","CrystalGolem_Evo3.png","CrystalGolem_Evo4.png"],names:["Gem Sprite","Crystal Guardian","Quartz Colossus","Diamond Titan"],canHeal:false,moves:{atk:[{n:"Crystal Punch",lv:1,p:1,f:0},{n:"Shard Barrage",lv:20,p:1.5,f:0}],def:[{n:"Crystal Wall",lv:1,f:0}],spec:[{n:"Diamond Crusher",lv:15,p:2.2,f:45}]}},
-magma_worm:{name:"Magma Worm",type:"Fire",evo:4,evAt:[18,28,40],base:{hp:88,atk:30,def:24,spd:16},grow:{hp:17,atk:6,def:4,spd:3},imgs:["MagmaWorm_Evo1.png","MagmaWorm_Evo2.png","MagmaWorm_Evo3.png","MagmaWorm_Evo4.png"],names:["Ember Grub","Lava Serpent","Magma Drake","Inferno Wyrm"],canHeal:false,moves:{atk:[{n:"Lava Bite",lv:1,p:1,f:0},{n:"Eruption",lv:20,p:1.5,f:0}],def:[{n:"Molten Shell",lv:1,f:0}],spec:[{n:"Core Meltdown",lv:15,p:2.2,f:45}]}},
-moss_blob:{name:"Moss Blob",type:"Nature",evo:4,evAt:[17,27,39],base:{hp:105,atk:18,def:28,spd:14},grow:{hp:21,atk:3,def:5,spd:2},imgs:["MossBlob_Evo1.png","MossBlob_Evo2.png","MossBlob_Evo3.png","MossBlob_Evo4.png"],names:["Moss Sprout","Forest Blob","Ancient Mossling","Gaia's Guardian"],canHeal:true,moves:{atk:[{n:"Vine Slap",lv:1,p:1,f:0},{n:"Root Crush",lv:20,p:1.5,f:0}],def:[{n:"Moss Shield",lv:1,f:0}],heal:[{n:"Regenerate",lv:5,p:.3,f:35}],spec:[{n:"Gaia's Fury",lv:15,p:2.2,f:40}]}},
-sand_sphinx:{name:"Sand Sphinx",type:"Earth",evo:4,evAt:[18,28,40],base:{hp:92,atk:26,def:26,spd:18},grow:{hp:18,atk:5,def:5,spd:3},imgs:["SandSphinx_Evo1.png","SandSphinx_Evo2.png","SandSphinx_Evo3.png","SandSphinx_Evo4.png"],names:["Desert Kit","Sand Prowler","Dune Sphinx","Pharaoh's Guardian"],canHeal:false,moves:{atk:[{n:"Sand Claw",lv:1,p:1,f:0},{n:"Sandstorm",lv:20,p:1.5,f:0}],def:[{n:"Sand Veil",lv:1,f:0}],spec:[{n:"Riddle of Ages",lv:15,p:2.2,f:40}]}},
-shadow_dragon:{name:"Shadow Dragon",type:"Shadow",evo:4,evAt:[18,28,40],base:{hp:90,atk:30,def:22,spd:20},grow:{hp:17,atk:6,def:4,spd:4},imgs:["ShadowDragon_Evo1.png","ShadowDragon_Evo2.png","ShadowDragon_Evo3.png","ShadowDragon_Evo4.png"],names:["Shadow Whelp","Dark Drake","Shadow Wyrm","Nightmare Dragon"],canHeal:false,moves:{atk:[{n:"Dark Claw",lv:1,p:1,f:0},{n:"Void Strike",lv:20,p:1.5,f:0}],def:[{n:"Shadow Scales",lv:1,f:0}],spec:[{n:"Eclipse",lv:15,p:2.2,f:45}]}},
-earth_turtle:{name:"Earth Turtle",type:"Earth",evo:3,evAt:[15,25],base:{hp:95,atk:20,def:30,spd:10},grow:{hp:18,atk:4,def:5,spd:2},imgs:["EarthTurtle_Evo1.png","EarthTurtle_Evo2.png","EarthTurtle_Evo3.png"],names:["Stone Hatchling","Boulder Shell","Terra Tortoise"],canHeal:true,moves:{atk:[{n:"Shell Slam",lv:1,p:1,f:0}],def:[{n:"Withdraw",lv:1,f:0}],heal:[{n:"Earth's Gift",lv:8,p:.25,f:30}],spec:[{n:"World Shaker",lv:12,p:2,f:35}]}},
-ember_spirit:{name:"Ember Spirit",type:"Fire",evo:3,evAt:[15,25],base:{hp:75,atk:30,def:18,spd:24},grow:{hp:14,atk:6,def:3,spd:4},imgs:["EmberSpirit_Evo1.png","EmberSpirit_Evo2.png","EmberSpirit_Evo3.png"],names:["Spark Wisp","Flame Spirit","Inferno Wraith"],canHeal:false,moves:{atk:[{n:"Flame Touch",lv:1,p:1,f:0},{n:"Blazing Rush",lv:18,p:1.5,f:0}],def:[{n:"Ember Shield",lv:1,f:0}],spec:[{n:"Inferno Burst",lv:12,p:2,f:35}]}},
-fungal_horror:{name:"Fungal Horror",type:"Poison",evo:3,evAt:[14,24],base:{hp:85,atk:24,def:22,spd:16},grow:{hp:16,atk:5,def:4,spd:3},imgs:["FungalHorror_Evo1.png","FungalHorror_Evo2.png","FungalHorror_Evo3.png"],names:["Spore Sprout","Toxic Fungal","Plague Horror"],canHeal:true,moves:{atk:[{n:"Toxic Tendril",lv:1,p:1,f:0}],def:[{n:"Fungal Wall",lv:1,f:0}],heal:[{n:"Absorb",lv:6,p:.2,f:25}],spec:[{n:"Plague Burst",lv:12,p:2,f:35}]}},
-gear_beast:{name:"Gear Beast",type:"Metal",evo:3,evAt:[15,25],base:{hp:90,atk:26,def:28,spd:12},grow:{hp:17,atk:5,def:5,spd:2},imgs:["GearBeast_Evo1.png","GearBeast_Evo2.png","GearBeast_Evo3.png"],names:["Cog Pup","Steel Beast","Mecha Titan"],canHeal:false,moves:{atk:[{n:"Gear Grind",lv:1,p:1,f:0},{n:"Steel Rampage",lv:18,p:1.5,f:0}],def:[{n:"Iron Guard",lv:1,f:0}],spec:[{n:"Overclock",lv:12,p:2,f:35}]}},
-plant_stag:{name:"Plant Stag",type:"Nature",evo:3,evAt:[14,24],base:{hp:82,atk:24,def:24,spd:20},grow:{hp:16,atk:5,def:4,spd:4},imgs:["PlantStag_Evo1.png","PlantStag_Evo2.png","PlantStag_Evo3.png"],names:["Vine Fawn","Forest Stag","Ancient Elk"],canHeal:true,moves:{atk:[{n:"Antler Strike",lv:1,p:1,f:0}],def:[{n:"Leaf Guard",lv:1,f:0}],heal:[{n:"Photosynthesis",lv:7,p:.25,f:30}],spec:[{n:"Stampede",lv:12,p:2,f:35}]}},
-prism_butterfly:{name:"Prism Butterfly",type:"Light",evo:3,evAt:[14,24],base:{hp:70,atk:28,def:16,spd:28},grow:{hp:13,atk:5,def:3,spd:5},imgs:["PrismButterfly_Evo1.png","PrismButterfly_Evo2.png","PrismButterfly_Evo3.png"],names:["Light Moth","Rainbow Flutter","Prism Monarch"],canHeal:true,moves:{atk:[{n:"Rainbow Wing",lv:1,p:1,f:0}],def:[{n:"Light Veil",lv:1,f:0}],heal:[{n:"Healing Dust",lv:5,p:.2,f:25}],spec:[{n:"Spectrum Blast",lv:12,p:2,f:35}]}},
-storm_cloud:{name:"Storm Cloud",type:"Lightning",evo:3,evAt:[15,25],base:{hp:78,atk:26,def:18,spd:26},grow:{hp:15,atk:5,def:3,spd:5},imgs:["StormCloud_Evo1.png","StormCloud_Evo2.png","StormCloud_Evo3.png"],names:["Spark Cloud","Thunder Nimbus","Storm Tempest"],canHeal:false,moves:{atk:[{n:"Spark Jolt",lv:1,p:1,f:0},{n:"Lightning Fury",lv:18,p:1.5,f:0}],def:[{n:"Cloud Cover",lv:1,f:0}],spec:[{n:"Tempest",lv:12,p:2,f:35}]}},
-swarm_beetle:{name:"Swarm Beetle",type:"Bug",evo:3,evAt:[14,24],base:{hp:80,atk:25,def:25,spd:18},grow:{hp:15,atk:5,def:5,spd:3},imgs:["SwarmBeetle_Evo1.png","SwarmBeetle_Evo2.png","SwarmBeetle_Evo3.png"],names:["Hive Larva","Swarm Soldier","Colony Overlord"],canHeal:false,moves:{atk:[{n:"Pincer Strike",lv:1,p:1,f:0},{n:"Hive Mind",lv:18,p:1.5,f:0}],def:[{n:"Carapace",lv:1,f:0}],spec:[{n:"Beetle Barrage",lv:12,p:2,f:35}]}},
-void_eye:{name:"Void Eye",type:"Void",evo:3,evAt:[15,25],base:{hp:72,atk:30,def:15,spd:25},grow:{hp:14,atk:6,def:3,spd:5},imgs:["VoidEye_Evo1.png","VoidEye_Evo2.png","VoidEye_Evo3.png"],names:["Void Spark","Rift Gazer","Cosmic Eye"],canHeal:false,moves:{atk:[{n:"Mind Pierce",lv:1,p:1,f:0},{n:"Psychic Blast",lv:18,p:1.5,f:0}],def:[{n:"Mental Shield",lv:1,f:0}],spec:[{n:"Reality Warp",lv:12,p:2,f:40}]}},
-water_serpent:{name:"Water Serpent",type:"Water",evo:3,evAt:[14,24],base:{hp:85,atk:26,def:22,spd:20},grow:{hp:16,atk:5,def:4,spd:4},imgs:["WaterSerpent_Evo1.png","WaterSerpent_Evo2.png","WaterSerpent_Evo3.png"],names:["Tide Hatchling","Ocean Serpent","Leviathan"],canHeal:true,moves:{atk:[{n:"Aqua Fang",lv:1,p:1,f:0},{n:"Hydro Cannon",lv:18,p:1.5,f:0}],def:[{n:"Water Veil",lv:1,f:0}],heal:[{n:"Aqua Heal",lv:9,p:.2,f:25}],spec:[{n:"Whirlpool",lv:12,p:2,f:35}]}},
-wind_hawk:{name:"Wind Hawk",type:"Air",evo:3,evAt:[14,24],base:{hp:70,atk:28,def:16,spd:30},grow:{hp:13,atk:5,def:3,spd:6},imgs:["WindHawk_Evo1.png","WindHawk_Evo2.png","WindHawk_Evo3.png"],names:["Breeze Chick","Gale Hawk","Storm Raptor"],canHeal:false,moves:{atk:[{n:"Gust Slash",lv:1,p:1,f:0},{n:"Cyclone Strike",lv:18,p:1.5,f:0}],def:[{n:"Wind Barrier",lv:1,f:0}],spec:[{n:"Hurricane",lv:12,p:2,f:35}]}},
-lightning_wolf:{name:"Lightning Wolf",type:"Lightning",evo:2,evAt:[12],base:{hp:70,atk:30,def:16,spd:30},grow:{hp:13,atk:5,def:3,spd:5},imgs:["LightningWolf_Evo1.png","LightningWolf_Evo2.png"],names:["Spark Pup","Thunder Wolf"],canHeal:false,moves:{atk:[{n:"Thunder Fang",lv:1,p:1,f:0},{n:"Volt Tackle",lv:10,p:1.4,f:0}],def:[{n:"Static Shield",lv:1,f:0}],spec:[{n:"Lightning Storm",lv:8,p:1.9,f:30}]}},
-fire_raptor:{name:"Fire Raptor",type:"Fire",evo:2,evAt:[12],base:{hp:72,atk:32,def:14,spd:28},grow:{hp:14,atk:6,def:2,spd:5},imgs:["FireRaptor_Evo1.png","FireRaptor_Evo2.png"],names:["Flame Hatchling","Blaze Raptor"],canHeal:false,moves:{atk:[{n:"Flame Claw",lv:1,p:1,f:0},{n:"Blaze Rush",lv:10,p:1.4,f:0}],def:[{n:"Heat Shield",lv:1,f:0}],spec:[{n:"Meteor Strike",lv:8,p:1.9,f:30}]}},
-ice_fox:{name:"Ice Fox",type:"Ice",evo:2,evAt:[12],base:{hp:68,atk:28,def:18,spd:32},grow:{hp:13,atk:5,def:3,spd:6},imgs:["IceFox_Evo1.png","IceFox_Evo2.png"],names:["Frost Kit","Arctic Fox"],canHeal:true,moves:{atk:[{n:"Frost Bite",lv:1,p:1,f:0},{n:"Blizzard Dash",lv:10,p:1.4,f:0}],def:[{n:"Ice Armor",lv:1,f:0}],heal:[{n:"Frost Mend",lv:7,p:.2,f:25}],spec:[{n:"Arctic Blast",lv:8,p:1.9,f:30}]}},
+bone_serpent:{name:"Bone Serpent",type:"Shadow",evo:4,evAt:[18,28,40],base:{hp:90,atk:28,def:22,spd:18,int:18},grow:{hp:18,atk:5,def:4,spd:3,int:3},imgs:["BoneSerpent_Evo1.png","BoneSerpent_Evo2.png","BoneSerpent_Evo3.png","BoneSerpent_Evo4.png"],names:["Bone Hatchling","Skeletal Serpent","Bone Wyrm","Necro Leviathan"],canHeal:false,moves:{atk:[{n:"Bone Strike",lv:1,p:1,f:0},{n:"Shadow Fang",lv:8,p:1.2,f:0},{n:"Soul Reaper",lv:25,p:1.8,f:0}],def:[{n:"Bone Shield",lv:1,f:0}],spec:[{n:"Necrotic Blast",lv:12,p:2.2,f:35}]}},
+celestial_tiger:{name:"Celestial Tiger",type:"Light",evo:4,evAt:[18,28,40],base:{hp:85,atk:32,def:20,spd:22,int:22},grow:{hp:16,atk:6,def:4,spd:4,int:3},imgs:["CelestialTiger_Evo1.png","CelestialTiger_Evo2.png","CelestialTiger_Evo3.png","CelestialTiger_Evo4.png"],names:["Star Cub","Celestial Cat","Astral Tiger","Divine Tigris"],canHeal:true,moves:{atk:[{n:"Star Claw",lv:1,p:1,f:0},{n:"Nova Strike",lv:20,p:1.5,f:0}],def:[{n:"Starlight Guard",lv:1,f:0}],heal:[{n:"Healing Light",lv:10,p:.25,f:30}],spec:[{n:"Galaxy Crusher",lv:15,p:2.2,f:40}]}},
+coral_cluster:{name:"Coral Cluster",type:"Water",evo:4,evAt:[17,27,39],base:{hp:100,atk:20,def:30,spd:12,int:18},grow:{hp:20,atk:4,def:5,spd:2,int:3},imgs:["CoralCluster_Evo1.png","CoralCluster_Evo2.png","CoralCluster_Evo3.png","CoralCluster_Evo4.png"],names:["Coral Sprout","Reef Guardian","Coral Titan","Abyssal Fortress"],canHeal:true,moves:{atk:[{n:"Coral Bash",lv:1,p:1,f:0},{n:"Reef Slam",lv:20,p:1.5,f:0}],def:[{n:"Coral Armor",lv:1,f:0}],heal:[{n:"Tidal Mend",lv:10,p:.25,f:30}],spec:[{n:"Tsunami",lv:15,p:2.2,f:40}]}},
+crystal_golem:{name:"Crystal Golem",type:"Earth",evo:4,evAt:[17,27,39],base:{hp:95,atk:25,def:32,spd:10,int:10},grow:{hp:19,atk:5,def:6,spd:2,int:2},imgs:["CrystalGolem_Evo1.png","CrystalGolem_Evo2.png","CrystalGolem_Evo3.png","CrystalGolem_Evo4.png"],names:["Gem Sprite","Crystal Guardian","Quartz Colossus","Diamond Titan"],canHeal:false,moves:{atk:[{n:"Crystal Punch",lv:1,p:1,f:0},{n:"Shard Barrage",lv:20,p:1.5,f:0}],def:[{n:"Crystal Wall",lv:1,f:0}],spec:[{n:"Diamond Crusher",lv:15,p:2.2,f:45}]}},
+magma_worm:{name:"Magma Worm",type:"Fire",evo:4,evAt:[18,28,40],base:{hp:88,atk:30,def:24,spd:16,int:12},grow:{hp:17,atk:6,def:4,spd:3,int:2},imgs:["MagmaWorm_Evo1.png","MagmaWorm_Evo2.png","MagmaWorm_Evo3.png","MagmaWorm_Evo4.png"],names:["Ember Grub","Lava Serpent","Magma Drake","Inferno Wyrm"],canHeal:false,moves:{atk:[{n:"Lava Bite",lv:1,p:1,f:0},{n:"Eruption",lv:20,p:1.5,f:0}],def:[{n:"Molten Shell",lv:1,f:0}],spec:[{n:"Core Meltdown",lv:15,p:2.2,f:45}]}},
+moss_blob:{name:"Moss Blob",type:"Nature",evo:4,evAt:[17,27,39],base:{hp:105,atk:18,def:28,spd:14,int:20},grow:{hp:21,atk:3,def:5,spd:2,int:3},imgs:["MossBlob_Evo1.png","MossBlob_Evo2.png","MossBlob_Evo3.png","MossBlob_Evo4.png"],names:["Moss Sprout","Forest Blob","Ancient Mossling","Gaia's Guardian"],canHeal:true,moves:{atk:[{n:"Vine Slap",lv:1,p:1,f:0},{n:"Root Crush",lv:20,p:1.5,f:0}],def:[{n:"Moss Shield",lv:1,f:0}],heal:[{n:"Regenerate",lv:5,p:.3,f:35}],spec:[{n:"Gaia's Fury",lv:15,p:2.2,f:40}]}},
+sand_sphinx:{name:"Sand Sphinx",type:"Earth",evo:4,evAt:[18,28,40],base:{hp:92,atk:26,def:26,spd:18,int:14},grow:{hp:18,atk:5,def:5,spd:3,int:2},imgs:["SandSphinx_Evo1.png","SandSphinx_Evo2.png","SandSphinx_Evo3.png","SandSphinx_Evo4.png"],names:["Desert Kit","Sand Prowler","Dune Sphinx","Pharaoh's Guardian"],canHeal:false,moves:{atk:[{n:"Sand Claw",lv:1,p:1,f:0},{n:"Sandstorm",lv:20,p:1.5,f:0}],def:[{n:"Sand Veil",lv:1,f:0}],spec:[{n:"Riddle of Ages",lv:15,p:2.2,f:40}]}},
+shadow_dragon:{name:"Shadow Dragon",type:"Shadow",evo:4,evAt:[18,28,40],base:{hp:90,atk:30,def:22,spd:20,int:20},grow:{hp:17,atk:6,def:4,spd:4,int:3},imgs:["ShadowDragon_Evo1.png","ShadowDragon_Evo2.png","ShadowDragon_Evo3.png","ShadowDragon_Evo4.png"],names:["Shadow Whelp","Dark Drake","Shadow Wyrm","Nightmare Dragon"],canHeal:false,moves:{atk:[{n:"Dark Claw",lv:1,p:1,f:0},{n:"Void Strike",lv:20,p:1.5,f:0}],def:[{n:"Shadow Scales",lv:1,f:0}],spec:[{n:"Eclipse",lv:15,p:2.2,f:45}]}},
+earth_turtle:{name:"Earth Turtle",type:"Earth",evo:3,evAt:[15,25],base:{hp:95,atk:20,def:30,spd:10,int:12},grow:{hp:18,atk:4,def:5,spd:2,int:2},imgs:["EarthTurtle_Evo1.png","EarthTurtle_Evo2.png","EarthTurtle_Evo3.png"],names:["Stone Hatchling","Boulder Shell","Terra Tortoise"],canHeal:true,moves:{atk:[{n:"Shell Slam",lv:1,p:1,f:0}],def:[{n:"Withdraw",lv:1,f:0}],heal:[{n:"Earth's Gift",lv:8,p:.25,f:30}],spec:[{n:"World Shaker",lv:12,p:2,f:35}]}},
+ember_spirit:{name:"Ember Spirit",type:"Fire",evo:3,evAt:[15,25],base:{hp:75,atk:30,def:18,spd:24,int:14},grow:{hp:14,atk:6,def:3,spd:4,int:2},imgs:["EmberSpirit_Evo1.png","EmberSpirit_Evo2.png","EmberSpirit_Evo3.png"],names:["Spark Wisp","Flame Spirit","Inferno Wraith"],canHeal:false,moves:{atk:[{n:"Flame Touch",lv:1,p:1,f:0},{n:"Blazing Rush",lv:18,p:1.5,f:0}],def:[{n:"Ember Shield",lv:1,f:0}],spec:[{n:"Inferno Burst",lv:12,p:2,f:35}]}},
+fungal_horror:{name:"Fungal Horror",type:"Poison",evo:3,evAt:[14,24],base:{hp:85,atk:24,def:22,spd:16,int:17},grow:{hp:16,atk:5,def:4,spd:3,int:2},imgs:["FungalHorror_Evo1.png","FungalHorror_Evo2.png","FungalHorror_Evo3.png"],names:["Spore Sprout","Toxic Fungal","Plague Horror"],canHeal:true,moves:{atk:[{n:"Toxic Tendril",lv:1,p:1,f:0}],def:[{n:"Fungal Wall",lv:1,f:0}],heal:[{n:"Absorb",lv:6,p:.2,f:25}],spec:[{n:"Plague Burst",lv:12,p:2,f:35}]}},
+gear_beast:{name:"Gear Beast",type:"Metal",evo:3,evAt:[15,25],base:{hp:90,atk:26,def:28,spd:12,int:10},grow:{hp:17,atk:5,def:5,spd:2,int:2},imgs:["GearBeast_Evo1.png","GearBeast_Evo2.png","GearBeast_Evo3.png"],names:["Cog Pup","Steel Beast","Mecha Titan"],canHeal:false,moves:{atk:[{n:"Gear Grind",lv:1,p:1,f:0},{n:"Steel Rampage",lv:18,p:1.5,f:0}],def:[{n:"Iron Guard",lv:1,f:0}],spec:[{n:"Overclock",lv:12,p:2,f:35}]}},
+plant_stag:{name:"Plant Stag",type:"Nature",evo:3,evAt:[14,24],base:{hp:82,atk:24,def:24,spd:20,int:18},grow:{hp:16,atk:5,def:4,spd:4,int:3},imgs:["PlantStag_Evo1.png","PlantStag_Evo2.png","PlantStag_Evo3.png"],names:["Vine Fawn","Forest Stag","Ancient Elk"],canHeal:true,moves:{atk:[{n:"Antler Strike",lv:1,p:1,f:0}],def:[{n:"Leaf Guard",lv:1,f:0}],heal:[{n:"Photosynthesis",lv:7,p:.25,f:30}],spec:[{n:"Stampede",lv:12,p:2,f:35}]}},
+prism_butterfly:{name:"Prism Butterfly",type:"Light",evo:3,evAt:[14,24],base:{hp:70,atk:28,def:16,spd:28,int:24},grow:{hp:13,atk:5,def:3,spd:5,int:4},imgs:["PrismButterfly_Evo1.png","PrismButterfly_Evo2.png","PrismButterfly_Evo3.png"],names:["Light Moth","Rainbow Flutter","Prism Monarch"],canHeal:true,moves:{atk:[{n:"Rainbow Wing",lv:1,p:1,f:0}],def:[{n:"Light Veil",lv:1,f:0}],heal:[{n:"Healing Dust",lv:5,p:.2,f:25}],spec:[{n:"Spectrum Blast",lv:12,p:2,f:35}]}},
+storm_cloud:{name:"Storm Cloud",type:"Lightning",evo:3,evAt:[15,25],base:{hp:78,atk:26,def:18,spd:26,int:16},grow:{hp:15,atk:5,def:3,spd:5,int:2},imgs:["StormCloud_Evo1.png","StormCloud_Evo2.png","StormCloud_Evo3.png"],names:["Spark Cloud","Thunder Nimbus","Storm Tempest"],canHeal:false,moves:{atk:[{n:"Spark Jolt",lv:1,p:1,f:0},{n:"Lightning Fury",lv:18,p:1.5,f:0}],def:[{n:"Cloud Cover",lv:1,f:0}],spec:[{n:"Tempest",lv:12,p:2,f:35}]}},
+swarm_beetle:{name:"Swarm Beetle",type:"Bug",evo:3,evAt:[14,24],base:{hp:80,atk:25,def:25,spd:18,int:10},grow:{hp:15,atk:5,def:5,spd:3,int:2},imgs:["SwarmBeetle_Evo1.png","SwarmBeetle_Evo2.png","SwarmBeetle_Evo3.png"],names:["Hive Larva","Swarm Soldier","Colony Overlord"],canHeal:false,moves:{atk:[{n:"Pincer Strike",lv:1,p:1,f:0},{n:"Hive Mind",lv:18,p:1.5,f:0}],def:[{n:"Carapace",lv:1,f:0}],spec:[{n:"Beetle Barrage",lv:12,p:2,f:35}]}},
+void_eye:{name:"Void Eye",type:"Void",evo:3,evAt:[15,25],base:{hp:72,atk:30,def:15,spd:25,int:24},grow:{hp:14,atk:6,def:3,spd:5,int:3},imgs:["VoidEye_Evo1.png","VoidEye_Evo2.png","VoidEye_Evo3.png"],names:["Void Spark","Rift Gazer","Cosmic Eye"],canHeal:false,moves:{atk:[{n:"Mind Pierce",lv:1,p:1,f:0},{n:"Psychic Blast",lv:18,p:1.5,f:0}],def:[{n:"Mental Shield",lv:1,f:0}],spec:[{n:"Reality Warp",lv:12,p:2,f:40}]}},
+water_serpent:{name:"Water Serpent",type:"Water",evo:3,evAt:[14,24],base:{hp:85,atk:26,def:22,spd:20,int:16},grow:{hp:16,atk:5,def:4,spd:4,int:3},imgs:["WaterSerpent_Evo1.png","WaterSerpent_Evo2.png","WaterSerpent_Evo3.png"],names:["Tide Hatchling","Ocean Serpent","Leviathan"],canHeal:true,moves:{atk:[{n:"Aqua Fang",lv:1,p:1,f:0},{n:"Hydro Cannon",lv:18,p:1.5,f:0}],def:[{n:"Water Veil",lv:1,f:0}],heal:[{n:"Aqua Heal",lv:9,p:.2,f:25}],spec:[{n:"Whirlpool",lv:12,p:2,f:35}]}},
+wind_hawk:{name:"Wind Hawk",type:"Air",evo:3,evAt:[14,24],base:{hp:70,atk:28,def:16,spd:30,int:14},grow:{hp:13,atk:5,def:3,spd:6,int:2},imgs:["WindHawk_Evo1.png","WindHawk_Evo2.png","WindHawk_Evo3.png"],names:["Breeze Chick","Gale Hawk","Storm Raptor"],canHeal:false,moves:{atk:[{n:"Gust Slash",lv:1,p:1,f:0},{n:"Cyclone Strike",lv:18,p:1.5,f:0}],def:[{n:"Wind Barrier",lv:1,f:0}],spec:[{n:"Hurricane",lv:12,p:2,f:35}]}},
+lightning_wolf:{name:"Lightning Wolf",type:"Lightning",evo:2,evAt:[12],base:{hp:70,atk:30,def:16,spd:30,int:14},grow:{hp:13,atk:5,def:3,spd:5,int:2},imgs:["LightningWolf_Evo1.png","LightningWolf_Evo2.png"],names:["Spark Pup","Thunder Wolf"],canHeal:false,moves:{atk:[{n:"Thunder Fang",lv:1,p:1,f:0},{n:"Volt Tackle",lv:10,p:1.4,f:0}],def:[{n:"Static Shield",lv:1,f:0}],spec:[{n:"Lightning Storm",lv:8,p:1.9,f:30}]}},
+fire_raptor:{name:"Fire Raptor",type:"Fire",evo:2,evAt:[12],base:{hp:72,atk:32,def:14,spd:28,int:12},grow:{hp:14,atk:6,def:2,spd:5,int:2},imgs:["FireRaptor_Evo1.png","FireRaptor_Evo2.png"],names:["Flame Hatchling","Blaze Raptor"],canHeal:false,moves:{atk:[{n:"Flame Claw",lv:1,p:1,f:0},{n:"Blaze Rush",lv:10,p:1.4,f:0}],def:[{n:"Heat Shield",lv:1,f:0}],spec:[{n:"Meteor Strike",lv:8,p:1.9,f:30}]}},
+ice_fox:{name:"Ice Fox",type:"Ice",evo:2,evAt:[12],base:{hp:68,atk:28,def:18,spd:32,int:16},grow:{hp:13,atk:5,def:3,spd:6,int:3},imgs:["IceFox_Evo1.png","IceFox_Evo2.png"],names:["Frost Kit","Arctic Fox"],canHeal:true,moves:{atk:[{n:"Frost Bite",lv:1,p:1,f:0},{n:"Blizzard Dash",lv:10,p:1.4,f:0}],def:[{n:"Ice Armor",lv:1,f:0}],heal:[{n:"Frost Mend",lv:7,p:.2,f:25}],spec:[{n:"Arctic Blast",lv:8,p:1.9,f:30}]}},
 
 // ============================================
 // RÚNVÍG - THE CREATOR'S MYTHICAL CREATURE
@@ -7909,8 +7935,8 @@ runvig:{
     type:"Mythical",
     evo:4,
     evAt:[18,28,40],
-    base:{hp:120,atk:35,def:28,spd:25},
-    grow:{hp:22,atk:7,def:6,spd:5},
+    base:{hp:120,atk:35,def:28,spd:25,int:30},
+    grow:{hp:22,atk:7,def:6,spd:5,int:4},
     imgs:["Runvig_Evo1.png","Runvig_Evo2.png","Runvig_Evo3.png","Runvig_Evo4.png"],
     names:["Blikrcub","Ísþurs","Blikrkonungr","Ísfenrir the Eternal"],
     canHeal:true,
@@ -8640,28 +8666,31 @@ function getXPProg(xp){const l=getLv(xp);if(l>=50)return 100;return Math.min(100
 function getEvo(cid,lv){const c=CREATURES[cid];if(!c)return 0;let e=0;for(let i=0;i<c.evAt.length;i++)if(lv>=c.evAt[i])e=i+1;return e}
 function getEvoClass(cid,lv){return 'evo'+(getEvo(cid,lv)+1)}
 // v54.3: Modified to accept nature parameter for stat modifiers
+// v54.15: Added INT stat calculation for healing and focus regen
 function getStats(cid, lv, nature = null){
     const c = CREATURES[cid];
-    if(!c) return {hp:100, atk:20, def:20, spd:20};
+    if(!c) return {hp:100, atk:20, def:20, spd:20, int:10};
 
     const e = getEvo(cid, lv);
     const b = 1 + (e * 0.15); // Evolution bonus
 
-    // Calculate base stats
+    // Calculate base stats (v54.15: includes INT)
     let stats = {
         hp: Math.floor((c.base.hp + c.grow.hp * (lv-1)) * b),
         atk: Math.floor((c.base.atk + c.grow.atk * (lv-1)) * b),
         def: Math.floor((c.base.def + c.grow.def * (lv-1)) * b),
-        spd: Math.floor((c.base.spd + c.grow.spd * (lv-1)) * b)
+        spd: Math.floor((c.base.spd + c.grow.spd * (lv-1)) * b),
+        int: Math.floor(((c.base.int || 10) + (c.grow.int || 2) * (lv-1)) * b)
     };
 
-    // Apply nature modifiers if provided
+    // Apply nature modifiers if provided (v54.15: includes INT)
     if(nature && NATURES[nature]){
         const mods = NATURES[nature];
         stats.hp = Math.floor(stats.hp * (1 + mods.hp / 100));
         stats.atk = Math.floor(stats.atk * (1 + mods.atk / 100));
         stats.def = Math.floor(stats.def * (1 + mods.def / 100));
         stats.spd = Math.floor(stats.spd * (1 + mods.spd / 100));
+        stats.int = Math.floor(stats.int * (1 + (mods.int || 0) / 100));
     }
 
     return stats;
@@ -9616,7 +9645,7 @@ function startArenaBattle(){
                 cooldown: 0,
                 focus: STARTING_FOCUS,
                 focusMax: MAX_FOCUS,
-                focusRegen: FOCUS_REGEN_PER_TURN,
+                focusRegen: calculateFocusRegen(st.int), // v54.15: INT-based focus regen
                 // v54.6: Store both player name and creature name for combat log
                 ownerName: s.name || 'Player',
                 creatureName: creatureName
@@ -11131,12 +11160,13 @@ function renderTeam(m){
                 ` : ''}
             </div>`;
 
-            // Mini Stat Bar - With icons from UI_Elements
+            // Mini Stat Bar - With icons from UI_Elements (v54.15: added INT)
             html+=`<div class="mini-stats">
                 <div class="mini-stat hp"><img src="${G}/UI_Elements/Icon_Health.png" class="stat-icon-img" alt="HP" onerror="this.outerHTML='<span class=stat-label>HP</span>'"><span class="val">${st.hp}</span></div>
                 <div class="mini-stat atk"><img src="${G}/UI_Elements/Icon_Attack.png" class="stat-icon-img" alt="ATK" onerror="this.outerHTML='<span class=stat-label>ATK</span>'"><span class="val">${st.atk}</span></div>
                 <div class="mini-stat def"><img src="${G}/UI_Elements/Icon_defense.png" class="stat-icon-img" alt="DEF" onerror="this.outerHTML='<span class=stat-label>DEF</span>'"><span class="val">${st.def}</span></div>
                 <div class="mini-stat spd"><img src="${G}/UI_Elements/Icon_Speed.png" class="stat-icon-img" alt="SPD" onerror="this.outerHTML='<span class=stat-label>SPD</span>'"><span class="val">${st.spd}</span></div>
+                <div class="mini-stat int"><span class="stat-icon-emoji">🧠</span><span class="val">${st.int}</span></div>
             </div>`;
             
         }else{
@@ -14035,6 +14065,9 @@ function startWildEncounter(avgLv,chapter){
             enemyName += ` #${usedCreatures.filter(u=>u===creature.id).length}`;
         }
 
+        // v54.15: Calculate INT for wild enemies (derive from type or use default)
+        const wildInt = creature.base?.int || (creature.type === 'Light' ? 20 : creature.type === 'Nature' ? 18 : creature.type === 'Shadow' ? 18 : creature.type === 'Void' ? 22 : 12);
+
         enemies.push({
             id: creature.id + '_' + i,
             name: enemyName,
@@ -14044,6 +14077,7 @@ function startWildEncounter(avgLv,chapter){
             atk: enemyAtk,
             def: finalDef,
             spd: scaledSpd,
+            int: wildInt, // v54.15: INT stat for healing/focus regen
             lv: wildLv,
             img: creature.img,
             bg: getBattleBackground(chapter), // v54.11: Set background based on chapter/region
@@ -14059,7 +14093,7 @@ function startWildEncounter(avgLv,chapter){
             // Focus system for specials (v54.1)
             focus: STARTING_FOCUS,
             focusMax: MAX_FOCUS,
-            focusRegen: FOCUS_REGEN_PER_TURN,
+            focusRegen: calculateFocusRegen(wildInt), // v54.15: INT-based focus regen
             // Abilities
             hasSpecial: hasSpecial && specialAttack,
             specialAttack: specialAttack,
@@ -14470,10 +14504,10 @@ function startBattleWith(enemy, sizeClass, additionalEnemies = []){
             // v54.6: Copy buffs from student to battle member
             const battleBuffs = s.buffs ? [...s.buffs] : [];
 
-            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus} | Buffs: ${battleBuffs.length}`);
+            debugLog('COMBAT', `${s.name} enters battle | HP: ${persistedHp}/${st.hp} | Focus: ${persistedFocus} | INT: ${st.int} | Buffs: ${battleBuffs.length}`);
 
             return{...s,lv:l,curHp:persistedHp,maxHp:st.hp,st,def:false,cooldown:0,
-                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:FOCUS_REGEN_PER_TURN,
+                focus:persistedFocus,focusMax:MAX_FOCUS,focusRegen:calculateFocusRegen(st.int), // v54.15: INT-based
                 buffs:battleBuffs};
         }),
         isMultiEnemy: allEnemies.length > 1
@@ -18469,11 +18503,14 @@ function showHealTargetSelection(healerIdx, move){
     const healer = b.team[healerIdx];
 
     // v54.6: ENHANCED HEAL FORMULA
-    // Base heal from move power, scaled by level
+    // v54.15: Added INT scaling for healing power
+    // Base heal from move power, scaled by level and INT
     const baseHealPct = move.p || 0.3;
     const baseHeal = healer.maxHp * baseHealPct;
-    const levelBonus = 1 + (healer.lv * 0.015); // +1.5% per level (Level 30 = +45%)
-    const healAmount = Math.floor(baseHeal * levelBonus);
+    const levelBonus = 1 + (healer.lv * 0.01); // +1% per level (reduced from 1.5% to balance INT)
+    const intBonus = 1 + ((healer.st?.int || 10) * 0.008); // +0.8% per INT point
+    // INT 10 = +8%, INT 25 = +20%, INT 50 = +40%
+    const healAmount = Math.floor(baseHeal * levelBonus * intBonus);
 
     // Get allies who need healing (not full HP, not dead)
     const healableAllies = b.team.filter((t, i) => t.curHp > 0 && t.curHp < t.maxHp);
@@ -18663,9 +18700,9 @@ function enemyAction(){
         }
     }
 
-    // FOCUS REGEN for enemies (hidden from player) - v54.1 uses constants
+    // FOCUS REGEN for enemies (hidden from player) - v54.15: INT-based focus regen
     if(enemy.focus !== undefined && enemy.focusMax){
-        enemy.focus = Math.min(enemy.focusMax, enemy.focus + (enemy.focusRegen || FOCUS_REGEN_PER_TURN));
+        enemy.focus = Math.min(enemy.focusMax, enemy.focus + (enemy.focusRegen || calculateFocusRegen(enemy.int || 10)));
     }
 
     // Reduce special cooldown
@@ -19131,9 +19168,11 @@ function enemyAction(){
 }
 
 // Enemy heal action
+// v54.15: Added INT scaling for enemy healing
 function executeEnemyHeal(enemy, enemyIdx, target, enemyEl){
     const heal = enemy.healAttack;
-    const healAmount = Math.floor(target.maxHp * heal.power);
+    const intBonus = 1 + ((enemy.int || 10) * 0.008); // +0.8% per INT point
+    const healAmount = Math.floor(target.maxHp * heal.power * intBonus);
     const actualHeal = Math.min(healAmount, target.maxHp - target.hp);
 
     // DEDUCT FOCUS COST (prevents heal spam)
