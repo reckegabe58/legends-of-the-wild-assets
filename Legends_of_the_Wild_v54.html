@@ -12464,6 +12464,9 @@ function renderShop(m){
                 <button class="shop-cat-btn ${shopCategory === 'equipment' ? 'active' : ''}" onclick="selectShopCategory('equipment')">
                     🛡️ Equipment
                 </button>
+                <button class="shop-cat-btn ${shopCategory === 'quest_items' ? 'active' : ''}" onclick="selectShopCategory('quest_items')">
+                    📜 Quest Items
+                </button>
                 <button class="shop-cat-btn ${shopCategory === 'real_rewards' ? 'active' : ''}" onclick="selectShopCategory('real_rewards')">
                     ⭐ Real Rewards
                 </button>
@@ -12478,14 +12481,27 @@ function renderShop(m){
     
     // Filter items by category
     let items = [];
+    let isQuestItems = false;
     if(shopCategory === 'consumables'){
         items = SHOP_ITEMS.filter(i => i.type === 'consumable');
     } else if(shopCategory === 'equipment'){
         items = SHOP_ITEMS.filter(i => i.type === 'equipment');
+    } else if(shopCategory === 'quest_items'){
+        isQuestItems = true;
+        // Build quest items from player's inventory
+        items = [];
     } else if(shopCategory === 'real_rewards'){
         items = REAL_REWARDS;
     } else if(shopCategory === 'classroom'){
         items = CLASSROOM_REWARDS;
+    }
+
+    // v54.16: Handle quest items display
+    if(isQuestItems){
+        html += renderQuestItemsGrid();
+        html += `</div></div>`;
+        m.innerHTML = html;
+        return;
     }
     
     // Render item cards
@@ -12551,6 +12567,111 @@ function renderShop(m){
     `;
     
     m.innerHTML = html;
+}
+
+// v54.16: Render Quest Items Grid
+function renderQuestItemsGrid(){
+    const items = state.questItems || {};
+    let html = '';
+
+    // Group items by type
+    const typeOrder = ['legendary', 'rare', 'consumable', 'key', 'cursed'];
+    const typeLabels = {
+        legendary: { name: '🌟 Legendary', color: '#fbbf24', glow: 'rgba(251, 191, 36, 0.5)' },
+        rare: { name: '💎 Rare', color: '#c084fc', glow: 'rgba(192, 132, 252, 0.5)' },
+        consumable: { name: '🧪 Consumables', color: '#4ade80', glow: 'rgba(74, 222, 128, 0.5)' },
+        key: { name: '🔑 Key Items', color: '#60a5fa', glow: 'rgba(96, 165, 250, 0.5)' },
+        cursed: { name: '💀 Cursed', color: '#f87171', glow: 'rgba(248, 113, 113, 0.5)' }
+    };
+
+    // Count owned items
+    const ownedItems = Object.entries(items).filter(([id, count]) => count > 0 && QUEST_ITEMS[id]);
+
+    if(ownedItems.length === 0){
+        html += `
+            <div class="quest-items-empty" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <div style="font-size: 48px; margin-bottom: 16px;">📜</div>
+                <div style="font-size: 18px; margin-bottom: 8px;">No Quest Items Yet</div>
+                <div style="font-size: 14px;">Complete quest stages to earn special items!</div>
+            </div>
+        `;
+        return html;
+    }
+
+    // Build items by type
+    typeOrder.forEach(type => {
+        const typeItems = ownedItems.filter(([id]) => QUEST_ITEMS[id].type === type);
+        if(typeItems.length === 0) return;
+
+        const label = typeLabels[type];
+        html += `
+            <div class="quest-items-section" style="margin-bottom: 24px;">
+                <div class="quest-items-header" style="
+                    color: ${label.color};
+                    font-size: 16px;
+                    font-weight: bold;
+                    margin-bottom: 12px;
+                    text-shadow: 0 0 10px ${label.glow};
+                ">
+                    ${label.name}
+                </div>
+                <div class="quest-items-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+        `;
+
+        typeItems.forEach(([itemId, count]) => {
+            const item = QUEST_ITEMS[itemId];
+            const isConsumable = item.type === 'consumable';
+            const isEquipment = item.type === 'legendary' || item.type === 'rare';
+
+            html += `
+                <div class="quest-item-card" style="
+                    background: linear-gradient(135deg, rgba(45, 35, 28, 0.95), rgba(35, 28, 22, 0.95));
+                    border: 2px solid ${label.color};
+                    border-radius: 12px;
+                    padding: 16px;
+                    box-shadow: 0 4px 20px ${label.glow};
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="color: ${label.color}; font-weight: bold; font-size: 15px;">${item.name}</span>
+                        <span style="background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 10px; color: #fff; font-size: 13px;">
+                            x${count}
+                        </span>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px; line-height: 1.4;">
+                        ${item.desc}
+                    </div>
+                    ${isConsumable ? `
+                        <button class="shop-buy-btn" style="width: 100%; padding: 8px; font-size: 13px;"
+                            onclick="useQuestItem('${itemId}')">
+                            Use Item
+                        </button>
+                    ` : ''}
+                    ${isEquipment ? `
+                        <div style="color: ${label.color}; font-size: 12px; text-align: center; opacity: 0.8;">
+                            ⚔️ Equipment - Auto-applies in battle
+                        </div>
+                    ` : ''}
+                    ${item.type === 'key' ? `
+                        <div style="color: ${label.color}; font-size: 12px; text-align: center; opacity: 0.8;">
+                            🔑 Quest Key Item
+                        </div>
+                    ` : ''}
+                    ${item.type === 'cursed' ? `
+                        <div style="color: ${label.color}; font-size: 12px; text-align: center; opacity: 0.8;">
+                            ⚠️ Cursed - Has drawbacks
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
 }
 
 // Shop helper functions
@@ -12666,6 +12787,138 @@ function buyItem(itemId){
     
     save();
     renderMain();
+}
+
+// v54.16: Use quest item (consumables)
+function useQuestItem(itemId){
+    const item = QUEST_ITEMS[itemId];
+    if(!item || item.type !== 'consumable') return;
+
+    const count = state.questItems[itemId] || 0;
+    if(count <= 0){
+        showToast('❌ You don\'t have this item!', 'error');
+        return;
+    }
+
+    // Get active party members who could benefit
+    const activeParty = getActiveStudents().filter(s => s.cid);
+    if(activeParty.length === 0){
+        showToast('❌ No party members to use this on!', 'error');
+        return;
+    }
+
+    // Show target selection overlay
+    let html = `
+        <div class="overlay active" onclick="closeQuestItemOverlay(event)">
+            <div class="event-overlay" style="background: linear-gradient(135deg, #2d231c 0%, #1a1510 100%); max-width: 600px;" onclick="event.stopPropagation()">
+                <h2 style="color: #fbbf24; margin-bottom: 16px;">🧪 Use ${item.name}</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">${item.desc}</p>
+                <div class="quest-item-targets" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
+    `;
+
+    activeParty.forEach(student => {
+        const c = CREATURES[student.cid];
+        const stats = getStats(student);
+        const hp = student.hp !== undefined ? student.hp : stats.hp;
+        const hpPercent = Math.round((hp / stats.hp) * 100);
+        const needsHeal = item.effect?.heal && hp < stats.hp;
+
+        html += `
+            <div class="quest-item-target ${needsHeal ? 'needs-heal' : ''}" style="
+                background: rgba(0,0,0,0.4);
+                border: 2px solid ${needsHeal ? '#4ade80' : '#666'};
+                border-radius: 10px;
+                padding: 12px;
+                cursor: ${needsHeal ? 'pointer' : 'not-allowed'};
+                opacity: ${needsHeal ? '1' : '0.5'};
+                transition: all 0.2s;
+            " ${needsHeal ? `onclick="executeQuestItemUse('${itemId}', ${student.id})"` : ''}>
+                <img src="${getImg(student)}" style="width: 48px; height: 48px; border-radius: 50%; margin-bottom: 8px;">
+                <div style="color: #fff; font-weight: bold; font-size: 13px;">${c.name}</div>
+                <div style="color: ${hpPercent < 50 ? '#f87171' : '#4ade80'}; font-size: 12px;">
+                    HP: ${hp}/${stats.hp} (${hpPercent}%)
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+                </div>
+                <button onclick="closeQuestItemOverlay()" style="
+                    background: linear-gradient(135deg, #666, #444);
+                    border: none;
+                    color: white;
+                    padding: 10px 24px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">Cancel</button>
+            </div>
+        </div>
+    `;
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'quest-item-overlay';
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay.firstElementChild);
+}
+
+function closeQuestItemOverlay(event){
+    if(event && event.target !== event.currentTarget) return;
+    const overlay = document.querySelector('.overlay.active');
+    if(overlay && overlay.closest('#quest-item-overlay') === null){
+        // Check if this is our quest item overlay
+        const heading = overlay.querySelector('h2');
+        if(heading && heading.textContent.includes('Use ')){
+            overlay.remove();
+        }
+    } else {
+        const qio = document.getElementById('quest-item-overlay');
+        if(qio) qio.remove();
+        const overlays = document.querySelectorAll('.overlay.active');
+        overlays.forEach(o => {
+            const h = o.querySelector('h2');
+            if(h && h.textContent.includes('Use ')) o.remove();
+        });
+    }
+}
+
+function executeQuestItemUse(itemId, studentId){
+    const item = QUEST_ITEMS[itemId];
+    if(!item) return;
+
+    const student = state.students.find(s => s.id === studentId);
+    if(!student) return;
+
+    const count = state.questItems[itemId] || 0;
+    if(count <= 0) return;
+
+    // Apply effect
+    if(item.effect?.heal){
+        const stats = getStats(student);
+        const maxHp = stats.hp;
+        const currentHp = student.hp !== undefined ? student.hp : maxHp;
+        const healAmount = Math.floor(maxHp * item.effect.heal);
+        const newHp = Math.min(maxHp, currentHp + healAmount);
+        const actualHeal = newHp - currentHp;
+
+        student.hp = newHp;
+
+        // Consume item
+        state.questItems[itemId]--;
+
+        // Close overlay
+        closeQuestItemOverlay();
+
+        // Show result
+        const c = CREATURES[student.cid];
+        showToast(`✨ ${c.name} healed for ${actualHeal} HP! (${item.name})`, 'success');
+        playSound('heal');
+
+        save();
+        renderMain();
+    }
 }
 
 function contributeToClassroom(rewardId){
