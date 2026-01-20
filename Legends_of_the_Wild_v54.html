@@ -15618,8 +15618,18 @@ function buildTurnOrder(){
         if(e.hp>0) battleQueue.push({type:'enemy',idx:i,spd:e.spd});
     });
 
+    // v54.16: Add quest ally if present (protective battles)
+    if(b.questAlly && b.questAlly.hp > 0){
+        battleQueue.push({type:'ally', idx:0, spd:b.questAlly.spd});
+    }
+
     battleQueue.sort((a,b)=>b.spd-a.spd);
     turnIdx=0;
+
+    // v54.16: Increment survival turn counter each round
+    if(b.isQuestBattle && b.survivalTurns > 0){
+        b.turnsElapsed = (b.turnsElapsed || 0) + 1;
+    }
 }
 
 function getAliveEnemies(){
@@ -15671,6 +15681,33 @@ function nextTurn(){
     const aliveEnemies = getAliveEnemies();
     if(aliveEnemies.length === 0){setTimeout(()=>endBattle(true),500);return}
     if(!b.team.some(m=>m.curHp>0)){setTimeout(()=>endBattle(false),500);return}
+
+    // v54.16: Quest-specific win/lose conditions
+    if(b.isQuestBattle){
+        // SURVIVAL: Check if survival turns completed
+        if(b.survivalTurns > 0 && b.turnsElapsed >= b.survivalTurns){
+            state.log.push({t:'quest', m:`⏰ Survived ${b.survivalTurns} turns!`});
+            setTimeout(()=>endBattle(true),500);
+            return;
+        }
+
+        // PROTECTIVE: Check if ally took too much damage
+        if(b.questAlly && b.questAlly.maxDamagePercent){
+            const damageTaken = b.questAlly.startingHp - b.questAlly.hp;
+            const damagePercent = (damageTaken / b.questAlly.startingHp) * 100;
+            if(damagePercent > b.questAlly.maxDamagePercent){
+                state.log.push({t:'quest', m:`💔 ${b.questAlly.name} took too much damage!`});
+                setTimeout(()=>endBattle(false),500);
+                return;
+            }
+            // Also check if ally KO'd
+            if(b.questAlly.hp <= 0){
+                state.log.push({t:'quest', m:`💀 ${b.questAlly.name} was defeated!`});
+                setTimeout(()=>endBattle(false),500);
+                return;
+            }
+        }
+    }
     
     if(turnIdx>=battleQueue.length){
         console.log('Turn order exhausted, rebuilding...');
@@ -15717,11 +15754,73 @@ function nextTurn(){
     
     processing=false;
     renderMain();
-    
+
     if(cur?.type==='enemy'){
         processing=true;
         setTimeout(enemyAction,800);
     }
+
+    // v54.16: Handle quest ally turns
+    if(cur?.type==='ally'){
+        processing=true;
+        setTimeout(questAllyAction,800);
+    }
+}
+
+// v54.16: Quest ally AI action
+function questAllyAction(){
+    if(!state.battle || !state.battle.questAlly) return;
+    const b = state.battle;
+    const ally = b.questAlly;
+    const aliveEnemies = getAliveEnemies();
+
+    // If no enemies left, advance turn
+    if(aliveEnemies.length === 0){
+        turnIdx++;
+        processing = false;
+        nextTurn();
+        return;
+    }
+
+    // Select random alive enemy to attack
+    const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+    const targetIdx = b.enemies.indexOf(target);
+
+    // Calculate damage (basic attack formula)
+    const baseDmg = Math.max(1, ally.atk - target.def * 0.2);
+    const dmg = Math.floor(baseDmg * (0.9 + Math.random() * 0.2));
+
+    // Apply damage
+    target.hp = Math.max(0, target.hp - dmg);
+
+    state.log.push({t:'ally', m:`🛡️ ${ally.name} attacks ${target.name} for ${dmg} damage!`});
+
+    // Fire projectile animation
+    const allyEl = document.getElementById('questAllyArena');
+    const enemyEl = document.getElementById(`enemy${targetIdx}`);
+    if(allyEl && enemyEl){
+        fireProjectile(allyEl, enemyEl, 'Light');
+    }
+
+    // Check for yield mechanic (duel battles)
+    if(target.yieldAtPercent !== undefined){
+        const hpPercent = (target.hp / target.maxHp) * 100;
+        if(hpPercent <= target.yieldAtPercent){
+            state.log.push({t:'yield', m:`⚔️ ${target.name} yields!`});
+            setTimeout(()=>endBattle(true),500);
+            return;
+        }
+    }
+
+    // Check if target defeated
+    if(target.hp <= 0){
+        state.log.push({t:'ko', m:`💥 ${target.name} defeated!`});
+    }
+
+    turnIdx++;
+    processing = false;
+    renderMain();
+    setTimeout(nextTurn, 600);
 }
 
 function renderBattle(m){
@@ -15751,11 +15850,49 @@ function renderBattle(m){
     
     let html=`<div class="battle-container" id="battleArena" style="background-image:url('${G}/Backgrounds/${b.enemy.bg||'Backgrounds_DarkForest.png'}')">`;
     
-    // Header
+    // Header - v54.16: Show quest battle type
+    let battleTypeLabel = enemy.isBoss ? '⚔️ BOSS BATTLE' : '🗡️ Wild Encounter';
+    if(b.isQuestBattle){
+        const typeLabels = {
+            'protective': '🛡️ PROTECT ALLY',
+            'swarm': '🌊 SWARM BATTLE',
+            'duel': '⚔️ DUEL',
+            'trial': '🏆 TRIAL COMBAT',
+            'mercy': '💚 MERCY BATTLE'
+        };
+        battleTypeLabel = typeLabels[b.questCombatType] || '📜 QUEST BATTLE';
+    }
     html+=`<div class="battle-header">
-        <div class="battle-type">${enemy.isBoss?'⚔️ BOSS BATTLE':'🗡️ Wild Encounter'}</div>
+        <div class="battle-type">${battleTypeLabel}</div>
         ${processing ? `<button onclick="processing=false;nextTurn();renderMain();" style="background:#f87171;color:#fff;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:.7rem;">⚠️ Unstuck</button>` : ''}
     </div>`;
+
+    // v54.16: Quest battle indicators
+    if(b.isQuestBattle){
+        html+=`<div class="quest-battle-indicators" style="display:flex;gap:12px;justify-content:center;margin:4px 0;font-size:0.75rem;">`;
+
+        // Survival turns remaining
+        if(b.survivalTurns > 0){
+            const turnsLeft = Math.max(0, b.survivalTurns - (b.turnsElapsed || 0));
+            html+=`<div style="background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;color:#fbbf24;">
+                ⏰ Survive: ${turnsLeft} turns
+            </div>`;
+        }
+
+        // Ally HP tracker
+        if(b.questAlly){
+            const allyHpPct = Math.floor((b.questAlly.hp / b.questAlly.maxHp) * 100);
+            const damageTaken = b.questAlly.startingHp - b.questAlly.hp;
+            const damagePct = Math.floor((damageTaken / b.questAlly.startingHp) * 100);
+            const maxDmg = b.questAlly.maxDamagePercent || 50;
+            const hpColor = damagePct > maxDmg * 0.7 ? '#f87171' : damagePct > maxDmg * 0.4 ? '#fbbf24' : '#4ade80';
+            html+=`<div style="background:rgba(0,0,0,0.6);padding:4px 10px;border-radius:8px;color:${hpColor};">
+                🛡️ ${b.questAlly.name}: ${allyHpPct}% HP (Max damage: ${maxDmg}%)
+            </div>`;
+        }
+
+        html+=`</div>`;
+    }
     
     // ============================================
     // V43: TURN ORDER TRACKER - Top center (v54.1: Added names)
@@ -15764,26 +15901,29 @@ function renderBattle(m){
     const upcomingTurns = battleQueue.slice(turnIdx, Math.min(turnIdx + 7, battleQueue.length));
     upcomingTurns.forEach((turn, offset) => {
         const isActive = offset === 0;
-        const isKO = turn.type === 'player' ?
-            b.team[turn.idx].curHp <= 0 :
-            b.enemies[turn.idx].hp <= 0;
+        let isKO = false;
+        let imgSrc = '';
+        let turnName = '';
+
+        // v54.16: Handle ally type in turn order
+        if(turn.type === 'player'){
+            isKO = b.team[turn.idx].curHp <= 0;
+            imgSrc = getImg(b.team[turn.idx].cid, b.team[turn.idx].lv);
+            turnName = b.team[turn.idx].name || 'Hero';
+        } else if(turn.type === 'enemy'){
+            isKO = b.enemies[turn.idx].hp <= 0;
+            imgSrc = `${G}/${b.enemies[turn.idx].img}`;
+            turnName = b.enemies[turn.idx].name || 'Enemy';
+        } else if(turn.type === 'ally' && b.questAlly){
+            isKO = b.questAlly.hp <= 0;
+            imgSrc = `${G}/${b.questAlly.img}`;
+            turnName = b.questAlly.name || 'Ally';
+        }
 
         let portraitClass = `turn-order-portrait ${turn.type}`;
         if(isActive) portraitClass += ' active';
         if(isKO) portraitClass += ' ko';
 
-        const imgSrc = turn.type === 'player' ?
-            getImg(b.team[turn.idx].cid, b.team[turn.idx].lv) :
-            `${G}/${b.enemies[turn.idx].img}`;
-
-        // v54.1: Get name for turn order display
-        let turnName = '';
-        if(turn.type === 'player'){
-            const member = b.team[turn.idx];
-            turnName = member.name || 'Hero';
-        } else {
-            turnName = b.enemies[turn.idx].name || 'Enemy';
-        }
         // Truncate long names
         const displayName = turnName.length > 8 ? turnName.substring(0, 7) + '…' : turnName;
 
@@ -15862,7 +16002,29 @@ function renderBattle(m){
         html+=`</div>`;
     });
     html+=`</div>`;
-    
+
+    // v54.16: Quest Ally Display (between player party and enemies)
+    if(b.questAlly && b.questAlly.hp > 0){
+        const ally = b.questAlly;
+        const allyHpPct = (ally.hp / ally.maxHp) * 100;
+        const isAllyTurn = cur?.type === 'ally';
+
+        html+=`<div class="quest-ally-arena" id="questAllyArena" style="display:flex;flex-direction:column;align-items:center;margin:0 15px;">
+            ${isAllyTurn ? '<span class="active-arrow" style="color:#4ade80;">▼</span>' : ''}
+            <div class="arena-frame evo2" style="border-color:#4ade80;box-shadow:0 0 12px rgba(74,222,128,0.4);">
+                <img src="${G}/${ally.img}" onerror="this.style.opacity='0.3'" style="width:60px;height:60px;object-fit:contain;">
+            </div>
+            <div style="text-align:center;margin-top:4px;">
+                <div style="font-size:0.65rem;color:#4ade80;font-weight:bold;">${ally.name}</div>
+                <div class="creature-bars-minimal" style="width:50px;">
+                    <div class="minimal-bar hp-minimal">
+                        <div class="minimal-bar-fill hp-fill-minimal" style="width:${allyHpPct}%;background:linear-gradient(90deg,#4ade80,#22c55e);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
     // RIGHT - Enemy Side with staggered columns (like players)
     const allEnemies = b.enemies || [enemy];
     const aliveEnemies = allEnemies.filter(e => e.hp > 0);
@@ -16323,6 +16485,17 @@ function doAction(a){
                 // Add to battle log
                 addLog(`${m.name||'Hero'} used ${moveName}! ${d} damage${isCrit?' (CRIT!)':''}`, 'dmg');
 
+                // v54.16: Check for duel yield mechanic
+                if(targetEnemy.yieldAtPercent !== undefined){
+                    const hpPercent = (targetEnemy.hp / targetEnemy.maxHp) * 100;
+                    if(hpPercent <= targetEnemy.yieldAtPercent){
+                        state.log.push({t:'yield', m:`⚔️ ${targetEnemy.name} yields!`});
+                        processing = false;
+                        setTimeout(()=>endBattle(true),500);
+                        return;
+                    }
+                }
+
                 // CRITICAL: Clear processing flag before advancing turn
                 processing = false;
 
@@ -16565,6 +16738,15 @@ function doAction(a){
 
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! Hit ${aliveEnemies.length} enemies for ${totalDamage} total damage!`, 'spec');
 
+                        // v54.16: Check for yield mechanic on any AOE target
+                        const yieldingEnemy = aliveEnemies.find(e => e.yieldAtPercent !== undefined && (e.hp / e.maxHp) * 100 <= e.yieldAtPercent);
+                        if(yieldingEnemy){
+                            state.log.push({t:'yield', m:`⚔️ ${yieldingEnemy.name} yields!`});
+                            processing = false;
+                            setTimeout(()=>endBattle(true),500);
+                            return;
+                        }
+
                         processing = false;
 
                         // v54.14: Boss summon/heal moved to boss's turn - removed checkBossMinionSummon() call here
@@ -16660,6 +16842,17 @@ function doAction(a){
 
                         showFloatingDamage(impactEnemyEl, d, 'crit');
                         addLog(`⚡ ${m.name||'Hero'} used ${moveName}! ${d} damage!`, 'spec');
+
+                        // v54.16: Check for duel yield mechanic
+                        if(targetEnemy.yieldAtPercent !== undefined){
+                            const hpPercent = (targetEnemy.hp / targetEnemy.maxHp) * 100;
+                            if(hpPercent <= targetEnemy.yieldAtPercent){
+                                state.log.push({t:'yield', m:`⚔️ ${targetEnemy.name} yields!`});
+                                processing = false;
+                                setTimeout(()=>endBattle(true),500);
+                                return;
+                            }
+                        }
 
                         processing = false;
 
@@ -19881,14 +20074,29 @@ function enemyAction(){
     }
 
     // 9. BASIC ATTACK - Default fallback (already set)
-    
+
+    // v54.16: QUEST ALLY TARGETING - In protective battles, enemies may target the ally
+    let attackingAlly = false;
+    if(b.questAlly && b.questAlly.hp > 0 && (actionType === 'basic' || actionType === 'special')){
+        // 40% chance to target ally in protective battles
+        if(Math.random() < 0.4){
+            attackingAlly = true;
+        }
+    }
+
     // Choose target for attacks
     const targetMember = alive[Math.floor(Math.random()*alive.length)];
     const targetMemberIdx = b.team.indexOf(targetMember);
-    
+
     // ============================================
     // EXECUTE ACTION
     // ============================================
+
+    // v54.16: Handle attack on quest ally
+    if(attackingAlly && (actionType === 'basic' || actionType === 'special')){
+        executeEnemyAttackOnAlly(enemy, enemyIdx, enemyEl, thisActionId);
+        return;
+    }
 
     if(actionType === 'heal'){
         // HEAL ACTION
@@ -20231,6 +20439,80 @@ function enemyAction(){
             }
         }, 350); // SLOWER - was 200
     }, 500); // SLOWER - was 400
+}
+
+// v54.16: Enemy attack on quest ally (protective battles)
+function executeEnemyAttackOnAlly(enemy, enemyIdx, enemyEl, thisActionId){
+    const b = state.battle;
+    const ally = b.questAlly;
+
+    if(!ally || ally.hp <= 0){
+        // Ally dead, fallback to normal attack
+        turnIdx++;
+        processing = false;
+        renderMain();
+        setTimeout(nextTurn, 600);
+        return;
+    }
+
+    // Calculate damage
+    let baseDmg = enemy.atk;
+    let defReduction = ally.def * 0.2;
+    let d = Math.max(5, baseDmg - defReduction);
+    d = Math.floor(d * (0.9 + Math.random() * 0.2));
+
+    // Get attack name
+    const atkName = enemy.moves?.atk?.n || enemy.basicAttack?.n || 'Attack';
+
+    // Telegraph - show ally is targeted
+    const allyEl = document.getElementById('questAllyArena');
+    if(allyEl) allyEl.classList.add('targeted');
+
+    setTimeout(() => {
+        if(allyEl) allyEl.classList.remove('targeted');
+
+        // Check action ID
+        if(thisActionId !== currentActionId){
+            console.warn('Enemy ally attack skipped - action ID mismatch');
+            return;
+        }
+
+        // Enemy dash animation
+        const freshEnemyEl = document.getElementById('enemyImg'+enemyIdx);
+        if(freshEnemyEl){
+            freshEnemyEl.classList.add('anim-dash-left');
+            setTimeout(() => freshEnemyEl.classList.remove('anim-dash-left'), 250);
+        }
+
+        // Fire projectile at ally
+        const freshAllyEl = document.getElementById('questAllyArena');
+        const element = enemy.type?.toLowerCase() || 'shadow';
+        fireProjectile(freshEnemyEl, freshAllyEl, element);
+
+        // Apply damage after projectile
+        setTimeout(() => {
+            if(thisActionId !== currentActionId) return;
+
+            playSound('hit');
+
+            ally.hp = Math.max(0, ally.hp - d);
+
+            // Show damage effects
+            if(freshAllyEl){
+                showImpactEffect(freshAllyEl, false, element);
+                freshAllyEl.classList.add('anim-hit-shake', 'anim-hit-flash');
+                setTimeout(() => freshAllyEl.classList.remove('anim-hit-shake', 'anim-hit-flash'), 400);
+                showFloatingDamage(freshAllyEl, d, 'damage');
+            }
+
+            addLog(`💥 ${enemy.name} attacks ${ally.name}! ${d} damage!`, 'dmg');
+
+            processing = false;
+            turnIdx++;
+            renderMain();
+            setTimeout(nextTurn, 600);
+        }, 350);
+    }, 400);
 }
 
 // Enemy heal action
